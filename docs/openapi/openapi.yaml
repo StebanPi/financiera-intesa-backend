@@ -1,0 +1,136 @@
+openapi: 3.0.3
+info:
+  title: Financiera Intesa API
+  version: 1.0.0
+  description: |
+    API REST para el sistema de gestión financiera académica.
+    
+    ## Autenticación
+    
+    La API usa autenticación Bearer Token mediante Laravel Sanctum.
+    
+    Para obtener un token:
+    1. Realizar un POST a `/api/v1/auth/login` con `email` y `password`
+    2. El token se devuelve en la respuesta: `data.token`
+    3. Usar el token en el header: `Authorization: Bearer {token}`
+    
+    ## Endpoints de Archivos
+    
+    Algunos endpoints devuelven archivos (PDF/XLSX):
+    - Los endpoints de PDF devuelven `Content-Type: application/pdf`
+    - Los endpoints de XLSX devuelven `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+    - Estos endpoints pueden requerir `Accept: */*` o `Accept: application/json` para evitar redirecciones
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+  - url: https://api-staging.ejemplo.com/api/v1
+    description: Staging server (placeholder - actualizar con URL real)
+  - url: https://api.ejemplo.com/api/v1
+    description: Production server (placeholder - actualizar con URL real)
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Auth
+    description: Authentication endpoints (login, register, password reset, etc.)
+  - name: Home
+    description: Home endpoint (protected)
+  - name: Maintenance
+    description: Maintenance endpoints (super-admin only)
+  - name: Matriculas
+    description: Student registration management
+  - name: Accounting
+    description: Accounting reports and downloads
+  - name: Attendance Sheet
+    description: Attendance sheet generation (PDF)
+  - name: Costs
+    description: Cost management
+  - name: Purses
+    description: Purse management
+  - name: Entries
+    description: Entry management
+  - name: Other Entries
+    description: Other entries management
+  - name: Discharges
+    description: Discharge management
+  - name: Providers
+    description: Provider management
+  - name: Discharge Concepts
+    description: Discharge concept management
+  - name: Third Entries
+    description: Third party entries management
+  - name: Third Activities
+    description: Third party activities management
+  - name: Third Receipts
+    description: Third party receipts management
+  - name: Concept Entry Receipts
+    description: Concept entry receipts management
+  - name: Concept Discharge Receipts
+    description: Concept discharge receipts management
+  - name: Financial Receipts
+    description: Financial receipts management
+  - name: Consecutives
+    description: Consecutive number management
+  - name: Catalog
+    description: Catalog endpoints
+  - name: Settings
+    description: Settings management
+  - name: Admin
+    description: Administration endpoints (users, roles, permissions)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Laravel Sanctum Bearer Token. Format: Bearer {token}
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Los datos enviados no son válidos.
+            details:
+              type: object
+              nullable: true
+              example:
+                email:
+                  - El campo email es obligatorio.
+            trace_id:
+              type: string
+              nullable: true
+              description: Trace ID para correlacionar errores en logs
+              example: "550e8400-e29b-41d4-a716-446655440000"
+    
+    Success:
+      type: object
+      properties:
+        data:
+          type: object
+          nullable: true
+        meta:
+          type: object
+          nullable: true
+          properties:
+            current_page:
+              type: integer
+            per_page:
+              type: integer
+            total:
+              type: integer
+        message:
+          type: string
+          nullable: true
+
+security:
+  - bearerAuth: []

@@ -1,0 +1,235 @@
+# ============================================
+# Laravel Framework
+# ============================================
+
+# Archivos de entorno (NUNCA subir a Git)
+.env
+.env.backup
+.env.production
+.env.local
+.env.*.local
+.env.testing
+
+# Archivos de configuración sensibles (si contienen credenciales)
+# config/services.php
+# config/database.php
+
+# ============================================
+# Dependencias
+# ============================================
+
+# Composer
+/vendor/
+composer.phar
+# Mantener composer.lock para versiones consistentes
+# composer.lock
+
+# NPM / Node
+/node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# ============================================
+# Archivos de Compilación y Build
+# ============================================
+
+
+# Mantener archivos estáticos necesarios
+
+# ============================================
+# Almacenamiento y Caché
+# ============================================
+
+# Storage
+/storage/*.key
+/storage/app/*
+!/storage/app/.gitignore
+!/storage/app/public
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+
+# Bootstrap cache
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+
+# ============================================
+# Archivos Temporales y de Sistema
+# ============================================
+
+# Sistema operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Archivos temporales
+*.tmp
+*.temp
+*.log
+*.cache
+*.swp
+*.swo
+*~
+.~*
+
+# ============================================
+# IDEs y Editores
+# ============================================
+
+# PhpStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# NetBeans
+nbproject/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Eclipse
+.project
+.classpath
+.settings/
+build/
+
+# ============================================
+# Testing y Cobertura
+# ============================================
+
+# PHPUnit
+/phpunit.xml
+.phpunit.result.cache
+/coverage/
+/.phpunit.cache
+
+# ============================================
+# Docker
+# ============================================
+
+# Docker (opcional, descomentar si no usas Docker)
+# docker-compose.override.yml
+# .dockerignore
+
+# ============================================
+# Archivos Específicos del Proyecto
+# ============================================
+
+# Scripts de desarrollo local
+Iniciar.bat
+
+# Archivos de respaldo
+*.bak
+*.backup
+*.old
+
+# Archivos de configuración local
+config/local.php
+config/local/*.php
+
+# Archivos de sesión
+/storage/framework/sessions/*
+
+# Archivos de caché de Laravel
+/storage/framework/cache/data/*
+/storage/framework/views/*
+
+# ============================================
+# Archivos que SÍ deben subirse
+# ============================================
+
+# Mantener estructura de directorios
+!/.gitkeep
+!/storage/.gitkeep
+!/storage/app/.gitkeep
+!/storage/app/public/.gitkeep
+!/storage/framework/.gitkeep
+!/storage/framework/cache/.gitkeep
+!/storage/framework/sessions/.gitkeep
+!/storage/framework/views/.gitkeep
+!/storage/logs/.gitkeep
+!/bootstrap/cache/.gitkeep
+
+# Mantener archivos de configuración de ejemplo
+!.env.example
+!composer.json
+!package.json
+!vite.config.js
+!postcss.config.js
+
+# Mantener toda la carpeta public (incluir todo explícitamente)
+!/public/
+!/public/**
+!/public/**/*
+# Ignorar solo archivos temporales de public
+/public/hot
+/public/storage
+
+# Mantener seeders y migraciones
+!/database/migrations/
+!/database/seeders/
+!/database/factories/
+
+# Mantener archivos de configuración importantes
+!/config/*.php
+!/routes/*.php
+!/config/app.php
+!/config/database.php
+!/config/mail.php
+!/config/services.php
+
+# Mantener README y documentación
+!README.md
+!LICENSE
+!CHANGELOG.md
+
+# Reportes y documentación temporal
+BOOTSTRAP_USAGE_REPORT.md
+JQUERY_MIGRATION_REPORT.md
+
+# ============================================
+# Notas
+# ============================================
+# 
+# IMPORTANTE:
+# - NUNCA subas el archivo .env a Git
+# - NUNCA subas credenciales, tokens o claves API
+# - Los archivos en /storage/ y /vendor/ se generan automáticamente
+# - Los assets compilados se generan con npm run build
+# - Asegúrate de tener un .env.example con valores de ejemplo
+# 
+# Para producción:
+# 1. Clona el repositorio
+# 2. Copia .env.example a .env
+# 3. Configura las variables de entorno
+# 4. Ejecuta: composer install --no-dev --optimize-autoloader
+# 5. Ejecuta: npm install && npm run build
+# 6. Ejecuta: php artisan key:generate
+# 7. Ejecuta: php artisan migrate --seed
+# 8. Configura los permisos de storage y bootstrap/cache

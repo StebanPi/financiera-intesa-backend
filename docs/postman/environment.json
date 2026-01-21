@@ -1,0 +1,177 @@
+{
+	"id": "financiera-intesa-api-v1",
+	"name": "Financiera Intesa API v1",
+	"values": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "secret",
+			"enabled": true
+		},
+		{
+			"key": "cod_alumno",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "id_cost",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "fecha_inicio",
+			"value": "2024-01-01",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "fecha_fin",
+			"value": "2024-01-31",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "fecha",
+			"value": "2024-01-15",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "month_year",
+			"value": "2024-01",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "id",
+			"value": "1",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "resource",
+			"value": "programs",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "role",
+			"value": "1",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "user",
+			"value": "1",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "type",
+			"value": "entry",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "program_id",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "schedule_id",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "group_id",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "teacher_id",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "module_id",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "fecha_clase",
+			"value": "2024-01-15",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "entry_id",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "concepto",
+			"value": "1",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "descripcion",
+			"value": "Test entry",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "fecha_recibo",
+			"value": "2024-01-15",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "valor",
+			"value": "100000",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "elaborado_por",
+			"value": "1",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "debe",
+			"value": "1",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "haber",
+			"value": "1",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "forma",
+			"value": "Efectivo",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2024-01-01T00:00:00.000Z",
+	"_postman_exported_using": "Financiera Intesa"
+}

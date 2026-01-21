@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use App\Models\ThirdReceipts;
+
+class haber extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'cuenta',
+        'nombre'
+    ];
+
+    protected $connection;
+
+    public function construct($con)
+    {
+        $this->connection = $con;
+    }
+    public function ThirdReceipts(){
+        return $this->hasMany(ThirdReceipts::class, 'id');
+    }
+    
+    /**
+     * Obtener cuentas haber únicas por cuenta y nombre, evitando duplicados
+     */
+    public static function getUnique()
+    {
+        $ids = static::select(DB::raw('MIN(id) as id'))
+            ->groupBy('cuenta', 'nombre')
+            ->pluck('id');
+        return static::whereIn('id', $ids)
+            ->orderBy('id')
+            ->get();
+    }
+}

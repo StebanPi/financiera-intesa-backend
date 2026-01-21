@@ -1,0 +1,60 @@
+body{
+    background: #000428;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #004e92, #000428);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #004e92, #000428); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+    margin: 0;
+    padding: 0;
+}
+
+.content{
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.content-child{
+    text-align: center;
+}
+
+.rounded-d{
+    border-radius: 50% !important;
+    font-size: 18px !important;
+}
+
+.content-preloader2{
+    width: 100%;
+    height: 100%;
+    background-color:#f7f7f7f0;
+    z-index: 10000;
+    position: fixed;
+    top: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 1s ease-in-out;
+}
+.content-preloader2 .preloader2{
+    width: 100px;
+    height: 100px;
+    border: 15px solid #eee;
+    border-top: 15px solid #2f4cdd !important;
+    border-radius: 50%;
+    animation-name: girar;
+    animation-duration: 2s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+      
+}
+.show2loader{
+    display: none !important;
+}
+
+@keyframes girar {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }

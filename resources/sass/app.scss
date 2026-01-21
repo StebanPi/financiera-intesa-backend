@@ -1,0 +1,14 @@
+// Fonts
+@import url('https://fonts.googleapis.com/css?family=Nunito');
+
+// Variables
+// Using @import here because Bootstrap 5.3.8 requires variables to be globally available
+// Warning suppressed via Sass configuration in vite.config.js
+@import 'variables';
+
+// Bootstrap
+// Using @import because Bootstrap 5.3.8 uses @import internally
+// Warnings from node_modules/bootstrap are silenced via vite.config.js
+@import 'bootstrap/scss/bootstrap';
+
+
