@@ -183,7 +183,58 @@ sudo chmod -R 775 storage bootstrap/cache
 
 Ajusta `www-data` si tu servidor usa otro usuario (p. ej. `nginx`, `apache`).
 
-### 4.10. Optimización para producción
+### 4.10. Documentación Swagger/OpenAPI (opcional)
+
+Si quieres tener la documentación interactiva en `/docs` en producción:
+
+1. **En `.env`:**
+   ```
+   SWAGGER_ENABLED=true
+   SWAGGER_URL=/docs
+   L5_SWAGGER_GENERATE_ALWAYS=false
+   ```
+
+2. **Generar el archivo OpenAPI** (una vez por despliegue o al cambiar anotaciones):
+   ```bash
+   php artisan l5-swagger:generate
+   ```
+   Esto crea o actualiza `storage/api-docs/openapi.json`. La UI en `/docs` y el JSON en `/docs/openapi.json` leen ese archivo.
+
+3. **Permisos:** el usuario del servidor web debe poder escribir en `storage/api-docs` (el comando crea la carpeta si no existe).
+
+Si `SWAGGER_ENABLED=false`, las rutas `/docs` y `/docs/openapi.json` responden 404. Con `L5_SWAGGER_GENERATE_ALWAYS=false` (recomendado en prod) **no** se regenera en cada request; solo al ejecutar `l5-swagger:generate`.
+
+#### Si `/docs` devuelve 404 en producción
+
+1. **`.env`:** Comprueba que exista y esté bien escrito (sin espacios ni comillas extra):
+   ```
+   SWAGGER_ENABLED=true
+   ```
+   Valores que se consideran "desactivado": `false`, `0`, vacío, o que la variable no exista.
+
+2. **Re-cachear configuración** (imprescindible tras tocar `.env`):
+   ```bash
+   php artisan config:clear
+   php artisan config:cache
+   ```
+   Si usas `config:cache`, el valor de `SWAGGER_ENABLED` se guarda en ese momento. Si no haces `config:clear` y `config:cache` después de poner `SWAGGER_ENABLED=true`, seguirá usándose el valor anterior (p. ej. `false`).
+
+3. **Generar OpenAPI:**
+   ```bash
+   php artisan l5-swagger:generate
+   ```
+
+4. **Comprobar que la ruta existe:**
+   ```bash
+   php artisan route:list --path=docs
+   ```
+   Debe aparecer `GET|HEAD docs` y `GET|HEAD docs/openapi.json`.
+
+5. **Document root:** El servidor web debe tener como raíz la carpeta `public` del proyecto. Si la raíz es la raíz del repo (y no `public/`), Laravel no se cargará bien.
+
+6. **Subdirectorio:** Si la app está en un subdirectorio (p. ej. `https://dominio.com/api/`), la URL de docs sería `https://dominio.com/api/docs`. Comprueba que `APP_URL` en `.env` coincida con la URL real de la app.
+
+### 4.11. Optimización para producción
 
 ```bash
 php artisan optimize
@@ -390,6 +441,7 @@ npm ci && npm run build
 php artisan app:release-check
 php artisan migrate --force
 php artisan storage:link
+# Si SWAGGER_ENABLED=true: php artisan l5-swagger:generate
 php artisan optimize
 ```
 
@@ -458,4 +510,4 @@ php artisan optimize
 - [ ] Login → token; `GET /api/v1/home` con token → 200
 - [ ] Al menos un PDF y un XLSX probados
 - [ ] CORS correcto para el frontend
-- [ ] `SWAGGER_ENABLED=false` en producción
+- [ ] `SWAGGER_ENABLED=false` en producción (o si está `true`: `php artisan l5-swagger:generate` y `GET /docs` → 200)
