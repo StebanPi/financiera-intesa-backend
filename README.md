@@ -110,16 +110,6 @@ Este proyecto es únicamente el **backend**; el frontend (web o móvil) se conec
 - **Documentación:** Con `SWAGGER_ENABLED=true`, la documentación interactiva está en `/docs` y la especificación OpenAPI en `/docs/openapi.json`.
 - **Health:** `GET /api/v1/health` (sin auth) para comprobar que el backend responde.
 
-## 👤 Usuario por Defecto
-
-Después de ejecutar los seeders, se crea automáticamente un usuario superadmin con las siguientes credenciales:
-
-- **Email**: `pinedasteban13@gmail.com`
-- **Contraseña**: `lego2200`
-- **Rol**: Super Admin (acceso completo a la API)
-
-> **⚠️ Importante**: Cambia estas credenciales inmediatamente después de la primera instalación en producción.
-
 ## 🔐 Roles y Permisos
 
 El sistema incluye un sistema completo de roles y permisos:
