@@ -64,10 +64,6 @@ Route::get('/pdf', function () {
     return view('layouts.pdf');
 })->middleware(['auth', 'permission:access.core']);
 
-Route::get('/synchronization', function () {
-    return view('cloud.synchronization');
-})->middleware(['auth', 'permission:access.core'])->name('cloud.synchronization');
-
 // Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
@@ -202,12 +198,6 @@ Route::middleware(['auth', 'permission:access.core'])->group(function () {
     Route::controller(App\Http\Controllers\HistoryPurseController::class)->group(function(){
     Route::post('/history/search/','search')->name('purse.history');
     Route::post('/history/delete/','delete')->name('history.delete');
-    }); 
-
-    Route::controller(App\Http\Controllers\SynchronizationController::class)->group(function(){
-    Route::get('/synchronization/local-cloud','transfer_local_cloud')->name('synchronization.local');
-    Route::get('/synchronization/cloud-local','transfer_cloud_local')->name('synchronization.cloud');
-    Route::get('/synchronization/count/local-cloud','count_local_cloud')->name('synchronization.count');
     }); 
 
     Route::controller(App\Http\Controllers\thirdEntryController::class)->group(function(){
