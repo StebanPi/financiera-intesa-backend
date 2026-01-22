@@ -194,7 +194,7 @@ class MatriculaService
         $matricula->save();
 
         return [
-            'url' => Storage::url($filename),
+            'url' => url('/api/v1/matriculas/' . $cod_alumno . '/foto'),
             'path' => $filename,
             'mime' => $file->getMimeType(),
             'size' => $file->getSize(),

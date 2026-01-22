@@ -322,6 +322,81 @@ class MatriculaController extends Controller
     }
 
     /**
+     * GET /matriculas/{cod_alumno}/foto — stream imagen
+     */
+    #[
+        OA\Get(
+            path: '/api/v1/matriculas/{cod_alumno}/foto',
+            summary: 'Obtener foto de estudiante',
+            description: 'Devuelve la foto del estudiante como imagen binaria. Si no tiene foto, devuelve 404.',
+            tags: ['Matriculas'],
+            security: [['bearerAuth' => []]],
+            parameters: [
+                new OA\Parameter(
+                    name: 'cod_alumno',
+                    in: 'path',
+                    required: true,
+                    description: 'Código del alumno',
+                    schema: new OA\Schema(type: 'string', example: '12345678')
+                ),
+            ],
+            responses: [
+                new OA\Response(
+                    response: 200,
+                    description: 'Foto obtenida exitosamente',
+                    content: new OA\MediaType(
+                        mediaType: 'image/jpeg',
+                        schema: new OA\Schema(
+                            type: 'string',
+                            format: 'binary'
+                        )
+                    ),
+                    headers: [
+                        new OA\Header(
+                            header: 'Content-Type',
+                            schema: new OA\Schema(type: 'string'),
+                            description: 'image/jpeg, image/png, image/webp según el archivo'
+                        ),
+                        new OA\Header(
+                            header: 'Content-Disposition',
+                            schema: new OA\Schema(type: 'string'),
+                            description: 'inline; filename="foto-{cod_alumno}.{ext}"'
+                        ),
+                    ]
+                ),
+                new OA\Response(
+                    response: 401,
+                    description: 'No autenticado',
+                    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+                ),
+                new OA\Response(
+                    response: 404,
+                    description: 'Matrícula no encontrada o sin foto',
+                    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+                ),
+            ]
+        )
+    ]
+    public function getFoto(string $cod_alumno)
+    {
+        $matricula = $this->matriculaService->getByCodAlumno($cod_alumno);
+
+        if (!$matricula->photo_path || !\Illuminate\Support\Facades\Storage::disk('public')->exists($matricula->photo_path)) {
+            abort(404, 'El estudiante no tiene foto registrada.');
+        }
+
+        $file = \Illuminate\Support\Facades\Storage::disk('public')->get($matricula->photo_path);
+        $mimeType = \Illuminate\Support\Facades\Storage::disk('public')->mimeType($matricula->photo_path);
+        $extension = pathinfo($matricula->photo_path, PATHINFO_EXTENSION);
+        $filename = 'foto-' . $cod_alumno . '.' . $extension;
+
+        return response($file, 200)
+            ->header('Content-Type', $mimeType)
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->header('Cache-Control', 'public, max-age=3600');
+    }
+
+    /**
      * GET /matriculas/{cod_alumno}/pdf — stream PDF
      */
     #[
