@@ -379,21 +379,55 @@ class MatriculaController extends Controller
     ]
     public function getFoto(string $cod_alumno)
     {
-        $matricula = $this->matriculaService->getByCodAlumno($cod_alumno);
+        try {
+            $matricula = $this->matriculaService->getByCodAlumno($cod_alumno);
 
-        if (!$matricula->photo_path || !\Illuminate\Support\Facades\Storage::disk('public')->exists($matricula->photo_path)) {
-            abort(404, 'El estudiante no tiene foto registrada.');
+            if (!$matricula->photo_path) {
+                \Log::warning("Matrícula {$cod_alumno} no tiene photo_path");
+                abort(404, 'El estudiante no tiene foto registrada.');
+            }
+
+            $photoPath = $matricula->photo_path;
+            $storage = \Illuminate\Support\Facades\Storage::disk('public');
+
+            if (!$storage->exists($photoPath)) {
+                \Log::warning("Foto no existe en storage: {$photoPath} para matrícula {$cod_alumno}");
+                abort(404, 'La foto no se encuentra en el servidor.');
+            }
+
+            $file = $storage->get($photoPath);
+            if (!$file) {
+                \Log::error("No se pudo leer el archivo: {$photoPath}");
+                abort(500, 'Error al leer la foto.');
+            }
+
+            $mimeType = $storage->mimeType($photoPath);
+            if (!$mimeType) {
+                // Intentar detectar el tipo MIME por extensión
+                $extension = strtolower(pathinfo($photoPath, PATHINFO_EXTENSION));
+                $mimeTypes = [
+                    'jpg' => 'image/jpeg',
+                    'jpeg' => 'image/jpeg',
+                    'png' => 'image/png',
+                    'webp' => 'image/webp',
+                ];
+                $mimeType = $mimeTypes[$extension] ?? 'image/jpeg';
+            }
+
+            $extension = pathinfo($photoPath, PATHINFO_EXTENSION);
+            $filename = 'foto-' . $cod_alumno . '.' . $extension;
+
+            return response($file, 200)
+                ->header('Content-Type', $mimeType)
+                ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+                ->header('Cache-Control', 'public, max-age=3600');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error("Matrícula no encontrada: {$cod_alumno}");
+            abort(404, 'Matrícula no encontrada.');
+        } catch (\Exception $e) {
+            \Log::error("Error en getFoto para {$cod_alumno}: " . $e->getMessage());
+            abort(500, 'Error al obtener la foto.');
         }
-
-        $file = \Illuminate\Support\Facades\Storage::disk('public')->get($matricula->photo_path);
-        $mimeType = \Illuminate\Support\Facades\Storage::disk('public')->mimeType($matricula->photo_path);
-        $extension = pathinfo($matricula->photo_path, PATHINFO_EXTENSION);
-        $filename = 'foto-' . $cod_alumno . '.' . $extension;
-
-        return response($file, 200)
-            ->header('Content-Type', $mimeType)
-            ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
-            ->header('Cache-Control', 'public, max-age=3600');
     }
 
     /**

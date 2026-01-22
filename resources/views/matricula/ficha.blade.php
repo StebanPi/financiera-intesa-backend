@@ -71,10 +71,11 @@
                                     <div class="col-md-4 text-center">
                                         <div id="photoPreview" class="mb-3">
                                             @if($matricula->photo_path && Storage::disk('public')->exists($matricula->photo_path))
-                                                <img src="{{ Storage::url($matricula->photo_path) }}" 
+                                                <img src="{{ url('/api/v1/matriculas/' . $matricula->cod_alumno . '/foto') }}" 
                                                      alt="Foto del estudiante" 
                                                      class="img-thumbnail" 
-                                                     style="max-width: 200px; max-height: 200px; object-fit: cover;">
+                                                     style="max-width: 200px; max-height: 200px; object-fit: cover;"
+                                                     onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect fill=\'%23ddd\' width=\'200\' height=\'200\'/%3E%3Ctext fill=\'%23999\' font-family=\'sans-serif\' font-size=\'14\' dy=\'10.5\' font-weight=\'bold\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\'%3ESin foto%3C/text%3E%3C/svg%3E';">
                                             @else
                                                 <div class="border rounded p-5 text-muted" style="width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
                                                     <div class="text-center">

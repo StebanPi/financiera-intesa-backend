@@ -722,7 +722,7 @@ class MatriculaController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Foto subida exitosamente',
-            'photo_url' => Storage::url($filename)
+            'photo_url' => url('/api/v1/matriculas/' . $cod_alumno . '/foto')
         ]);
     }
 
