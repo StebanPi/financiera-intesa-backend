@@ -71,7 +71,11 @@
                                     <div class="col-md-4 text-center">
                                         <div id="photoPreview" class="mb-3">
                                             @if($matricula->photo_path && Storage::disk('public')->exists($matricula->photo_path))
-                                                <img src="{{ url('/api/v1/matriculas/' . $matricula->cod_alumno . '/foto') }}" 
+                                                @php
+                                                    $baseUrl = rtrim(config('app.url'), '/');
+                                                    $photoUrl = $baseUrl . '/api/v1/matriculas/' . $matricula->cod_alumno . '/foto';
+                                                @endphp
+                                                <img src="{{ $photoUrl }}" 
                                                      alt="Foto del estudiante" 
                                                      class="img-thumbnail" 
                                                      style="max-width: 200px; max-height: 200px; object-fit: cover;"

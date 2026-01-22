@@ -16,7 +16,9 @@ class MatriculaResource extends JsonResource
         $photoUrl = null;
         if ($this->photo_path && Storage::disk('public')->exists($this->photo_path)) {
             // Usar la URL del endpoint de la API en lugar de Storage::url() para evitar problemas en producción
-            $photoUrl = url('/api/v1/matriculas/' . $this->cod_alumno . '/foto');
+            // Usar config('app.url') para asegurar URL absoluta correcta en producción
+            $baseUrl = rtrim(config('app.url'), '/');
+            $photoUrl = $baseUrl . '/api/v1/matriculas/' . $this->cod_alumno . '/foto';
         }
 
         return [

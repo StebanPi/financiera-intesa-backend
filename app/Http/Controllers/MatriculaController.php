@@ -719,10 +719,14 @@ class MatriculaController extends Controller
         $matricula->photo_path = $filename;
         $matricula->save();
 
+        // Usar config('app.url') para asegurar URL absoluta correcta en producción
+        $baseUrl = rtrim(config('app.url'), '/');
+        $photoUrl = $baseUrl . '/api/v1/matriculas/' . $cod_alumno . '/foto';
+        
         return response()->json([
             'success' => true,
             'message' => 'Foto subida exitosamente',
-            'photo_url' => url('/api/v1/matriculas/' . $cod_alumno . '/foto')
+            'photo_url' => $photoUrl
         ]);
     }
 

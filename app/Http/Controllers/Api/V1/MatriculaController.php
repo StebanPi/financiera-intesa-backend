@@ -379,8 +379,10 @@ class MatriculaController extends Controller
     ]
     public function getFoto(string $cod_alumno)
     {
+        \Log::info("getFoto llamado para cod_alumno: {$cod_alumno}");
         try {
             $matricula = $this->matriculaService->getByCodAlumno($cod_alumno);
+            \Log::info("Matrícula encontrada, photo_path: " . ($matricula->photo_path ?? 'null'));
 
             if (!$matricula->photo_path) {
                 \Log::warning("Matrícula {$cod_alumno} no tiene photo_path");
