@@ -328,9 +328,9 @@ class MatriculaController extends Controller
         OA\Get(
             path: '/api/v1/matriculas/{cod_alumno}/foto',
             summary: 'Obtener foto de estudiante',
-            description: 'Devuelve la foto del estudiante como imagen binaria. Si no tiene foto, devuelve 404.',
+            description: 'Devuelve la foto del estudiante como imagen binaria. Si no tiene foto, devuelve 404. Este endpoint es público (sin autenticación) para permitir que funcione en etiquetas <img>.',
             tags: ['Matriculas'],
-            security: [['bearerAuth' => []]],
+            security: [],
             parameters: [
                 new OA\Parameter(
                     name: 'cod_alumno',

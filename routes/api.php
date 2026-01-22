@@ -44,6 +44,9 @@ Route::prefix('v1')->group(function () {
     // ---- 0) Health (sin auth, para infra: load balancer, k8s, monitoreo) ----
     Route::get('health', [HealthController::class, 'index']);
 
+    // ---- 0.5) Foto de matrícula (pública, sin auth, para que funcione en <img> tags) ----
+    Route::get('matriculas/{cod_alumno}/foto', [MatriculaController::class, 'getFoto'])->where('cod_alumno', '[A-Za-z0-9\-]+');
+
     // ---- 1) Auth: login, register, forgot, reset, verify, resend (throttle en sensibles), logout, me ----
     Route::prefix('auth')->group(function () {
         Route::post('login', [AuthController::class, 'login'])->middleware('throttle:5,1');
@@ -142,9 +145,10 @@ Route::prefix('v1')->group(function () {
         // Financial receipt: datos JSON y stream PDF por type+id (entry|other-entry|egreso|third)
         Route::get('financial-receipts/{type}/{id}/pdf', [FinancialReceiptController::class, 'streamPdf'])->where('type', 'entry|other-entry|egreso|third')->whereNumber('id');
         Route::get('financial-receipts/{type}/{id}', [FinancialReceiptController::class, 'show'])->where('type', 'entry|other-entry|egreso|third')->whereNumber('id');
+        // Foto pública (sin auth) para que funcione en <img> tags
+        Route::get('matriculas/{cod_alumno}/foto', [MatriculaController::class, 'getFoto'])->where('cod_alumno', '[A-Za-z0-9\-]+');
         Route::get('matriculas', [MatriculaController::class, 'index']);
         Route::get('matriculas/{cod_alumno}/pdf', [MatriculaController::class, 'streamPdf'])->where('cod_alumno', '[A-Za-z0-9\-]+');
-        Route::get('matriculas/{cod_alumno}/foto', [MatriculaController::class, 'getFoto'])->where('cod_alumno', '[A-Za-z0-9\-]+');
         Route::post('matriculas/{cod_alumno}/foto', [MatriculaController::class, 'uploadFoto'])->where('cod_alumno', '[A-Za-z0-9\-]+');
         Route::get('matriculas/{cod_alumno}', [MatriculaController::class, 'show'])->where('cod_alumno', '[A-Za-z0-9\-]+');
         Route::post('matriculas', [MatriculaController::class, 'store']);
