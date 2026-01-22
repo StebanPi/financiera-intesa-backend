@@ -15,8 +15,8 @@ class CostResource extends JsonResource
         return [
             'id' => $this->id,
             'cod_alumno' => $this->cod_alumno,
-            'valor_semestre' => $this->valor_semestre,
             'numero_semestre' => $this->numero_semestre,
+            'valor_semestre' => $this->valor_semestre,
             'valor_total_semestre' => $this->valor_total_semestre,
             'descuento' => $this->descuento,
             'valor_neto' => $this->valor_neto,
@@ -26,6 +26,7 @@ class CostResource extends JsonResource
             'valor_cuotas' => $this->valor_cuotas,
             'fecha_pago' => $this->fecha_pago instanceof \DateTimeInterface ? $this->fecha_pago->format('Y-m-d') : $this->fecha_pago,
             'detalles' => $this->detalles,
+            'cuotas' => PurseResource::collection($this->whenLoaded('purses')),
         ];
     }
 }

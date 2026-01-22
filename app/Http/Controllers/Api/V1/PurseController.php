@@ -39,13 +39,13 @@ class PurseController extends Controller
     ]
     public function index(PurseIndexRequest $request): JsonResponse
     {
-        $cost = Cost::where('cod_alumno', $request->cod_alumno)->first();
-        if (! $cost) {
+        $ids_cost = Cost::where('cod_alumno', $request->cod_alumno)->pluck('id')->toArray();
+        if (empty($ids_cost)) {
             return ApiResponse::success([], null, ['current_page' => 1, 'per_page' => (int) $request->get('per_page', 15), 'total' => 0, 'last_page' => 1], 200);
         }
 
         $perPage = min((int) $request->get('per_page', 15), 100);
-        $paginator = Purse::where('id_cost', $cost->id)->with('cost')->orderBy('fecha_pago')->paginate($perPage);
+        $paginator = Purse::whereIn('id_cost', $ids_cost)->with('cost')->orderBy('fecha_pago')->paginate($perPage);
 
         return ApiResponse::success(
             PurseResource::collection($paginator->items())->resolve(),

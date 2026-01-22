@@ -72,163 +72,141 @@ class CostController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(CostRequest $request)
+    public function store(Request $request)
     {
-        $message = '';
-        $Cost = Cost::where('cod_alumno',$request->cod_alumno)->first();
         $this->construct();
-        if(empty($Cost) == true){
-            $cost1 = Cost::create($request->all());
-            $message = "Añadido Correctamente";
-            TableChangeController::StoreAdd('costs',$cost1->id);
+        $cod_alumno = $request->cod_alumno;
+        $semestresData = $request->input('semestres', []);
 
-            $arrayCost = DB::table('costs')->where('id',$cost1->id)->first();
-            $rowsPurses = DB::table('purses')->where('id_cost',$arrayCost->id)->count();
-            if($rowsPurses == 0){
-                $fechaActual = explode("-",$arrayCost->fecha_pago);
-                $Mes = $fechaActual[1];
-                $nameMes = DateController::getMes($Mes);
-                $Año = $fechaActual[0]; 
-                for ($i=0; $i < $arrayCost->numero_cuotas ; $i++) { 
-                    if($i > 0){
-                        $Mes = DateController::nextMes($Mes,true);
-                        $Año = DateController::Is_nextYear($Año,$Mes);
-                        $nameMes = DateController::getMes($Mes);
-                    }
-                    if($Mes < 10 && strlen($Mes) == 1){
-                        $Mes = "0".$Mes;
-                    }
-                    
-                    // Validar y ajustar la fecha para evitar días inválidos (ej: 30 de febrero)
-                    $fechaPago = $this->validateAndAdjustDate((int)$Año, (int)$Mes, (int)$fechaActual[2]);
-                    
-                    $obj = Purse::create([
-                        'id_cost' => $arrayCost->id,
-                        'fecha_pago' => $fechaPago,
-                        'estado' => 'Pendiente',
-                        'cuota' => $arrayCost->valor_cuotas,
-                        'abonado' => 0,
-                        'comentario' => 'Fecha de pago establecidas con sus cuotas iniciales.'
-                    ]);
-                    /*if($obj){
-                        //table_change::create(['table' => 'purses','id_change' => $obj->id, 'add' => 1,'edit' => 0, 'delete' => 0]);
-                        TableChangeController::StoreAdd('purses',$obj->id);
-                        $obj1 = historyPurse::create([
-                            'id_purse' => $obj->id,
-                            'fecha_pago'=> $obj->fecha_pago,
-                            'estado'=> $obj->estado,
-                            'cuota'=> $obj->cuota,
-                            'abonado'=> $obj->abonado,
-                            'comentario'=> $obj->comentario
-                        ]);
-                        if($obj1){
-                            TableChangeController::StoreAdd('history_purses',$obj1->id);
-                            //table_change::create(['table' => 'history_purses','id_change' => $obj1->id, 'add' => 1,'edit' => 0, 'delete' => 0]);
-                        }
-                    }*/
-                    
-                }
-            }
-            
-        }else{
-            $Cost->valor_semestre = $request->valor_semestre;
-            $Cost->numero_semestre = $request->numero_semestre;
-            $Cost->valor_total_semestre = $request->valor_total_semestre;
-            $Cost->descuento = $request->descuento;
-            $Cost->valor_neto = $request->valor_neto;
-            $Cost->saldo_financiar = $request->saldo_financiar;
-            $Cost->periodo = $request->periodo;
-            $Cost->numero_cuotas = $request->numero_cuotas;
-            $Cost->valor_cuotas = $request->valor_cuotas;
-            $Cost->fecha_pago = $request->fecha_pago;
-            $Cost->detalles = $request->detalles;
-            $Cost->save();
-
-            $numCost = Purse::where('id_cost', $Cost->id)->count();
-
-            if($numCost == $Cost->numero_cuotas){
-                $Costs = Purse::where('id_cost', $Cost->id)->get();
-                $k = 0;
-                foreach ($Costs as $item) {
-          
-                    $item->cuota = $Cost->valor_cuotas;
-                    if($k == 0){
-                        $item->fecha_pago = $Cost->fecha_pago;  
-                    }else{
-                        $fechaActual = explode("-",$Cost->fecha_pago);
-                        $Mes = $fechaActual[1];
-                        $nameMes = DateController::getMes($Mes);
-                        $Año = $fechaActual[0]; 
-                        $Mes = DateController::nextMes($Mes,true);
-                        $Año = DateController::Is_nextYear($Año,$Mes);
-                        $nameMes = DateController::getMes($Mes);
-
-                        if($Mes < 10 && strlen($Mes) == 1){
-                            $Mes = "0".$Mes;
-                        }
-
-                        // Validar y ajustar la fecha para evitar días inválidos (ej: 30 de febrero)
-                        $item->fecha_pago = $this->validateAndAdjustDate((int)$Año, (int)$Mes, (int)$fechaActual[2]);
-                    }
-                    $item->save();
-                    $k++;
-                }
-            }else{
-                // Obtener todos los purses que se van a eliminar
-                $pursesToDelete = Purse::where('id_cost', $Cost->id)->get();
-                
-                // Eliminar primero los history_purses relacionados para evitar violación de clave foránea
-                if($pursesToDelete->count() > 0) {
-                    $purseIds = $pursesToDelete->pluck('id')->toArray();
-                    historyPurse::whereIn('id_purse', $purseIds)->delete();
-                }
-                
-                // Ahora eliminar los purses
-                Purse::where('id_cost', $Cost->id)->delete();
-                
-                // Crear las nuevas cuotas
-                $fechaActual = explode("-",$Cost->fecha_pago);
-                $Mes = $fechaActual[1];
-                $nameMes = DateController::getMes($Mes);
-                $Año = $fechaActual[0]; 
-                for ($i=0; $i < $Cost->numero_cuotas ; $i++) { 
-                    if($i > 0){
-                        $Mes = DateController::nextMes($Mes,true);
-                        $Año = DateController::Is_nextYear($Año,$Mes);
-                        $nameMes = DateController::getMes($Mes);
-                    }
-                    if($Mes < 10 && strlen($Mes) == 1){
-                        $Mes = "0".$Mes;
-                    }
-                    
-                    // Validar y ajustar la fecha para evitar días inválidos (ej: 30 de febrero)
-                    $fechaPago = $this->validateAndAdjustDate((int)$Año, (int)$Mes, (int)$fechaActual[2]);
-                    
-                    $obj = Purse::create([
-                        'id_cost' => $Cost->id,
-                        'fecha_pago' => $fechaPago,
-                        'estado' => 'Pendiente',
-                        'cuota' => $Cost->valor_cuotas,
-                        'abonado' => 0,
-                        'comentario' => 'Fecha de pago establecidas con sus cuotas iniciales.'
-                    ]);
-                }
-            }
-
-
-            $message = "Editado Correctamente";
-            //table_change::create(['table' => 'costs','id_change' => $Cost->id, 'add' => 0,'edit' => 1, 'delete' => 0]);
-            TableChangeController::StoreEdit('costs',$Cost->id);
-
-      
-            
+        // Si no vienen semestres como array, intentar procesar como el formato anterior (un solo semestre)
+        if (empty($semestresData)) {
+            $semestresData = [
+                [
+                    'numero_semestre' => $request->numero_semestre,
+                    'valor_semestre' => $request->valor_semestre,
+                    'valor_total_semestre' => $request->valor_total_semestre,
+                    'descuento' => $request->descuento,
+                    'valor_neto' => $request->valor_neto,
+                    'saldo_financiar' => $request->saldo_financiar,
+                    'periodo' => $request->periodo,
+                    'numero_cuotas' => $request->numero_cuotas,
+                    'valor_cuotas' => $request->valor_cuotas,
+                    'fecha_pago' => $request->fecha_pago,
+                    'detalles' => $request->detalles
+                ]
+            ];
         }
+
+        $semestresRecibidos = [];
+        foreach ($semestresData as $data) {
+            $numSemestre = $data['numero_semestre'];
+            $semestresRecibidos[] = $numSemestre;
+            
+            // Limpiar valores (quitar puntos)
+            $data['valor_semestre'] = str_replace(['.', ','], '', $data['valor_semestre'] ?? '0');
+            $data['valor_total_semestre'] = str_replace(['.', ','], '', $data['valor_total_semestre'] ?? '0');
+            $data['descuento'] = str_replace(['.', ','], '', $data['descuento'] ?? '0');
+            $data['valor_neto'] = str_replace(['.', ','], '', $data['valor_neto'] ?? '0');
+            $data['saldo_financiar'] = str_replace(['.', ','], '', $data['saldo_financiar'] ?? '0');
+            $data['valor_cuotas'] = str_replace(['.', ','], '', $data['valor_cuotas'] ?? '0');
+            $data['cod_alumno'] = $cod_alumno;
+
+            $Cost = Cost::where('cod_alumno', $cod_alumno)->where('numero_semestre', $numSemestre)->first();
+
+            if (!$Cost) {
+                $Cost = Cost::create($data);
+                TableChangeController::StoreAdd('costs', $Cost->id);
+                $this->regeneratePurses($Cost);
+            } else {
+                $Cost->update($data);
+                TableChangeController::StoreEdit('costs', $Cost->id);
+                $this->updateOrRegeneratePurses($Cost);
+            }
+        }
+
+        // Opcional: Eliminar semestres que ya no están en la lista (si se desea ese comportamiento)
+        // Cost::where('cod_alumno', $cod_alumno)->whereNotIn('numero_semestre', $semestresRecibidos)->delete();
+
+        $message = "Configuración de costos guardada correctamente";
         // Determinar a dónde redirigir según el origen
         if($request->has('redirect_to') && $request->redirect_to == 'matricula'){
             return redirect()->route('matricula.estudiante', $request->cod_alumno)->with('success', $message);
         }
         
         return redirect()->route('cost.show',$request->cod_alumno)->with('success',$message);
+    }
+
+    /**
+     * Regenera las cuotas (purses) para un registro de costo
+     */
+    private function regeneratePurses($Cost)
+    {
+        // Eliminar existentes
+        $pursesToDelete = Purse::where('id_cost', $Cost->id)->get();
+        if($pursesToDelete->count() > 0) {
+            historyPurse::whereIn('id_purse', $pursesToDelete->pluck('id'))->delete();
+        }
+        Purse::where('id_cost', $Cost->id)->delete();
+
+        // Crear nuevas cuotas
+        $fechaActual = explode("-", $Cost->fecha_pago);
+        $Mes = $fechaActual[1];
+        $Año = $fechaActual[0];
+        $Dia = $fechaActual[2] ?? 1;
+
+        for ($i=0; $i < $Cost->numero_cuotas; $i++) {
+            if($i > 0){
+                $Mes = DateController::nextMes($Mes,true);
+                $Año = DateController::Is_nextYear($Año,$Mes);
+            }
+            if($Mes < 10 && strlen($Mes) == 1){
+                $Mes = "0".$Mes;
+            }
+
+            $fechaPago = $this->validateAndAdjustDate((int)$Año, (int)$Mes, (int)$Dia);
+
+            Purse::create([
+                'id_cost' => $Cost->id,
+                'fecha_pago' => $fechaPago,
+                'estado' => 'Pendiente',
+                'cuota' => $Cost->valor_cuotas,
+                'abonado' => 0,
+                'comentario' => 'Cuota generada automáticamente para el semestre ' . $Cost->numero_semestre
+            ]);
+        }
+    }
+
+    /**
+     * Actualiza o regenera cuotas según si cambió el número de cuotas
+     */
+    private function updateOrRegeneratePurses($Cost)
+    {
+        $numActual = Purse::where('id_cost', $Cost->id)->count();
+        if ($numActual == $Cost->numero_cuotas) {
+            $purses = Purse::where('id_cost', $Cost->id)->orderBy('fecha_pago', 'asc')->get();
+            $fechaBase = explode("-", $Cost->fecha_pago);
+            $Mes = $fechaBase[1];
+            $Año = $fechaBase[0];
+            $Dia = $fechaBase[2] ?? 1;
+
+            foreach ($purses as $k => $item) {
+                $item->cuota = $Cost->valor_cuotas;
+                if ($k == 0) {
+                    $item->fecha_pago = $Cost->fecha_pago;
+                } else {
+                    for($j=0; $j<$k; $j++) {
+                        $Mes = DateController::nextMes($Mes,true);
+                        $Año = DateController::Is_nextYear($Año,$Mes);
+                    }
+                    $item->fecha_pago = $this->validateAndAdjustDate((int)$Año, (int)$Mes, (int)$Dia);
+                    $Mes = $fechaBase[1];
+                    $Año = $fechaBase[0];
+                }
+                $item->save();
+            }
+        } else {
+            $this->regeneratePurses($Cost);
+        }
     }
 
     /**

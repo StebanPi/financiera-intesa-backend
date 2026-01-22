@@ -2,11 +2,23 @@ const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov'
 
 const CARTERA = {
   all: function(){
-    // Usar id_cost directamente si existe, o buscar en formularios
+    // Usar cod_alumno si está disponible para vista unificada
+    var cod_alumno = $("#cod_alumno").val();
     var id_cost = $("#id_cost").val();
-    var data = { id: id_cost };
+
+    var data = {};
+    if (cod_alumno) {
+        data.cod_alumno = cod_alumno;
+    } else if (id_cost) {
+        data.id = id_cost;
+    }
+
     if($("#purseAll").length > 0){
       data = $("#purseAll").serialize();
+      // Si el serialize no incluye cod_alumno y lo tenemos, agregarlo
+      if (cod_alumno && data.indexOf('cod_alumno') === -1) {
+          data += '&cod_alumno=' + cod_alumno;
+      }
     } else if($("#FormRequestOtros").length > 0){
       data = $("#FormRequestOtros").serialize();
     }
@@ -33,7 +45,8 @@ const CARTERA = {
   totales:function(){
     // Nuevo método para obtener todos los totales
     var id_cost = $("#id_cost").val();
-    return AJAX("/purse/totales",'POST', { id: id_cost });
+    var cod_alumno = $("#cod_alumno").val();
+    return AJAX("/purse/totales",'POST', { id: id_cost, cod_alumno: cod_alumno });
   }
 }
 

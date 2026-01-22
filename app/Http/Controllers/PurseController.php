@@ -132,26 +132,34 @@ class PurseController extends Controller
     public function totales(Request $request){
         try {
             $id_cost = $request->id ?? $request->input('id');
+            $cod_alumno = $request->cod_alumno ?? $request->input('cod_alumno');
             
-            if(empty($id_cost)){
+            if(empty($id_cost) && empty($cod_alumno)){
                 return response()->json([
-                    'error' => 'id_cost es requerido'
+                    'error' => 'id_cost o cod_alumno es requerido'
                 ], 400);
             }
             
+            $ids_cost = [];
+            if ($cod_alumno) {
+                $ids_cost = DB::table('costs')->where('cod_alumno', $cod_alumno)->pluck('id')->toArray();
+            } elseif ($id_cost) {
+                $ids_cost = [$id_cost];
+            }
+
             // Obtener datos raw de la base de datos para debug
             $entriesRaw = DB::connection('mysql')
                 ->table('entries')
-                ->where('id_cost', $id_cost)
+                ->whereIn('id_cost', $ids_cost)
                 ->get(['id', 'valor', 'fecha_recibo', 'no_recibo']);
             
             $pursesRaw = DB::connection('mysql')
                 ->table('purses')
-                ->where('id_cost', $id_cost)
+                ->whereIn('id_cost', $ids_cost)
                 ->orderBy('fecha_pago', 'asc')
                 ->get(['id', 'fecha_pago', 'cuota', 'abonado', 'comentario']);
             
-            $carteraData = \App\Services\CarteraService::calcularCartera($id_cost);
+            $carteraData = \App\Services\CarteraService::calcularCartera($id_cost, $cod_alumno);
             
             return response()->json([
                 'total_abono' => $carteraData['totales']['total_abono'],

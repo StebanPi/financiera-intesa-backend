@@ -59,6 +59,7 @@ date_default_timezone_set("America/Bogota");
     <input type="hidden" id="pages" value="show.cartera">
     <input type="hidden" id="cod_alumno_hidden" value="{{ $student[0]->cod_alumno }}">
     <input type="hidden" id="id_cost" value="{{ $cost->id ?? '' }}">
+    <input type="hidden" id="cod_alumno" value="{{ $student[0]->cod_alumno }}">
     <div class="row">
         <div class="col-md-4">
             <div class="card stickyMenu mr-2 bg-gray1" id="stickyMenuWidth">
@@ -682,10 +683,10 @@ date_default_timezone_set("America/Bogota");
 
   <!-- Modal Configurar Información de Costos -->
   <div class="modal fade" id="modalConfigurarCostos" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modalConfigurarCostosLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-xl" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="modalConfigurarCostosLabel"><i class="fa-solid fa-cog mr-2"></i>Configurar Información de Costos</h5>
+          <h5 class="modal-title" id="modalConfigurarCostosLabel"><i class="fa-solid fa-cog mr-2"></i>Configurar Información de Costos por Semestre</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -695,81 +696,108 @@ date_default_timezone_set("America/Bogota");
                 @csrf
                 <input type="hidden" value="{{ $student[0]->cod_alumno }}" name="cod_alumno">
                 <input type="hidden" name="redirect_to" value="matricula">
-                <div class="form-row">
-                    <div class="col-md-6">
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label><i class="fa-solid fa-dollar-sign mr-2"></i>Valor Semestre</label>
-                            <input type="text" value="{{ old('valor_semestre',$cost->valor_semestre) }}" name="valor_semestre" placeholder="" id="valor_semestre" class="form-control form-control-sm number-lg miles input-sm" onkeypress="return valideKey(event);">
-                            <div class="error_vs text-danger ActiveError d-none"></div>
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fa-solid fa-hashtag mr-2"></i>Numero de Semestres</label>
-                            <input type="number" value="{{ old('numero_semestre',$cost->numero_semestre) }}" name="numero_semestre" placeholder="" id="numero_semestre" class="form-control form-control-sm number-lg" onkeypress="return valideKey(event);">
-                            <div class="error_ns text-danger ActiveError d-none"></div>
-                        </div>
-                        <div class="form-group">
-                            <label><b><i class="fa-solid fa-dollar-sign mr-2"></i>Valor total Programa</b></label>
-                            <input type="hidden" name="valor_total_semestre" value="{{ old('valor_total_semestre',$cost->valor_total_semestre) }}">
-                            <input type="text" value="{{ old('valor_total_semestre',$cost->valor_total_semestre) }}" placeholder="" id="valor_total_semestre" disabled class="form-control form-control-sm number-lg disabled-input">
-                            <div class="error_vtp text-danger ActiveError d-none"></div>
-                        </div>
-                       
-                        <div class="form-group">
-                            <label><i class="fa-solid fa-dollar-sign mr-2"></i>Descuento</label>
-                            <input type="text" value="{{ old('descuento',$cost->descuento) }}" name="descuento" placeholder="" id="descuento" class="form-control form-control-sm number-lg miles" onkeypress="return valideKey(event);">
-                            <div class="error_d text-danger ActiveError d-none"></div>
-                        </div>
-                        <div class="form-group">
-                            <label><b><i class="fa-solid fa-dollar-sign mr-2"></i>Valor total neto del Programa</b></label>
-                            <input type="hidden" id="NetoP" value="{{ $cost->valor_neto }}">
-                            <input type="hidden" name="valor_neto" value="{{ old('valor_neto',$cost->valor_neto) }}">
-                            <input type="text" value="{{ old('valor_neto',$cost->valor_neto) }}" placeholder="" id="valor_neto" disabled class="form-control form-control-sm number-lg disabled-input" >
-                            <div class="error_tn text-danger ActiveError d-none"></div>
+                            <label class="font-weight-bold"><i class="fa-solid fa-hashtag mr-2"></i>Número Total de Semestres</label>
+                            <input type="number" value="{{ count($costs) }}" name="total_semestres" id="total_semestres" class="form-control" min="1" max="10">
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><b><i class="fa-solid fa-dollar-sign mr-2"></i>Saldo a Financiar</b></label>
-                            <input type="hidden" name="saldo_financiar" value="{{ old('saldo_financiar',$cost->saldo_financiar) }}">
-                            <input type="text" value="{{ old('saldo_financiar',$cost->saldo_financiar) }}" placeholder="" id="saldo_financiar" disabled class="form-control form-control-sm number-lg disabled-input">
-                            <div class="error_sf text-danger ActiveError d-none"></div>
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fa-solid fa-arrow-pointer mr-2"></i>Periodo de Pago</label>
-                            <div class="dropdown bootstrap-select form-control form-control-sm number-lg periodo-pago-container">
-                                <select class="form-control form-control-sm number-lg periodo-pago-select" name="periodo" id="inputState" tabindex="-98">
-                                    <option value="Semanal"  @if($cost->periodo == "Semanal") {{ "selected" }} @endif>Semanal</option>
-                                    <option value="Quincenal" @if($cost->periodo == "Quincenal") {{ "selected" }} @endif>Quincenal</option>
-                                    <option value="Mensual" @if($cost->periodo == "Mensual") {{ "selected" }} @endif>Mensual</option>
-                                    <option value="Contado" @if($cost->periodo == "Contado") {{ "selected" }} @endif>Contado</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fa-solid fa-hashtag mr-2 mt-2"></i>Numero de cuotas</label>
-                            <input type="number" name="numero_cuotas" placeholder="" value="{{ old('numero_cuotas',$cost->numero_cuotas) }}" id="numero_cuota" class="form-control form-control-sm number-lg" onkeypress="return valideKey(event);">
-                            <div class="error_nc text-danger ActiveError d-none"></div>
-                        </div>
-                        <div class="form-group">
-                            <label><b><i class="fa-solid fa-dollar-sign mr-2"></i>Valor de Cuotas</b></label>
-                            <input type="hidden" name="valor_cuotas" value="{{ old('valor_cuotas',$cost->valor_cuotas) }}">
-                            <input type="text" placeholder="" value="{{ old('valor_cuotas',$cost->valor_cuotas) }}" id="valor_cuota" disabled class="form-control form-control-sm number-lg disabled-input" >
-                            <div class="error_vc text-danger ActiveError d-none"></div>
-                        </div>
-                        <div class="form-group">
-                            <label><b><i class="fa-solid fa-dollar-sign mr-2"></i>Fecha de Pago</b> <small class="text-danger">(Obligatorio)</small></label>
-                            <input type="date" name="fecha_pago" placeholder="" value="{{ old('fecha_pago',$cost->fecha_pago) }}" id="fecha_pago" class="form-control form-control-sm number-lg">
-                            <div class="error_fp text-danger ActiveError d-none"></div>
+                    <div class="col-md-8 d-flex align-items-end">
+                        <div class="form-group mb-0 w-100">
+                            <label class="font-weight-bold">Seleccionar Semestre para Configurar:</label>
+                            <select id="selector_semestre" class="form-control">
+                                @for($i = 1; $i <= 10; $i++)
+                                    <option value="{{ $i }}" {{ $i > count($costs) ? 'disabled' : '' }}>Semestre {{ $i }}</option>
+                                @endfor
+                            </select>
                         </div>
                     </div>
                 </div>
+
+                <hr>
+
+                <div id="contenedor_semestres">
+                    @for($i = 1; $i <= 10; $i++)
+                        @php
+                            $c = $costs->where('numero_semestre', $i)->first() ?? (object)[
+                                'id' => '',
+                                'valor_semestre' => '',
+                                'numero_semestre' => $i,
+                                'valor_total_semestre' => '',
+                                'descuento' => '',
+                                'valor_neto' => '',
+                                'saldo_financiar' => '',
+                                'periodo' => 'Mensual',
+                                'numero_cuotas' => '',
+                                'valor_cuotas' => '',
+                                'fecha_pago' => ''
+                            ];
+                        @endphp
+                        <div class="seccion-semestre {{ $i > count($costs) ? 'd-none' : ($i == 1 ? '' : 'd-none') }}" id="seccion_semestre_{{ $i }}" data-semestre="{{ $i }}">
+                            <h5 class="text-primary border-bottom pb-2 mb-3">Configuración Semestre {{ $i }}</h5>
+                            <input type="hidden" name="semestres[{{ $i }}][numero_semestre]" value="{{ $i }}">
+                            <div class="form-row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label><i class="fa-solid fa-dollar-sign mr-2"></i>Valor Semestre {{ $i }}</label>
+                                        <input type="text" value="{{ $c->valor_semestre }}" name="semestres[{{ $i }}][valor_semestre]" id="valor_semestre_{{ $i }}" class="form-control form-control-sm miles input-valor-semestre" data-semestre="{{ $i }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label><b><i class="fa-solid fa-dollar-sign mr-2"></i>Valor total Neto del Semestre</b></label>
+                                        <input type="text" value="{{ $c->valor_neto }}" id="valor_neto_{{ $i }}" class="form-control form-control-sm disabled-input" disabled>
+                                        <input type="hidden" name="semestres[{{ $i }}][valor_neto]" value="{{ $c->valor_neto }}">
+                                        <input type="hidden" name="semestres[{{ $i }}][valor_total_semestre]" value="{{ $c->valor_total_semestre }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label><i class="fa-solid fa-dollar-sign mr-2"></i>Descuento Semestre {{ $i }}</label>
+                                        <input type="text" value="{{ $c->descuento }}" name="semestres[{{ $i }}][descuento]" id="descuento_{{ $i }}" class="form-control form-control-sm miles input-descuento" data-semestre="{{ $i }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label><i class="fa-solid fa-arrow-pointer mr-2"></i>Periodo de Pago</label>
+                                        <select class="form-control form-control-sm" name="semestres[{{ $i }}][periodo]">
+                                            <option value="Mensual" {{ $c->periodo == 'Mensual' ? 'selected' : '' }}>Mensual</option>
+                                            <option value="Quincenal" {{ $c->periodo == 'Quincenal' ? 'selected' : '' }}>Quincenal</option>
+                                            <option value="Semanal" {{ $c->periodo == 'Semanal' ? 'selected' : '' }}>Semanal</option>
+                                            <option value="Contado" {{ $c->periodo == 'Contado' ? 'selected' : '' }}>Contado</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label><i class="fa-solid fa-hashtag mr-2"></i>Nro Cuotas</label>
+                                                <input type="number" name="semestres[{{ $i }}][numero_cuotas]" value="{{ $c->numero_cuotas }}" id="numero_cuotas_{{ $i }}" class="form-control form-control-sm input-numero-cuotas" data-semestre="{{ $i }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label><i class="fa-solid fa-calendar mr-2"></i>Fecha Inicio</label>
+                                                <input type="date" name="semestres[{{ $i }}][fecha_pago]" value="{{ $c->fecha_pago }}" class="form-control form-control-sm">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label><b><i class="fa-solid fa-dollar-sign mr-2"></i>Valor Cuotas</b></label>
+                                        <input type="text" value="{{ $c->valor_cuotas }}" id="valor_cuotas_{{ $i }}" class="form-control form-control-sm disabled-input" disabled>
+                                        <input type="hidden" name="semestres[{{ $i }}][valor_cuotas]" value="{{ $c->valor_cuotas }}">
+                                        <input type="hidden" name="semestres[{{ $i }}][saldo_financiar]" value="{{ $c->saldo_financiar }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endfor
+                </div>
+
                 <div class="error_noti text-warning mt-2 font-weight-bold ActiveError d-none"></div>
             </form>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-primary ejecutarmodal" onclick="document.getElementById('FormValueProgram').submit();">
-                <i class="fa-solid fa-floppy-disk mr-2"></i>Guardar
+            <button type="button" class="btn btn-primary ejecutarmodal" id="btn_guardar_costos">
+                <i class="fa-solid fa-floppy-disk mr-2"></i>Guardar Todo
             </button>
         </div>
       </div>
@@ -1409,28 +1437,99 @@ jQuery(document).ready(function($) {
         }
     });
     
-    // Asegurar que los campos hidden estén actualizados antes de enviar el formulario
-    $('#FormValueProgram').on('submit', function(e) {
-        // Actualizar campos hidden con valores sin formato antes de enviar
-        var vts = $('#valor_total_semestre').val();
-        if(vts) {
-            $('input[name="valor_total_semestre"]').val(vts.replace(/\./g, ''));
+    // Lógica para el manejo dinámico de semestres
+    $('#total_semestres').on('input change', function() {
+        var total = parseInt($(this).val());
+        if (isNaN(total) || total < 1) total = 1;
+        if (total > 10) total = 10;
+
+        // Actualizar selector y visibilidad
+        $('#selector_semestre option').each(function() {
+            var val = parseInt($(this).val());
+            if (val <= total) {
+                $(this).prop('disabled', false);
+            } else {
+                $(this).prop('disabled', true);
+            }
+        });
+
+        // Si el seleccionado actualmente es mayor que el nuevo total, volver al 1
+        if (parseInt($('#selector_semestre').val()) > total) {
+            $('#selector_semestre').val(1).trigger('change');
         }
         
-        var vn = $('#valor_neto').val();
-        if(vn) {
-            $('input[name="valor_neto"]').val(vn.replace(/\./g, ''));
+        // Copiar valores del semestre 1 a los nuevos si están vacíos (herencia)
+        if (total > 1) {
+            var v1 = $('#valor_semestre_1').val();
+            var d1 = $('#descuento_1').val();
+            var n1 = $('#numero_cuotas_1').val();
+
+            for (var i = 2; i <= total; i++) {
+                if ($('#valor_semestre_' + i).val() === '') {
+                    $('#valor_semestre_' + i).val(v1).trigger('keyup');
+                }
+                if ($('#descuento_' + i).val() === '') {
+                    $('#descuento_' + i).val(d1).trigger('keyup');
+                }
+                if ($('#numero_cuotas_' + i).val() === '') {
+                    $('#numero_cuotas_' + i).val(n1).trigger('keyup');
+                }
+            }
         }
+    });
+
+    $('#selector_semestre').on('change', function() {
+        var semestre = $(this).val();
+        $('.seccion-semestre').addClass('d-none');
+        $('#seccion_semestre_' + semestre).removeClass('d-none');
+    });
+
+    // Cálculos por semestre
+    $(document).on('keyup', '.input-valor-semestre, .input-descuento, .input-numero-cuotas', function() {
+        var sem = $(this).data('semestre');
+        calcularValoresSemestre(sem);
+    });
+
+    function calcularValoresSemestre(sem) {
+        var valorStr = $('#valor_semestre_' + sem).val().replace(/\./g, '');
+        var descuentoStr = $('#descuento_' + sem).val().replace(/\./g, '');
+        var nCuotas = parseInt($('#numero_cuotas_' + sem).val());
         
-        var sf = $('#saldo_financiar').val();
-        if(sf) {
-            $('input[name="saldo_financiar"]').val(sf.replace(/\./g, ''));
+        var valor = parseInt(valorStr) || 0;
+        var descuento = parseInt(descuentoStr) || 0;
+
+        var neto = Math.max(0, valor - descuento);
+
+        $('#valor_neto_' + sem).val(dar_formato(neto));
+        $('input[name="semestres[' + sem + '][valor_neto]"]').val(neto);
+        $('input[name="semestres[' + sem + '][valor_total_semestre]"]').val(valor);
+        $('input[name="semestres[' + sem + '][saldo_financiar]"]').val(neto);
+
+        if (nCuotas > 0) {
+            var vCuota = Math.round(neto / nCuotas);
+            $('#valor_cuotas_' + sem).val(dar_formato(vCuota));
+            $('input[name="semestres[' + sem + '][valor_cuotas]"]').val(vCuota);
+        } else {
+            $('#valor_cuotas_' + sem).val('0');
+            $('input[name="semestres[' + sem + '][valor_cuotas]"]').val('0');
         }
+    }
+
+    // Botón guardar costos unificado
+    $('#btn_guardar_costos').on('click', function(e) {
+        e.preventDefault();
+        var total = parseInt($('#total_semestres').val());
         
-        var vc = $('#valor_cuota').val();
-        if(vc) {
-            $('input[name="valor_cuotas"]').val(vc.replace(/\./g, ''));
+        // Deshabilitar semestres que no se usan antes de enviar
+        for (var i = 1; i <= 10; i++) {
+            if (i > total) {
+                $('#seccion_semestre_' + i + ' input, #seccion_semestre_' + i + ' select').prop('disabled', true);
+            } else {
+                $('#seccion_semestre_' + i + ' input, #seccion_semestre_' + i + ' select').prop('disabled', false);
+            }
         }
+
+        $('#FormValueProgram').submit();
     });
 
     // Manejar click en botón editar abono

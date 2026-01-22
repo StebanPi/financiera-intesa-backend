@@ -66,27 +66,31 @@ class viewStudentController extends Controller
     {
         $Sql = 'SELECT alumno.cod_alumno ,alumno.nombre, alumno.foto, alumno.cedula, programa.nombre_programa, estado.estado FROM alumno INNER JOIN relacion_programa_estudiante ON alumno.cod_alumno = relacion_programa_estudiante.Alumno_cod INNER JOIN programa ON relacion_programa_estudiante.programa_cod = programa.cod_programa INNER JOIN estado ON estado.cod_estado = alumno.estado  WHERE cod_alumno = "'.$id.'"';
         $Student = DB::connection('mysql2')->select($Sql);
-        $Cost = DB::table('costs')->where('cod_alumno',$id)->first();
-        if(empty($Cost) == true){
-            $Cost =  ["id"=> '',
-            "cod_alumno"=> '',
-            "valor_semestre" => '',
-            "numero_semestre"=> '',
-            "valor_total_semestre"=> '',
-            "descuento"=> '',
-            "valor_neto"=> '',
-            "saldo_financiar"=> '',
-            "periodo"=> '',
-            "numero_cuotas"=> '',
-            "valor_cuotas"=> '',
-            'fecha_pago'=> '',
-            "created_at"=> '',
-            "updated_at"=> ''
+        $Costs = DB::table('costs')->where('cod_alumno', $id)->orderBy('numero_semestre', 'asc')->get();
+        if($Costs->isEmpty()){
+            $emptyCost = [
+                "id"=> '',
+                "cod_alumno"=> $id,
+                "valor_semestre" => '',
+                "numero_semestre"=> 1,
+                "valor_total_semestre"=> '',
+                "descuento"=> '',
+                "valor_neto"=> '',
+                "saldo_financiar"=> '',
+                "periodo"=> 'Mensual',
+                "numero_cuotas"=> '',
+                "valor_cuotas"=> '',
+                'fecha_pago'=> '',
+                "created_at"=> '',
+                "updated_at"=> ''
             ];
-            $obj = json_encode($Cost);
-            $Cost = json_decode($obj);
+            $Costs = collect([json_decode(json_encode($emptyCost))]);
+            $Cost = $Costs[0];
         }else{
-            $Cost = MoneyController::datas($Cost,['valor_semestre','valor_total_semestre','descuento','valor_neto','saldo_financiar','valor_cuotas']);
+            foreach($Costs as $c) {
+                MoneyController::datas($c, ['valor_semestre','valor_total_semestre','descuento','valor_neto','saldo_financiar','valor_cuotas']);
+            }
+            $Cost = $Costs[0];
         }
         $con = consecutive::where('type','entry')->first();
         $Entries = EntryController::getEntry($id,true);
@@ -107,7 +111,7 @@ class viewStudentController extends Controller
             }else{
                 $Purses = "";
             }
-            return view('viewStudent.show',['Purses' => $Purses,'otrosConceptos' => $otrosConceptos,'OtherEntries' => $OtherEntries,'ConsecutivosOcupados' => $ConsecutivosOcupados,'student' => $Student, 'cost' => $Cost, 'con' => $con, 'entry' => $Entries, 'conceptos' => $conceptos,'elaborados'=> $elaborado, 'haber' =>$haber, 'debe' => $debe]);
+            return view('viewStudent.show',['Purses' => $Purses,'otrosConceptos' => $otrosConceptos,'OtherEntries' => $OtherEntries,'ConsecutivosOcupados' => $ConsecutivosOcupados,'student' => $Student, 'cost' => $Cost, 'costs' => $Costs, 'con' => $con, 'entry' => $Entries, 'conceptos' => $conceptos,'elaborados'=> $elaborado, 'haber' =>$haber, 'debe' => $debe]);
         }
         
     }
@@ -246,13 +250,15 @@ class viewStudentController extends Controller
 
     public function cartera(Request $request){
         $id_cost = $request->id;
-        if(empty($id_cost)){
+        $cod_alumno = $request->cod_alumno;
+
+        if(empty($id_cost) && empty($cod_alumno)){
             echo json_encode([]);
             return;
         }
         
         // Usar el servicio para obtener los datos calculados
-        $carteraData = \App\Services\CarteraService::calcularCartera($id_cost);
+        $carteraData = \App\Services\CarteraService::calcularCartera($id_cost, $cod_alumno);
         
         // Formatear los datos para que sean compatibles con el JavaScript existente
         $pursesFormateados = [];
@@ -262,7 +268,7 @@ class viewStudentController extends Controller
             
             $pursesFormateados[] = [
                 'id' => $cuota['id'],
-                'id_cost' => $id_cost,
+                'id_cost' => $cuota['id_cost'] ?? $id_cost,
                 'fecha_pago' => $fechaFormateada,
                 'estado' => $cuota['estado'],
                 'estado_pago' => $cuota['estado_pago'],
