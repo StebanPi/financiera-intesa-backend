@@ -439,29 +439,33 @@ class MatriculaController extends Controller
     {
         $matricula = Matricula::where('cod_alumno', $cod_alumno)->firstOrFail();
         
-        // Obtener información de costos
-        $Cost = DB::table('costs')->where('cod_alumno', $cod_alumno)->first();
-        if(empty($Cost) == true){
-            $Cost =  [
+        // Obtener todos los registros de costos del estudiante
+        $Costs = DB::table('costs')->where('cod_alumno', $cod_alumno)->orderBy('numero_semestre', 'asc')->get();
+
+        if($Costs->isEmpty()){
+            $emptyCost = [
                 "id"=> '',
-                "cod_alumno"=> '',
+                "cod_alumno"=> $cod_alumno,
                 "valor_semestre" => '',
-                "numero_semestre"=> '',
+                "numero_semestre"=> 1,
                 "valor_total_semestre"=> '',
                 "descuento"=> '',
                 "valor_neto"=> '',
                 "saldo_financiar"=> '',
-                "periodo"=> '',
+                "periodo"=> 'Mensual',
                 "numero_cuotas"=> '',
                 "valor_cuotas"=> '',
                 'fecha_pago'=> '',
                 "created_at"=> '',
                 "updated_at"=> ''
             ];
-            $obj = json_encode($Cost);
-            $Cost = json_decode($obj);
+            $Costs = collect([json_decode(json_encode($emptyCost))]);
+            $Cost = $Costs[0];
         }else{
-            $Cost = MoneyController::datas($Cost,['valor_semestre','valor_total_semestre','descuento','valor_neto','saldo_financiar','valor_cuotas']);
+            foreach($Costs as $c) {
+                MoneyController::datas($c, ['valor_semestre','valor_total_semestre','descuento','valor_neto','saldo_financiar','valor_cuotas']);
+            }
+            $Cost = $Costs[0]; // Para compatibilidad con lógica existente
         }
         
         $con = consecutive::where('type','entry')->first();
@@ -503,6 +507,7 @@ class MatriculaController extends Controller
                 'ConsecutivosOcupados' => $ConsecutivosOcupados,
                 'student' => $student,
                 'cost' => $Cost,
+                'costs' => $Costs, // Pasar todos los costos
                 'con' => $con,
                 'entry' => $Entries,
                 'conceptos' => $conceptos,

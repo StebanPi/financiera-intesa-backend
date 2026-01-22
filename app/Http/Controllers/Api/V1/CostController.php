@@ -68,15 +68,24 @@ class CostController extends Controller
             requestBody: new OA\RequestBody(
                 required: true,
                 content: new OA\JsonContent(
-                    required: ['cod_alumno', 'valor_semestre', 'numero_semestre', 'descuento', 'periodo', 'numero_cuotas', 'fecha_pago'],
+                    required: ['cod_alumno', 'semestres'],
                     properties: [
                         new OA\Property(property: 'cod_alumno', type: 'string', example: '12345678'),
-                        new OA\Property(property: 'valor_semestre', type: 'number', format: 'float', example: 1000000),
-                        new OA\Property(property: 'numero_semestre', type: 'integer', example: 1),
-                        new OA\Property(property: 'descuento', type: 'number', format: 'float', example: 0),
-                        new OA\Property(property: 'periodo', type: 'string', example: '2024-1'),
-                        new OA\Property(property: 'numero_cuotas', type: 'integer', example: 6),
-                        new OA\Property(property: 'fecha_pago', type: 'string', format: 'date', example: '2024-01-15'),
+                        new OA\Property(
+                            property: 'semestres',
+                            type: 'array',
+                            items: new OA\Items(
+                                required: ['numero_semestre', 'valor_semestre', 'descuento', 'periodo', 'numero_cuotas', 'fecha_pago'],
+                                properties: [
+                                    new OA\Property(property: 'numero_semestre', type: 'integer', example: 1),
+                                    new OA\Property(property: 'valor_semestre', type: 'number', format: 'float', example: 1000000),
+                                    new OA\Property(property: 'descuento', type: 'number', format: 'float', example: 0),
+                                    new OA\Property(property: 'periodo', type: 'string', example: 'Mensual'),
+                                    new OA\Property(property: 'numero_cuotas', type: 'integer', example: 6),
+                                    new OA\Property(property: 'fecha_pago', type: 'string', format: 'date', example: '2024-01-15'),
+                                ]
+                            )
+                        ),
                     ]
                 )
             ),
@@ -87,11 +96,20 @@ class CostController extends Controller
             ]
         )
     ]
-    public function store(CostStoreRequest $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $cost = $this->costService->create($request->validated());
+        $cod_alumno = $request->cod_alumno;
+        $semestres = $request->input('semestres', []);
 
-        return ApiResponse::success(new CostResource($cost), 'Costo creado.', null, 201);
+        if (empty($semestres)) {
+            return ApiResponse::error('Debe enviar al menos un semestre.', 422);
+        }
+
+        $this->costService->syncStudentCosts($cod_alumno, $semestres);
+
+        $costs = \App\Models\Cost::where('cod_alumno', $cod_alumno)->orderBy('numero_semestre')->get();
+
+        return ApiResponse::success(CostResource::collection($costs)->resolve(), 'Costos sincronizados.', null, 200);
     }
 
     /**

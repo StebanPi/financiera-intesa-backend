@@ -12,24 +12,48 @@ use Illuminate\Support\Facades\Log;
 class CarteraService
 {
     /**
-     * Calcula la información completa de cartera para un id_cost
+     * Calcula la información completa de cartera para un estudiante o un id_cost específico
      * 
-     * @param int $id_cost
+     * @param int|string|null $id_cost ID del registro de costo
+     * @param string|null $cod_alumno Código del alumno (si se quiere calcular para todos sus semestres)
      * @return array
      */
-    public static function calcularCartera($id_cost)
+    public static function calcularCartera($id_cost = null, $cod_alumno = null)
     {
+        $ids_cost = [];
+
+        if ($cod_alumno) {
+            $ids_cost = DB::table('costs')->where('cod_alumno', $cod_alumno)->pluck('id')->toArray();
+        } elseif ($id_cost) {
+            $ids_cost = [$id_cost];
+        }
+
+        if (empty($ids_cost)) {
+            return [
+                'cuotas' => [],
+                'totales' => [
+                    'total_abono' => 0,
+                    'cuotas_total' => 0,
+                    'total_abonado' => 0,
+                    'saldo_pendiente' => 0,
+                    'saldo_a_favor' => 0,
+                    'saldo_en_mora' => 0,
+                ],
+                'hoy' => date('Y-m-d'),
+            ];
+        }
+
         // Obtener todas las cuotas ordenadas por fecha
         $purses = DB::connection('mysql')
             ->table('purses')
-            ->where('id_cost', $id_cost)
+            ->whereIn('id_cost', $ids_cost)
             ->orderBy('fecha_pago', 'asc')
             ->get();
 
         // Calcular total de abonos (solo entries, other_entries son otros ingresos separados)
         $totalEntries = DB::connection('mysql')
             ->table('entries')
-            ->where('id_cost', $id_cost)
+            ->whereIn('id_cost', $ids_cost)
             ->sum('valor') ?? 0;
 
         $totalAbono = floatval($totalEntries);
@@ -146,6 +170,7 @@ class CarteraService
             // Guardar información de la cuota
             $cuotasCalculadas[] = [
                 'id' => $purse->id,
+                'id_cost' => $purse->id_cost,
                 'fecha_pago' => $purse->fecha_pago,
                 'fecha_pago_formateada' => $purse->fecha_pago, // Se formateará en la vista
                 'cuota' => $cuota,
@@ -161,7 +186,8 @@ class CarteraService
 
         // Log detallado para depuración
         Log::info('CarteraService - DATOS DE LA BASE DE DATOS', [
-            'id_cost' => $id_cost,
+            'ids_cost' => $ids_cost,
+            'cod_alumno' => $cod_alumno,
             'total_entries' => $totalEntries,
             'total_abono' => $totalAbono,
             'nota' => 'other_entries no se incluyen en el cálculo de cartera (son otros ingresos separados)',
@@ -182,7 +208,8 @@ class CarteraService
         ]);
         
         Log::info('CarteraService - TOTALES CALCULADOS', [
-            'id_cost' => $id_cost,
+            'ids_cost' => $ids_cost,
+            'cod_alumno' => $cod_alumno,
             'total_abono' => $totalAbono,
             'cuotas_total' => $cuotasTotal,
             'total_abonado' => $totalAbonado,

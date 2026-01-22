@@ -114,9 +114,13 @@ class CostService
      */
     public function create(array $data): Cost
     {
-        if (Cost::where('cod_alumno', $data['cod_alumno'])->exists()) {
+        // En el nuevo sistema, permitimos múltiples semestres,
+        // pero validamos que no exista el mismo semestre para el mismo alumno.
+        if (Cost::where('cod_alumno', $data['cod_alumno'])
+                ->where('numero_semestre', $data['numero_semestre'] ?? 1)
+                ->exists()) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'cod_alumno' => ['Ya existe un costo para este alumno.'],
+                'numero_semestre' => ['Ya existe una configuración para este semestre.'],
             ]);
         }
 
@@ -124,6 +128,33 @@ class CostService
         $this->createPursesForCost($cost);
 
         return $cost->fresh();
+    }
+
+    /**
+     * Sincroniza múltiples registros de costos para un estudiante
+     *
+     * @param string $cod_alumno
+     * @param array $semestres
+     * @return void
+     */
+    public function syncStudentCosts(string $cod_alumno, array $semestres): void
+    {
+        foreach ($semestres as $data) {
+            $numSemestre = $data['numero_semestre'];
+            $data['cod_alumno'] = $cod_alumno;
+
+            $cost = Cost::where('cod_alumno', $cod_alumno)
+                        ->where('numero_semestre', $numSemestre)
+                        ->first();
+
+            if (!$cost) {
+                $cost = Cost::create($data);
+                $this->createPursesForCost($cost);
+            } else {
+                $cost->update($data);
+                $this->updatePursesForCost($cost->fresh());
+            }
+        }
     }
 
     public function getById(int $id): Cost

@@ -19,54 +19,38 @@ class CostStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cod_alumno' => ['required', 'string', 'max:255', 'exists:matriculas,cod_alumno', Rule::unique('costs', 'cod_alumno')],
-            'valor_semestre' => ['required', 'numeric', 'min:0'],
-            'numero_semestre' => ['required', 'integer', 'min:0'],
-            'valor_total_semestre' => ['nullable', 'numeric', 'min:0'],
-            'descuento' => ['required', 'numeric', 'min:0'],
-            'valor_neto' => ['nullable', 'numeric', 'min:0'],
-            'saldo_financiar' => ['nullable', 'numeric', 'min:0'],
-            'periodo' => ['required', 'string', 'max:255'],
-            'numero_cuotas' => ['required', 'integer', 'min:0'],
-            'valor_cuotas' => ['nullable', 'numeric', 'min:0'],
-            'fecha_pago' => ['required', 'date'],
-            'detalles' => ['nullable', 'string'],
+            'cod_alumno' => ['required', 'string', 'max:255', 'exists:matriculas,cod_alumno'],
+            'semestres' => ['required', 'array', 'min:1'],
+            'semestres.*.numero_semestre' => ['required', 'integer', 'min:1'],
+            'semestres.*.valor_semestre' => ['required', 'numeric', 'min:0'],
+            'semestres.*.descuento' => ['required', 'numeric', 'min:0'],
+            'semestres.*.periodo' => ['required', 'string', 'max:255'],
+            'semestres.*.numero_cuotas' => ['required', 'integer', 'min:0'],
+            'semestres.*.fecha_pago' => ['required', 'date'],
+            'semestres.*.detalles' => ['nullable', 'string'],
         ];
     }
 
     protected function prepareForValidation(): void
     {
-        $valorSemestre = (string) Str::replace('.', '', $this->valor_semestre ?? '0');
-        $numeroSemestre = (int) ($this->numero_semestre ?? 0);
-        $descuento = (string) Str::replace('.', '', $this->descuento ?? '0');
-        $numeroCuotas = (int) ($this->numero_cuotas ?? 0);
+        $semestres = $this->semestres;
+        if (is_array($semestres)) {
+            foreach ($semestres as $key => $sem) {
+                $valorSemestre = (string) Str::replace('.', '', $sem['valor_semestre'] ?? '0');
+                $descuento = (string) Str::replace('.', '', $sem['descuento'] ?? '0');
+                $numeroCuotas = (int) ($sem['numero_cuotas'] ?? 0);
 
-        $valorTotalSemestre = (string) Str::replace('.', '', $this->valor_total_semestre ?? '');
-        if ($valorTotalSemestre === '' && $valorSemestre !== '' && $numeroSemestre > 0) {
-            $valorTotalSemestre = (string) ((int) $valorSemestre * $numeroSemestre);
-        }
+                $valorNeto = (string) max(0, (int)$valorSemestre - (int)$descuento);
+                $valorCuotas = $numeroCuotas > 0 ? (string)(int)round((int)$valorNeto / $numeroCuotas) : '0';
 
-        $valorNeto = (string) Str::replace('.', '', $this->valor_neto ?? '');
-        $saldoFinanciar = (string) Str::replace('.', '', $this->saldo_financiar ?? '');
-        if ($valorNeto === '' && $valorTotalSemestre !== '') {
-            $valorNeto = (string) max(0, (int) $valorTotalSemestre - (int) $descuento);
+                $semestres[$key]['valor_semestre'] = $valorSemestre;
+                $semestres[$key]['valor_total_semestre'] = $valorSemestre; // Ahora es igual al valor_semestre
+                $semestres[$key]['descuento'] = $descuento;
+                $semestres[$key]['valor_neto'] = $valorNeto;
+                $semestres[$key]['saldo_financiar'] = $valorNeto;
+                $semestres[$key]['valor_cuotas'] = $valorCuotas;
+            }
+            $this->merge(['semestres' => $semestres]);
         }
-        if ($saldoFinanciar === '' && $valorNeto !== '') {
-            $saldoFinanciar = $valorNeto;
-        }
-
-        $valorCuotas = (string) Str::replace('.', '', $this->valor_cuotas ?? '');
-        if ($valorCuotas === '' && $saldoFinanciar !== '' && $numeroCuotas > 0) {
-            $valorCuotas = (string) (int) round((int) $saldoFinanciar / $numeroCuotas);
-        }
-
-        $this->merge([
-            'valor_semestre' => $valorSemestre ?: '0',
-            'valor_total_semestre' => $valorTotalSemestre ?: '0',
-            'descuento' => $descuento ?: '0',
-            'valor_neto' => $valorNeto ?: '0',
-            'saldo_financiar' => $saldoFinanciar ?: '0',
-            'valor_cuotas' => $valorCuotas ?: '0',
-        ]);
     }
 }
