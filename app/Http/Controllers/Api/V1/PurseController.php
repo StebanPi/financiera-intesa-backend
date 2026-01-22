@@ -9,8 +9,10 @@ use App\Http\Resources\V1\PurseResource;
 use App\Models\Cost;
 use App\Models\historyPurse;
 use App\Models\Purse;
+use App\Services\CarteraService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 class PurseController extends Controller
@@ -126,5 +128,123 @@ class PurseController extends Controller
             ],
             200
         );
+    }
+
+    /**
+     * GET /purses/totales?id_cost=...&cod_alumno=...
+     * Obtiene los totales calculados de cartera usando CarteraService
+     */
+    #[
+        OA\Get(
+            path: '/api/v1/purses/totales',
+            summary: 'Obtener totales de cartera',
+            description: 'Obtiene los totales calculados de cartera (total_abono, cuotas_total, total_abonado, saldo_pendiente, saldo_a_favor, saldo_en_mora) para un id_cost o cod_alumno.',
+            tags: ['Purses'],
+            security: [['bearerAuth' => []]],
+            parameters: [
+                new OA\Parameter(name: 'id_cost', in: 'query', required: false, description: 'ID del costo', schema: new OA\Schema(type: 'integer')),
+                new OA\Parameter(name: 'cod_alumno', in: 'query', required: false, description: 'Código del alumno (calcula para todos sus semestres)', schema: new OA\Schema(type: 'string', example: '12345678')),
+            ],
+            responses: [
+                new OA\Response(response: 200, description: 'Totales calculados', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
+                new OA\Response(response: 400, description: 'id_cost o cod_alumno es requerido', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+                new OA\Response(response: 401, description: 'No autenticado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            ]
+        )
+    ]
+    public function totales(Request $request): JsonResponse
+    {
+        try {
+            $id_cost = $request->input('id_cost');
+            $cod_alumno = $request->input('cod_alumno');
+            
+            if (empty($id_cost) && empty($cod_alumno)) {
+                return ApiResponse::error('id_cost o cod_alumno es requerido', 400);
+            }
+            
+            $carteraData = CarteraService::calcularCartera($id_cost, $cod_alumno);
+            
+            return ApiResponse::success([
+                'total_abono' => $carteraData['totales']['total_abono'],
+                'cuotas_total' => $carteraData['totales']['cuotas_total'],
+                'total_abonado' => $carteraData['totales']['total_abonado'],
+                'saldo_pendiente' => $carteraData['totales']['saldo_pendiente'],
+                'saldo_a_favor' => $carteraData['totales']['saldo_a_favor'],
+                'saldo_en_mora' => $carteraData['totales']['saldo_en_mora'],
+            ], 'Totales calculados correctamente', null, 200);
+        } catch (\Exception $e) {
+            \Log::error('Error en PurseController::totales', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return ApiResponse::error('Error al calcular totales: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * GET /purses/cartera?id_cost=...&cod_alumno=...
+     * Obtiene la información completa de cartera con cálculos detallados
+     */
+    #[
+        OA\Get(
+            path: '/api/v1/purses/cartera',
+            summary: 'Obtener información completa de cartera',
+            description: 'Obtiene la información completa de cartera con todas las cuotas calculadas, estados y totales para un id_cost o cod_alumno.',
+            tags: ['Purses'],
+            security: [['bearerAuth' => []]],
+            parameters: [
+                new OA\Parameter(name: 'id_cost', in: 'query', required: false, description: 'ID del costo', schema: new OA\Schema(type: 'integer')),
+                new OA\Parameter(name: 'cod_alumno', in: 'query', required: false, description: 'Código del alumno (calcula para todos sus semestres)', schema: new OA\Schema(type: 'string', example: '12345678')),
+            ],
+            responses: [
+                new OA\Response(response: 200, description: 'Información completa de cartera', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
+                new OA\Response(response: 400, description: 'id_cost o cod_alumno es requerido', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+                new OA\Response(response: 401, description: 'No autenticado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            ]
+        )
+    ]
+    public function cartera(Request $request): JsonResponse
+    {
+        try {
+            $id_cost = $request->input('id_cost');
+            $cod_alumno = $request->input('cod_alumno');
+            
+            if (empty($id_cost) && empty($cod_alumno)) {
+                return ApiResponse::error('id_cost o cod_alumno es requerido', 400);
+            }
+            
+            $carteraData = CarteraService::calcularCartera($id_cost, $cod_alumno);
+            
+            // Formatear las cuotas para incluir información adicional
+            $cuotasFormateadas = [];
+            foreach ($carteraData['cuotas'] as $cuota) {
+                $cuotasFormateadas[] = [
+                    'id' => $cuota['id'],
+                    'id_cost' => $cuota['id_cost'],
+                    'numero_semestre' => $cuota['numero_semestre'] ?? 1,
+                    'fecha_pago' => $cuota['fecha_pago'],
+                    'cuota' => $cuota['cuota'],
+                    'abonado' => $cuota['abonado'],
+                    'estado_pago' => $cuota['estado_pago'],
+                    'estado' => $cuota['estado'],
+                    'is_vencida' => $cuota['is_vencida'],
+                    'comentario' => $cuota['comentario'] ?? '',
+                ];
+            }
+            
+            return ApiResponse::success([
+                'cuotas' => $cuotasFormateadas,
+                'totales' => $carteraData['totales'],
+                'hoy' => $carteraData['hoy'],
+            ], 'Información de cartera obtenida correctamente', null, 200);
+        } catch (\Exception $e) {
+            \Log::error('Error en PurseController::cartera', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return ApiResponse::error('Error al obtener información de cartera: ' . $e->getMessage(), 500);
+        }
     }
 }

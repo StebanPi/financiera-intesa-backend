@@ -139,8 +139,11 @@ class CostService
      */
     public function syncStudentCosts(string $cod_alumno, array $semestres): void
     {
+        $semestresRecibidos = [];
+        
         foreach ($semestres as $data) {
             $numSemestre = $data['numero_semestre'];
+            $semestresRecibidos[] = $numSemestre;
             $data['cod_alumno'] = $cod_alumno;
 
             $cost = Cost::where('cod_alumno', $cod_alumno)
@@ -154,6 +157,27 @@ class CostService
                 $cost->update($data);
                 $this->updatePursesForCost($cost->fresh());
             }
+        }
+
+        // Eliminar semestres que ya no están en la lista y todas sus relaciones
+        $costsAEliminar = Cost::where('cod_alumno', $cod_alumno)
+            ->whereNotIn('numero_semestre', $semestresRecibidos)
+            ->get();
+        
+        foreach ($costsAEliminar as $costEliminar) {
+            // Eliminar history_purses asociados
+            $purseIds = Purse::where('id_cost', $costEliminar->id)->pluck('id');
+            if ($purseIds->isNotEmpty()) {
+                historyPurse::whereIn('id_purse', $purseIds)->delete();
+            }
+            // Eliminar purses asociados
+            Purse::where('id_cost', $costEliminar->id)->delete();
+            // Eliminar entries asociados
+            Entry::where('id_cost', $costEliminar->id)->delete();
+            // Eliminar other_entries asociados
+            OtherEntry::where('id_cost', $costEliminar->id)->delete();
+            // Eliminar el cost
+            $costEliminar->delete();
         }
     }
 
