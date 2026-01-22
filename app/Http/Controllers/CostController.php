@@ -111,6 +111,20 @@ class CostController extends Controller
             $data['valor_cuotas'] = str_replace(['.', ','], '', $data['valor_cuotas'] ?? '0');
             $data['cod_alumno'] = $cod_alumno;
 
+            // Validar que fecha_pago esté presente y no sea null
+            if (empty($data['fecha_pago']) || is_null($data['fecha_pago'])) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['fecha_pago' => 'La fecha de pago es requerida para el semestre ' . $numSemestre]);
+            }
+
+            // Asegurar que fecha_pago sea una fecha válida
+            if (!strtotime($data['fecha_pago'])) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['fecha_pago' => 'La fecha de pago no es válida para el semestre ' . $numSemestre]);
+            }
+
             $Cost = Cost::where('cod_alumno', $cod_alumno)->where('numero_semestre', $numSemestre)->first();
 
             if (!$Cost) {
@@ -120,12 +134,31 @@ class CostController extends Controller
             } else {
                 $Cost->update($data);
                 TableChangeController::StoreEdit('costs', $Cost->id);
-                $this->updateOrRegeneratePurses($Cost);
+                // Siempre regenerar las cuotas para asegurar que estén actualizadas
+                $this->regeneratePurses($Cost);
             }
         }
 
-        // Opcional: Eliminar semestres que ya no están en la lista (si se desea ese comportamiento)
-        // Cost::where('cod_alumno', $cod_alumno)->whereNotIn('numero_semestre', $semestresRecibidos)->delete();
+        // Eliminar semestres que ya no están en la lista y todas sus relaciones
+        $costsAEliminar = Cost::where('cod_alumno', $cod_alumno)
+            ->whereNotIn('numero_semestre', $semestresRecibidos)
+            ->get();
+        
+        foreach ($costsAEliminar as $costEliminar) {
+            // Eliminar history_purses asociados
+            $purseIds = Purse::where('id_cost', $costEliminar->id)->pluck('id');
+            if ($purseIds->isNotEmpty()) {
+                historyPurse::whereIn('id_purse', $purseIds)->delete();
+            }
+            // Eliminar purses asociados
+            Purse::where('id_cost', $costEliminar->id)->delete();
+            // Eliminar entries asociados
+            Entry::where('id_cost', $costEliminar->id)->delete();
+            // Eliminar other_entries asociados
+            OtherEntry::where('id_cost', $costEliminar->id)->delete();
+            // Eliminar el cost
+            $costEliminar->delete();
+        }
 
         $message = "Configuración de costos guardada correctamente";
         // Determinar a dónde redirigir según el origen

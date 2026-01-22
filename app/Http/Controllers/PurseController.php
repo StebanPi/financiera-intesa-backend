@@ -268,11 +268,12 @@ class PurseController extends Controller
                 \Log::warning('cod_alumno no está definido o está vacío en arrayCost. ID cost: ' . $id);
             }
             
-            // Obtener datos para la cartera usando el servicio centralizado
-            $cost = DB::table('costs')->where('id', $id)->get();
+            // Obtener todos los costs del estudiante para mostrar todas las cuotas
+            $codAlumno = $arrayCost->cod_alumno;
+            $cost = DB::table('costs')->where('cod_alumno', $codAlumno)->orderBy('numero_semestre', 'asc')->get();
             
-            // Usar el servicio para calcular cartera
-            $carteraData = \App\Services\CarteraService::calcularCartera($id);
+            // Usar el servicio para calcular cartera con todos los semestres del estudiante
+            $carteraData = \App\Services\CarteraService::calcularCartera(null, $codAlumno);
             
             // Preparar datos para el PDF (mantener compatibilidad con la vista)
             $entries = [ (object)['TotalAbono' => $carteraData['totales']['total_abono']] ];
@@ -280,6 +281,8 @@ class PurseController extends Controller
             foreach($carteraData['cuotas'] as $cuota) {
                 $purses[] = (object)[
                     'id' => $cuota['id'],
+                    'id_cost' => $cuota['id_cost'],
+                    'numero_semestre' => $cuota['numero_semestre'] ?? 1,
                     'fecha_pago' => $cuota['fecha_pago'],
                     'cuota' => $cuota['cuota'],
                     'abonado' => $cuota['abonado'],

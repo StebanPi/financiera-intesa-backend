@@ -15,10 +15,10 @@ class EnsureSwaggerEnabled
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // config('app.swagger_enabled') lee de config/app.php que usa env('SWAGGER_ENABLED').
-        // Con config:cache en producción, env() solo se evalúa al hacer config:cache;
-        // por eso usamos config() para que el valor cacheado se respete.
-        if (!config('app.swagger_enabled', false)) {
+        // Verificar SWAGGER_ENABLED desde env (no usar config cache para esta variable)
+        $swaggerEnabled = filter_var(env('SWAGGER_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
+        
+        if (!$swaggerEnabled) {
             abort(404, 'Not Found');
         }
 

@@ -28,3 +28,34 @@ if (!function_exists('institution_settings')) {
         });
     }
 }
+
+if (!function_exists('numero_a_romano')) {
+    /**
+     * Convertir un número a número romano.
+     *
+     * @param int $numero
+     * @return string
+     */
+    function numero_a_romano($numero)
+    {
+        $numero = (int) $numero;
+        if ($numero <= 0 || $numero > 3999) {
+            return (string) $numero;
+        }
+        
+        $valores = [
+            1000 => 'M', 900 => 'CM', 500 => 'D', 400 => 'CD',
+            100 => 'C', 90 => 'XC', 50 => 'L', 40 => 'XL',
+            10 => 'X', 9 => 'IX', 5 => 'V', 4 => 'IV', 1 => 'I'
+        ];
+        
+        $romano = '';
+        foreach ($valores as $valor => $letra) {
+            $cantidad = intval($numero / $valor);
+            $romano .= str_repeat($letra, $cantidad);
+            $numero = $numero % $valor;
+        }
+        
+        return $romano;
+    }
+}

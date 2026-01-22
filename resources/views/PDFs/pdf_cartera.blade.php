@@ -138,12 +138,13 @@
     @if(isset($id_cost) && $id_cost != 0)
     <table id="table" style="width: 100%; font-size: {{ $fontSizeStr }};" class=""> 
         <thead style="" class="thead-secondary text-black text-center">
-            <th scope="col" style="width: 5%; padding: {{ $thPadding }};">ID</th>
-            <th scope="col" style="width: 15%; padding: {{ $thPadding }};">Fecha de Pago</th>
-            <th scope="col" style="width: 15%; padding: {{ $thPadding }};">Cuota</th>
-            <th scope="col" style="width: 15%; padding: {{ $thPadding }};">Abonado</th>
-            <th scope="col" style="width: 18%; padding: {{ $thPadding }};">Estado Pago</th>
-            <th scope="col" style="width: 15%; padding: {{ $thPadding }};">Estado</th>
+            <th scope="col" style="width: 4%; padding: {{ $thPadding }};">ID</th>
+            <th scope="col" style="width: 8%; padding: {{ $thPadding }};">Semestre</th>
+            <th scope="col" style="width: 14%; padding: {{ $thPadding }};">Fecha de Pago</th>
+            <th scope="col" style="width: 14%; padding: {{ $thPadding }};">Cuota</th>
+            <th scope="col" style="width: 14%; padding: {{ $thPadding }};">Abonado</th>
+            <th scope="col" style="width: 16%; padding: {{ $thPadding }};">Estado Pago</th>
+            <th scope="col" style="width: 14%; padding: {{ $thPadding }};">Estado</th>
         </thead>
         <tbody>
 
@@ -318,6 +319,7 @@
                     @endif
        
                         <td style="text-align:center; padding: {{ $tdPadding }};">{{ $i}}</td>
+                        <td style="text-align:center; padding: {{ $tdPadding }};">{{ numero_a_romano($item->numero_semestre ?? 1) }}</td>
                         <td style="text-align:center; padding: {{ $tdPadding }};">{{ App\Http\Controllers\DateController::getMesSubtr($item->fecha_pago) }}</td>
                         <td style="text-align:right; padding: {{ $tdPadding }};">${{ App\Http\Controllers\MoneyController::main($item->cuota) }}</td>
                         @if($valueShow > 0)
@@ -335,6 +337,7 @@
 
             <tr style="background-color:#0e00ce;color:#fff;">
                 <td style="text-align:center; padding: {{ $tdPadding }};"></td>
+                <td style="text-align:center; padding: {{ $tdPadding }};"></td>
                 <td style="text-align:center; padding: {{ $tdPadding }}; font-weight: 600;">Total Financiado</td>
                 <td style="text-align:right; padding: {{ $tdPadding }}; font-weight: 600;">${{ App\Http\Controllers\MoneyController::main($CuotasTotal) }}</td>
                 <td style="text-align:center; padding: {{ $tdPadding }};"></td>
@@ -345,6 +348,7 @@
             <tr style="background-color:#585858;color:#fff;">
                 <td style="text-align:center; padding: {{ $tdPadding }};"></td>
                 <td style="text-align:center; padding: {{ $tdPadding }};"></td>
+                <td style="text-align:center; padding: {{ $tdPadding }};"></td>
                 <td style="text-align:center; padding: {{ $tdPadding }}; font-weight: 600;">Total Abonado</td>
                 <td style="text-align:right; padding: {{ $tdPadding }}; font-weight: 600;">${{ App\Http\Controllers\MoneyController::main(isset($totales) ? $totales['total_abonado'] : $totalAbono) }}</td>
                 <td style="text-align:center; padding: {{ $tdPadding }};"></td>
@@ -353,12 +357,14 @@
             <tr style="background-color:#ffebee;">
                 <td style="text-align:center; padding: {{ $tdPadding }};"></td>
                 <td style="text-align:center; padding: {{ $tdPadding }};"></td>
+                <td style="text-align:center; padding: {{ $tdPadding }};"></td>
                 <td style="text-align:center; padding: {{ $tdPadding }}; font-weight: 600;">Saldo en Mora</td>
                 <td style="text-align:right; padding: {{ $tdPadding }}; color:#f72b50; font-weight: 600;">${{ App\Http\Controllers\MoneyController::main(isset($totales) ? $totales['saldo_en_mora'] : $SaldoEnMora) }}</td>
                 <td style="text-align:center; padding: {{ $tdPadding }};"></td>
                 <td style="text-align:center; padding: {{ $tdPadding }};"></td>
             </tr>
             <tr style="background-color:#dcecb0;">
+                <td style="text-align:center; padding: {{ $tdPadding }};"></td>
                 <td style="text-align:center; padding: {{ $tdPadding }};"></td>
                 <td style="text-align:center; padding: {{ $tdPadding }};"></td>
                 <td style="text-align:center; padding: {{ $tdPadding }}; font-weight: 600;">Saldo a Favor</td>

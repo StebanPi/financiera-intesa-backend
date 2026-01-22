@@ -58,15 +58,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Swagger / OpenAPI Documentation
-    |--------------------------------------------------------------------------
-    | Cuando es true, /docs y /docs/openapi.json responden. Si es false, 404.
-    | Tras cambiar SWAGGER_ENABLED en .env, ejecutar: config:clear y config:cache.
-    */
-    'swagger_enabled' => filter_var(env('SWAGGER_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
-
-    /*
-    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

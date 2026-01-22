@@ -43,11 +43,13 @@ class CarteraService
             ];
         }
 
-        // Obtener todas las cuotas ordenadas por fecha
+        // Obtener todas las cuotas ordenadas por fecha, incluyendo información del semestre
         $purses = DB::connection('mysql')
             ->table('purses')
-            ->whereIn('id_cost', $ids_cost)
-            ->orderBy('fecha_pago', 'asc')
+            ->join('costs', 'purses.id_cost', '=', 'costs.id')
+            ->whereIn('purses.id_cost', $ids_cost)
+            ->select('purses.*', 'costs.numero_semestre')
+            ->orderBy('purses.fecha_pago', 'asc')
             ->get();
 
         // Calcular total de abonos (solo entries, other_entries son otros ingresos separados)
@@ -171,6 +173,7 @@ class CarteraService
             $cuotasCalculadas[] = [
                 'id' => $purse->id,
                 'id_cost' => $purse->id_cost,
+                'numero_semestre' => $purse->numero_semestre ?? 1, // Agregar número de semestre
                 'fecha_pago' => $purse->fecha_pago,
                 'fecha_pago_formateada' => $purse->fecha_pago, // Se formateará en la vista
                 'cuota' => $cuota,

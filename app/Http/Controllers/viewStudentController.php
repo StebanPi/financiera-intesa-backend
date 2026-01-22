@@ -206,11 +206,65 @@ class viewStudentController extends Controller
     
     public function carteraTable($id)
     {
-        $arrayCost = DB::table('costs')->where('cod_alumno',$id)->first();
-        $data = DB::connection('mysql2')->SELECT('SELECT alumno.cedula , alumno.nombre, programa.nombre_programa FROM alumno INNER JOIN relacion_programa_estudiante ON relacion_programa_estudiante.Alumno_cod = alumno.cod_alumno INNER JOIN programa ON programa.cod_programa = relacion_programa_estudiante.programa_cod WHERE alumno.cod_alumno = "'.$arrayCost->cod_alumno.'"');
-        $entries = DB::connection('mysql')->select('SELECT SUM(valor) AS TotalAbono FROM entries WHERE id_cost ="'.$arrayCost->id.'"');
-        $purses = DB::connection('mysql')->select('SELECT * FROM purses WHERE id_cost = "'.$arrayCost->id.'"');
-        return view('viewStudent.cartera.show',['id_cost' => $id, 'student' => $data, 'cost' => $arrayCost, 'entries' => $entries, 'purses' => $purses]);
+        // $id es cod_alumno, obtener todos los costs del estudiante
+        $costs = DB::table('costs')->where('cod_alumno', $id)->orderBy('numero_semestre', 'asc')->get();
+        
+        if ($costs->isEmpty()) {
+            return view('viewStudent.cartera.show', [
+                'id_cost' => 0, 
+                'student' => [], 
+                'cost' => null, 
+                'entries' => [], 
+                'purses' => []
+            ]);
+        }
+        
+        // Obtener datos del estudiante
+        $data = DB::connection('mysql2')->SELECT('SELECT alumno.cedula , alumno.nombre, programa.nombre_programa FROM alumno INNER JOIN relacion_programa_estudiante ON relacion_programa_estudiante.Alumno_cod = alumno.cod_alumno INNER JOIN programa ON programa.cod_programa = relacion_programa_estudiante.programa_cod WHERE alumno.cod_alumno = "'.$id.'"');
+        
+        // Si no se encuentra en mysql2, buscar en matriculas
+        if(empty($data)){
+            $matricula = \App\Models\Matricula::where('cod_alumno', $id)->first();
+            if($matricula){
+                $data = [
+                    (object)[
+                        'cedula' => $matricula->numero_documento ?? '',
+                        'nombre' => $matricula->nombre_completo ?? 'N/A',
+                        'nombre_programa' => $matricula->programa ?? ''
+                    ]
+                ];
+            }
+        }
+        
+        // Usar el servicio para calcular cartera con todos los semestres
+        $carteraData = \App\Services\CarteraService::calcularCartera(null, $id);
+        
+        // Preparar datos para la vista
+        $entries = [ (object)['TotalAbono' => $carteraData['totales']['total_abono']] ];
+        $purses = [];
+        foreach($carteraData['cuotas'] as $cuota) {
+            $purses[] = (object)[
+                'id' => $cuota['id'],
+                'id_cost' => $cuota['id_cost'],
+                'numero_semestre' => $cuota['numero_semestre'] ?? 1,
+                'fecha_pago' => $cuota['fecha_pago'],
+                'cuota' => $cuota['cuota'],
+                'abonado' => $cuota['abonado'] ?? 0,
+                'estado' => $cuota['estado'] ?? 'Pendiente',
+                'comentario' => $cuota['comentario'] ?? ''
+            ];
+        }
+        
+        // Usar el primer cost para compatibilidad (aunque ahora mostramos todos)
+        $arrayCost = $costs->first();
+        
+        return view('viewStudent.cartera.show', [
+            'id_cost' => $arrayCost->id ?? 0, 
+            'student' => $data, 
+            'cost' => $arrayCost, 
+            'entries' => $entries, 
+            'purses' => $purses
+        ]);
     }
     /**
      * Update the specified resource in storage.
@@ -269,6 +323,7 @@ class viewStudentController extends Controller
             $pursesFormateados[] = [
                 'id' => $cuota['id'],
                 'id_cost' => $cuota['id_cost'] ?? $id_cost,
+                'numero_semestre' => $cuota['numero_semestre'] ?? 1,
                 'fecha_pago' => $fechaFormateada,
                 'estado' => $cuota['estado'],
                 'estado_pago' => $cuota['estado_pago'],

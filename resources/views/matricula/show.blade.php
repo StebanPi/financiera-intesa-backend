@@ -281,6 +281,7 @@ date_default_timezone_set("America/Bogota");
                                                         <thead class="thead-secondary text-primary text-center">
                                                             <tr>
                                                                 <th scope="col">Id</th>
+                                                                <th scope="col">Semestre</th>
                                                                 <th scope="col">Fecha de Pago</th>
                                                                 <th scope="col">Cuota</th>
                                                                 <th scope="col">Abonado</th>
@@ -701,15 +702,33 @@ date_default_timezone_set("America/Bogota");
                     <div class="col-md-4">
                         <div class="form-group">
                             <label class="font-weight-bold"><i class="fa-solid fa-hashtag mr-2"></i>Número Total de Semestres</label>
-                            <input type="number" value="{{ count($costs) }}" name="total_semestres" id="total_semestres" class="form-control" min="1" max="10">
+                            <div class="d-flex">
+                                @php
+                                    // Obtener el número máximo de semestre configurado
+                                    $maxSemestre = 0;
+                                    if ($costs && $costs->isNotEmpty()) {
+                                        foreach ($costs as $cost) {
+                                            $numSem = isset($cost->numero_semestre) ? (int)$cost->numero_semestre : 0;
+                                            if ($numSem > $maxSemestre) {
+                                                $maxSemestre = $numSem;
+                                            }
+                                        }
+                                    }
+                                    $totalSemestresInput = max(1, max(count($costs), $maxSemestre));
+                                @endphp
+                                <input type="number" value="{{ $totalSemestresInput }}" name="total_semestres" id="total_semestres" class="form-control" min="1" max="10" style="flex: 1;">
+                                <button type="button" id="btn_actualizar_select" class="btn btn-primary ml-2" title="Actualizar selector de semestres">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-8 d-flex align-items-end">
                         <div class="form-group mb-0 w-100">
                             <label class="font-weight-bold">Seleccionar Semestre para Configurar:</label>
-                            <select id="selector_semestre" class="form-control">
-                                @for($i = 1; $i <= 10; $i++)
-                                    <option value="{{ $i }}" {{ $i > count($costs) ? 'disabled' : '' }}>Semestre {{ $i }}</option>
+                            <select id="selector_semestre" class="form-control no-selectpicker" data-no-selectpicker="true" data-initial-total="{{ $totalSemestresInput }}">
+                                @for($i = 1; $i <= $totalSemestresInput; $i++)
+                                    <option value="{{ $i }}" {{ $i == 1 ? 'selected' : '' }}>Semestre {{ $i }}</option>
                                 @endfor
                             </select>
                         </div>
@@ -758,7 +777,7 @@ date_default_timezone_set("America/Bogota");
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label><i class="fa-solid fa-arrow-pointer mr-2"></i>Periodo de Pago</label>
-                                        <select class="form-control form-control-sm" name="semestres[{{ $i }}][periodo]">
+                                        <select class="form-control form-control-sm input-periodo" name="semestres[{{ $i }}][periodo]" id="periodo_{{ $i }}" data-semestre="{{ $i }}">
                                             <option value="Mensual" {{ $c->periodo == 'Mensual' ? 'selected' : '' }}>Mensual</option>
                                             <option value="Quincenal" {{ $c->periodo == 'Quincenal' ? 'selected' : '' }}>Quincenal</option>
                                             <option value="Semanal" {{ $c->periodo == 'Semanal' ? 'selected' : '' }}>Semanal</option>
@@ -775,7 +794,10 @@ date_default_timezone_set("America/Bogota");
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label><i class="fa-solid fa-calendar mr-2"></i>Fecha Inicio</label>
-                                                <input type="date" name="semestres[{{ $i }}][fecha_pago]" value="{{ $c->fecha_pago }}" class="form-control form-control-sm">
+                                                <input type="date" name="semestres[{{ $i }}][fecha_pago]" value="{{ $c->fecha_pago }}" id="fecha_pago_{{ $i }}" class="form-control form-control-sm input-fecha-pago" data-semestre="{{ $i }}" {{ $i == 1 ? '' : 'readonly' }}>
+                                                @if($i > 1)
+                                                    <small class="text-muted"><i class="fa-solid fa-info-circle"></i> Calculada automáticamente</small>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -1438,26 +1460,120 @@ jQuery(document).ready(function($) {
     });
     
     // Lógica para el manejo dinámico de semestres
-    $('#total_semestres').on('input change', function() {
-        var total = parseInt($(this).val());
+    function actualizarSelectorSemestres(forceUpdate) {
+        var total = parseInt($('#total_semestres').val());
         if (isNaN(total) || total < 1) total = 1;
         if (total > 10) total = 10;
 
-        // Actualizar selector y visibilidad
-        $('#selector_semestre option').each(function() {
-            var val = parseInt($(this).val());
-            if (val <= total) {
-                $(this).prop('disabled', false);
-            } else {
-                $(this).prop('disabled', true);
-            }
-        });
-
-        // Si el seleccionado actualmente es mayor que el nuevo total, volver al 1
-        if (parseInt($('#selector_semestre').val()) > total) {
-            $('#selector_semestre').val(1).trigger('change');
+        var $select = $('#selector_semestre');
+        if ($select.length === 0) {
+            console.log('Select no encontrado');
+            return;
         }
         
+        var currentSelected = parseInt($select.val()) || 1;
+        var currentOptions = $select.find('option').length;
+        
+        console.log('Actualizando select - Total:', total, 'Opciones actuales:', currentOptions, 'Forzar:', forceUpdate); // Debug
+        
+        // Asegurar que selectpicker NO se inicialice en este select
+        $select.addClass('no-selectpicker').attr('data-no-selectpicker', 'true');
+        
+        // Si selectpicker ya está activo, destruirlo completamente
+        if (typeof $.fn.selectpicker !== 'undefined') {
+            try {
+                if ($select.hasClass('selectpicker') || $select.data('selectpicker')) {
+                    $select.selectpicker('destroy');
+                    $select.removeClass('selectpicker');
+                }
+                // Remover cualquier wrapper de Bootstrap Select
+                var $parent = $select.parent();
+                if ($parent.hasClass('bootstrap-select')) {
+                    $select.detach();
+                    $parent.replaceWith($select);
+                }
+            } catch(e) {
+                console.log('Error al destruir selectpicker:', e);
+            }
+        }
+        
+        // Actualizar siempre si se fuerza, o si el número de opciones es diferente
+        if (forceUpdate || currentOptions !== total) {
+            // Guardar el valor seleccionado actual si es válido
+            if (currentSelected > total) {
+                currentSelected = 1;
+            }
+            
+            // Detener cualquier animación o proceso en curso
+            $select.stop(true, true);
+            
+            // Limpiar y recrear todas las opciones
+            $select.empty();
+            for (var i = 1; i <= total; i++) {
+                var selected = (i === currentSelected) ? 'selected' : '';
+                $select.append('<option value="' + i + '" ' + selected + '>Semestre ' + i + '</option>');
+            }
+            
+            // Asegurar que el valor seleccionado sea válido
+            $select.val(currentSelected);
+            
+            // Forzar re-render del navegador
+            $select[0].offsetHeight; // Trigger reflow
+            
+            // Disparar eventos para actualizar cualquier listener
+            $select.trigger('change');
+            
+            console.log('Select actualizado con', total, 'opciones. Opciones en DOM:', $select.find('option').length); // Debug
+            console.log('Opciones visibles:', $select.find('option').map(function() { return $(this).text(); }).get()); // Debug
+            
+            // Disparar evento change si cambió la selección
+            if (currentSelected > total) {
+                $select.trigger('change');
+            }
+        }
+    }
+    
+    // Botón para forzar actualización manual
+    $('#btn_actualizar_select').on('click', function() {
+        console.log('Botón de actualización presionado');
+        actualizarSelectorSemestres(true);
+        // Mostrar feedback visual
+        var $btn = $(this);
+        var originalHtml = $btn.html();
+        $btn.html('<i class="fa-solid fa-check"></i>').addClass('btn-success').removeClass('btn-primary');
+        setTimeout(function() {
+            $btn.html(originalHtml).removeClass('btn-success').addClass('btn-primary');
+        }, 1000);
+    });
+
+    // Manejar cambios en el selector de semestre
+    $('#selector_semestre').on('change', function() {
+        var semestre = parseInt($(this).val()) || 1;
+        $('.seccion-semestre').addClass('d-none');
+        $('#seccion_semestre_' + semestre).removeClass('d-none');
+    });
+    
+    // Manejar cambios en el campo de total de semestres - actualización inmediata
+    // Usar .off() primero para evitar múltiples bindings
+    $('#total_semestres').off('input keyup change').on('input keyup change', function() {
+        var total = parseInt($(this).val());
+        if (isNaN(total) || total < 1) total = 1;
+        if (total > 10) {
+            total = 10;
+            $(this).val(10);
+        }
+        
+        console.log('Total semestres cambiado a:', total); // Debug
+        
+        // Actualizar el select inmediatamente (forzar actualización)
+        actualizarSelectorSemestres(true);
+        
+        // Si el semestre seleccionado es mayor que el nuevo total, cambiar al primero
+        var selected = parseInt($('#selector_semestre').val()) || 1;
+        if (selected > total) {
+            $('#selector_semestre').val(1).trigger('change');
+        }
+
         // Copiar valores del semestre 1 a los nuevos si están vacíos (herencia)
         if (total > 1) {
             var v1 = $('#valor_semestre_1').val();
@@ -1476,14 +1592,151 @@ jQuery(document).ready(function($) {
                 }
             }
         }
+        
+        // Recalcular todas las fechas después de cambiar el total
+        for (var i = 2; i <= total; i++) {
+            calcularFechaInicioSemestre(i);
+        }
     });
+    
+    // Prevenir que selectpicker se inicialice en nuestro select
+    var $selectorSemestre = $('#selector_semestre');
+    if ($selectorSemestre.length) {
+        $selectorSemestre.addClass('no-selectpicker').attr('data-no-selectpicker', 'true');
+        
+        // Si selectpicker ya se inicializó, destruirlo
+        if (typeof $.fn.selectpicker !== 'undefined') {
+            try {
+                if ($selectorSemestre.hasClass('selectpicker') || $selectorSemestre.data('selectpicker')) {
+                    $selectorSemestre.selectpicker('destroy');
+                    $selectorSemestre.removeClass('selectpicker');
+                }
+                // Remover wrapper de Bootstrap Select si existe
+                var $parent = $selectorSemestre.parent();
+                if ($parent.hasClass('bootstrap-select')) {
+                    $selectorSemestre.detach();
+                    $parent.replaceWith($selectorSemestre);
+                }
+            } catch(e) {
+                console.log('Error al prevenir selectpicker:', e);
+            }
+        }
+    }
+    
+    // Inicializar al cargar la página - mover fuera del document.ready anidado
+    // Asegurar que el select tenga todas las opciones correctas
+    actualizarSelectorSemestres();
+    
+    // Calcular fechas de inicio de todos los semestres al cargar
+    var totalSemestres = parseInt($('#total_semestres').val()) || 1;
+    for (var i = 2; i <= totalSemestres; i++) {
+        calcularFechaInicioSemestre(i);
+    }
+    
+    // Mostrar el primer semestre por defecto
+    var initialSemestre = parseInt($('#selector_semestre').val()) || 1;
+    $('.seccion-semestre').addClass('d-none');
+    $('#seccion_semestre_' + initialSemestre).removeClass('d-none');
 
-    $('#selector_semestre').on('change', function() {
-        var semestre = $(this).val();
-        $('.seccion-semestre').addClass('d-none');
-        $('#seccion_semestre_' + semestre).removeClass('d-none');
+    // Función para calcular la fecha de inicio de un semestre basándose en el anterior
+    function calcularFechaInicioSemestre(semestre) {
+        if (semestre <= 1) {
+            return; // El semestre 1 no se calcula, es manual
+        }
+        
+        // Obtener fecha de inicio del semestre anterior
+        var fechaAnterior = $('#fecha_pago_' + (semestre - 1)).val();
+        if (!fechaAnterior) {
+            return;
+        }
+        
+        // Obtener número de cuotas del semestre anterior
+        var numCuotasAnterior = parseInt($('#numero_cuotas_' + (semestre - 1)).val()) || 0;
+        if (numCuotasAnterior <= 0) {
+            return;
+        }
+        
+        // Obtener período del semestre anterior
+        var periodoAnterior = $('#periodo_' + (semestre - 1)).val();
+        
+        // Calcular fecha de inicio del semestre actual
+        var fecha = new Date(fechaAnterior);
+        var año = fecha.getFullYear();
+        var mes = fecha.getMonth() + 1; // JavaScript usa 0-11, necesitamos 1-12
+        var dia = fecha.getDate();
+        
+        // Calcular según el período
+        if (periodoAnterior === 'Mensual') {
+            // Sumar meses según número de cuotas
+            mes += numCuotasAnterior;
+            // Ajustar año si es necesario
+            while (mes > 12) {
+                mes -= 12;
+                año += 1;
+            }
+        } else if (periodoAnterior === 'Quincenal') {
+            // Sumar quincenas (15 días por cuota)
+            var diasTotales = numCuotasAnterior * 15;
+            fecha.setDate(fecha.getDate() + diasTotales);
+            año = fecha.getFullYear();
+            mes = fecha.getMonth() + 1;
+            dia = fecha.getDate();
+        } else if (periodoAnterior === 'Semanal') {
+            // Sumar semanas (7 días por cuota)
+            var diasTotales = numCuotasAnterior * 7;
+            fecha.setDate(fecha.getDate() + diasTotales);
+            año = fecha.getFullYear();
+            mes = fecha.getMonth() + 1;
+            dia = fecha.getDate();
+        } else if (periodoAnterior === 'Contado') {
+            // Contado generalmente es 1 cuota, usar la misma fecha o sumar 1 mes
+            mes += 1;
+            if (mes > 12) {
+                mes = 1;
+                año += 1;
+            }
+        }
+        
+        // Validar y ajustar día si es necesario (ej: 31 de febrero)
+        var ultimoDiaMes = new Date(año, mes, 0).getDate();
+        if (dia > ultimoDiaMes) {
+            dia = ultimoDiaMes;
+        }
+        
+        // Formatear fecha como YYYY-MM-DD
+        var fechaFormateada = año + '-' + 
+            String(mes).padStart(2, '0') + '-' + 
+            String(dia).padStart(2, '0');
+        
+        // Actualizar el campo de fecha del semestre actual
+        $('#fecha_pago_' + semestre).val(fechaFormateada);
+        
+        // Si hay más semestres, calcularlos también
+        var totalSemestres = parseInt($('#total_semestres').val()) || 1;
+        if (semestre < totalSemestres) {
+            calcularFechaInicioSemestre(semestre + 1);
+        }
+    }
+    
+    // Calcular todas las fechas cuando cambie la fecha del semestre 1
+    $('#fecha_pago_1').on('change', function() {
+        var totalSemestres = parseInt($('#total_semestres').val()) || 1;
+        for (var i = 2; i <= totalSemestres; i++) {
+            calcularFechaInicioSemestre(i);
+        }
     });
-
+    
+    // Calcular fechas cuando cambie el número de cuotas o período de cualquier semestre
+    $(document).on('change keyup', '.input-numero-cuotas, .input-periodo', function() {
+        var semestre = parseInt($(this).data('semestre')) || 1;
+        var totalSemestres = parseInt($('#total_semestres').val()) || 1;
+        
+        // Recalcular desde el semestre siguiente al que cambió
+        for (var i = semestre + 1; i <= totalSemestres; i++) {
+            calcularFechaInicioSemestre(i);
+        }
+    });
+    
     // Cálculos por semestre
     $(document).on('keyup', '.input-valor-semestre, .input-descuento, .input-numero-cuotas', function() {
         var sem = $(this).data('semestre');
@@ -1741,7 +1994,7 @@ function Mostrar_SheetCartera(){
     let id_cost = $("#id_cost").val();
     if(!id_cost || id_cost == ""){
         console.error("Mostrar_SheetCartera: id_cost no encontrado");
-        $("#TABLE_ITEMS_CARTERA").html("<tr><td colspan='8' class='text-center'>No hay información de costos disponible</td></tr>");
+                $("#TABLE_ITEMS_CARTERA").html("<tr><td colspan='9' class='text-center'>No hay información de costos disponible</td></tr>");
         return;
     }
     
@@ -1770,7 +2023,7 @@ function Mostrar_SheetCartera(){
             
             if(!data || data.length === 0){
                 console.log("Mostrar_SheetCartera: No hay datos de cartera");
-                $("#TABLE_ITEMS_CARTERA").html("<tr><td colspan='8' class='text-center'>No hay cuotas registradas</td></tr>");
+                $("#TABLE_ITEMS_CARTERA").html("<tr><td colspan='9' class='text-center'>No hay cuotas registradas</td></tr>");
                 return;
             }
             
@@ -1873,17 +2126,39 @@ function Mostrar_SheetCartera(){
                             estadoColor = 'color:#6c757d !important;'; // Gris para Proxima
                         }
                         
+                        // Función para convertir número a romano
+                        function numeroARomano(num) {
+                            num = parseInt(num) || 1;
+                            if (num <= 0 || num > 3999) return num.toString();
+                            var valores = [
+                                {valor: 1000, letra: 'M'}, {valor: 900, letra: 'CM'}, {valor: 500, letra: 'D'}, {valor: 400, letra: 'CD'},
+                                {valor: 100, letra: 'C'}, {valor: 90, letra: 'XC'}, {valor: 50, letra: 'L'}, {valor: 40, letra: 'XL'},
+                                {valor: 10, letra: 'X'}, {valor: 9, letra: 'IX'}, {valor: 5, letra: 'V'}, {valor: 4, letra: 'IV'}, {valor: 1, letra: 'I'}
+                            ];
+                            var romano = '';
+                            for (var j = 0; j < valores.length; j++) {
+                                var cantidad = Math.floor(num / valores[j].valor);
+                                romano += valores[j].letra.repeat(cantidad);
+                                num = num % valores[j].valor;
+                            }
+                            return romano;
+                        }
+                        
+                        const numeroSemestre = item.numero_semestre || 1;
+                        const semestreRomano = numeroARomano(numeroSemestre);
+                        
                         const TR = $("<tr " + rowClass + "></tr>");
                         const TD1 = $("<td style='text-align:center;' class='text-center text-black'>" + i + "</td>");
-                        const TD2 = $("<td style='text-align:center;' class='text-center text-black'>" + (item.fecha_pago || '') + "</td>");
-                        const TD3 = $("<td style='text-align:right;font-weight:bold !important;' class='text-center text-black font-weight-bold'>$" + dar_formato(cuota) + "</td>");
-                        const TD4 = $("<td style='text-align:right;font-weight:bold !important;' class='text-center text-black font-weight-bold'>" + abonadoDisplay + "</td>");
-                        const TD5 = $("<td style='text-align:center;' class='text-center text-black'>" + estadoBadge + "</td>");
-                        const TD6 = $("<td style='text-align:center;font-weight:bold !important;" + estadoColor + "' class='text-center font-weight-bold'>" + estado + "</td>");
-                        const TD7 = $("<td style='text-align:center;' class='text-center text-black'><i message='" + comentario + "' class='fa-solid fa-comment-dots text-primary showMessage pointer cpointer'></i></td>");
-                        const TD8 = $("<td style='text-align:center;' class='text-center text-black'><i class='fa-solid fa-file-waveform ml-2 text-primary ShowRegisterPurse cpointer' data-toggle='modal' data-id-purse='" + item.id + "' data-target='#showEditFecha'></i></td>");
+                        const TD2 = $("<td style='text-align:center;' class='text-center text-black'>" + semestreRomano + "</td>");
+                        const TD3 = $("<td style='text-align:center;' class='text-center text-black'>" + (item.fecha_pago || '') + "</td>");
+                        const TD4 = $("<td style='text-align:right;font-weight:bold !important;' class='text-center text-black font-weight-bold'>$" + dar_formato(cuota) + "</td>");
+                        const TD5 = $("<td style='text-align:right;font-weight:bold !important;' class='text-center text-black font-weight-bold'>" + abonadoDisplay + "</td>");
+                        const TD6 = $("<td style='text-align:center;' class='text-center text-black'>" + estadoBadge + "</td>");
+                        const TD7 = $("<td style='text-align:center;font-weight:bold !important;" + estadoColor + "' class='text-center font-weight-bold'>" + estado + "</td>");
+                        const TD8 = $("<td style='text-align:center;' class='text-center text-black'><i message='" + comentario + "' class='fa-solid fa-comment-dots text-primary showMessage pointer cpointer'></i></td>");
+                        const TD9 = $("<td style='text-align:center;' class='text-center text-black'><i class='fa-solid fa-file-waveform ml-2 text-primary ShowRegisterPurse cpointer' data-toggle='modal' data-id-purse='" + item.id + "' data-target='#showEditFecha'></i></td>");
                         
-                        TR.append(TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8);
+                        TR.append(TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8, TD9);
                         $("#TABLE_ITEMS_CARTERA").append(TR);
                     }
                     

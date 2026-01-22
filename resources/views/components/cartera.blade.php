@@ -50,6 +50,7 @@
                 <thead class="thead-secondary text-primary text-center">
                     <tr>
                         <th scope="col">Id</th>
+                        <th scope="col">Semestre</th>
                         <th scope="col">Fecha de Pago</th>
                         <th scope="col">Cuota</th>
                         <th scope="col">Abonado</th>
@@ -103,6 +104,7 @@
                         @endif
            
                             <td style="text-align:center;" class="text-center text-black">{{ $i }}</td>
+                            <td style="text-align:center;" class="text-center text-black">{{ numero_a_romano($cuota['numero_semestre'] ?? 1) }}</td>
                             <td style="text-align:center;" class="text-center text-black">{{ App\Http\Controllers\DateController::getMesSubtr($cuota['fecha_pago']) }}</td>
                             <td style="text-align:right;" class="text-center text-black">${{ App\Http\Controllers\MoneyController::main($cuota['cuota']) }}</td>
                             @if($valueShow > 0)
@@ -132,6 +134,7 @@
                     {{-- Filas de totales --}}
                     <tr style="background-color:#0e00ce;color:#fff;">
                         <td style="text-align:center;" class="text-center text-black"></td>
+                        <td style="text-align:center;" class="text-center text-black"></td>
                         <td style="text-align:center;" class="text-center text-black">Total Programa</td>
                         <td style="text-align:right;" class="text-center text-black">${{ App\Http\Controllers\MoneyController::main($totales['cuotas_total']) }}</td>
                         <td style="text-align:center;" class="text-center text-black"></td>
@@ -144,6 +147,7 @@
                     <tr style="background-color:#585858;color:#fff;">
                         <td style="text-align:center;" class="text-center text-black"></td>
                         <td style="text-align:center;" class="text-center text-black"></td>
+                        <td style="text-align:center;" class="text-center text-black"></td>
                         <td style="text-align:center;" class="text-center text-black">Total Abonado</td>
                         <td style="text-align:right;" class="text-center text-black">${{ App\Http\Controllers\MoneyController::main($totales['total_abonado']) }}</td>
                         <td style="text-align:center;" class="text-center text-black"></td>
@@ -154,6 +158,7 @@
                     <tr style="background-color:#F3CAD5 ;">
                         <td style="text-align:center;" class="text-center text-black"></td>
                         <td style="text-align:center;" class="text-center text-black"></td>
+                        <td style="text-align:center;" class="text-center text-black"></td>
                         <td style="text-align:center;" class="text-center text-black">Saldo Pendiente</td>
                         <td style="text-align:right;" class="text-center text-black">${{ App\Http\Controllers\MoneyController::main($totales['saldo_pendiente']) }}</td>
                         <td style="text-align:center;" class="text-center text-black"></td>
@@ -162,6 +167,7 @@
                         <td style="text-align:center;" class="text-center text-black"></td>
                     </tr>
                     <tr style="background-color:#dcecb0;">
+                        <td style="text-align:center;" class="text-center text-black"></td>
                         <td style="text-align:center;" class="text-center text-black"></td>
                         <td style="text-align:center;" class="text-center text-black"></td>
                         <td style="text-align:center;" class="text-center text-black">Saldo a Favor</td>

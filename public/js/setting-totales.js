@@ -41,6 +41,7 @@ function TotalPursesSimplificado(){
                 // Total Programa
                 var TR1 = $("<tr class='bg-azul'></tr>");
                 TR1.append($("<td></td>"));
+                TR1.append($("<td></td>"));
                 TR1.append($("<td class='text-center'>Total Programa</td>"));
                 TR1.append($("<td class='text-center font-weight-bold'>$"+dar_formato(CuotasTotal)+"</td>"));
                 for(var i = 0; i < 5; i++){ TR1.append($("<td></td>")); }
@@ -48,6 +49,7 @@ function TotalPursesSimplificado(){
                 
                 // Total Abonado
                 var TR2 = $("<tr class='bg-gray-2'></tr>");
+                TR2.append($("<td></td>"));
                 TR2.append($("<td></td>"));
                 TR2.append($("<td></td>"));
                 TR2.append($("<td class='text-center font-weight-bold'>Total Abonado</td>"));
@@ -59,6 +61,7 @@ function TotalPursesSimplificado(){
                 var TR3 = $("<tr class='bg-rojosuave'></tr>");
                 TR3.append($("<td></td>"));
                 TR3.append($("<td></td>"));
+                TR3.append($("<td></td>"));
                 TR3.append($("<td class='text-center'>Saldo Pendiente</td>"));
                 TR3.append($("<td class='d-flex font-weight-bold'><div>$</div><div class='ml-auto'>"+dar_formato(SaldoPendiente)+"</div></td>"));
                 for(var i = 0; i < 4; i++){ TR3.append($("<td></td>")); }
@@ -66,6 +69,7 @@ function TotalPursesSimplificado(){
                 
                 // Saldo a Favor
                 var TR4 = $("<tr class='bg-verdesuave'></tr>");
+                TR4.append($("<td></td>"));
                 TR4.append($("<td></td>"));
                 TR4.append($("<td></td>"));
                 TR4.append($("<td class='text-center'>Saldo a Favor</td>"));

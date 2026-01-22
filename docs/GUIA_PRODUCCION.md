@@ -204,36 +204,6 @@ Si quieres tener la documentación interactiva en `/docs` en producción:
 
 Si `SWAGGER_ENABLED=false`, las rutas `/docs` y `/docs/openapi.json` responden 404. Con `L5_SWAGGER_GENERATE_ALWAYS=false` (recomendado en prod) **no** se regenera en cada request; solo al ejecutar `l5-swagger:generate`.
 
-#### Si `/docs` devuelve 404 en producción
-
-1. **`.env`:** Comprueba que exista y esté bien escrito (sin espacios ni comillas extra):
-   ```
-   SWAGGER_ENABLED=true
-   ```
-   Valores que se consideran "desactivado": `false`, `0`, vacío, o que la variable no exista.
-
-2. **Re-cachear configuración** (imprescindible tras tocar `.env`):
-   ```bash
-   php artisan config:clear
-   php artisan config:cache
-   ```
-   Si usas `config:cache`, el valor de `SWAGGER_ENABLED` se guarda en ese momento. Si no haces `config:clear` y `config:cache` después de poner `SWAGGER_ENABLED=true`, seguirá usándose el valor anterior (p. ej. `false`).
-
-3. **Generar OpenAPI:**
-   ```bash
-   php artisan l5-swagger:generate
-   ```
-
-4. **Comprobar que la ruta existe:**
-   ```bash
-   php artisan route:list --path=docs
-   ```
-   Debe aparecer `GET|HEAD docs` y `GET|HEAD docs/openapi.json`.
-
-5. **Document root:** El servidor web debe tener como raíz la carpeta `public` del proyecto. Si la raíz es la raíz del repo (y no `public/`), Laravel no se cargará bien.
-
-6. **Subdirectorio:** Si la app está en un subdirectorio (p. ej. `https://dominio.com/api/`), la URL de docs sería `https://dominio.com/api/docs`. Comprueba que `APP_URL` en `.env` coincida con la URL real de la app.
-
 ### 4.11. Optimización para producción
 
 ```bash
