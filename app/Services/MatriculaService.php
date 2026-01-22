@@ -194,7 +194,7 @@ class MatriculaService
         $matricula->save();
 
         return [
-            'url' => url('/api/v1/matriculas/' . $cod_alumno . '/foto'),
+            'url' => '/matriculas/' . $cod_alumno . '/foto', // Ruta relativa para que el frontend construya la URL completa
             'path' => $filename,
             'mime' => $file->getMimeType(),
             'size' => $file->getSize(),

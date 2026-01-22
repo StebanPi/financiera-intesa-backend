@@ -72,6 +72,7 @@
                                         <div id="photoPreview" class="mb-3">
                                             @if($matricula->photo_path && Storage::disk('public')->exists($matricula->photo_path))
                                                 @php
+                                                    // Para Blade (vista web), usar URL absoluta del backend
                                                     $baseUrl = rtrim(config('app.url'), '/');
                                                     $photoUrl = $baseUrl . '/api/v1/matriculas/' . $matricula->cod_alumno . '/foto';
                                                 @endphp

@@ -15,10 +15,9 @@ class MatriculaResource extends JsonResource
     {
         $photoUrl = null;
         if ($this->photo_path && Storage::disk('public')->exists($this->photo_path)) {
-            // Usar la URL del endpoint de la API en lugar de Storage::url() para evitar problemas en producción
-            // Usar config('app.url') para asegurar URL absoluta correcta en producción
-            $baseUrl = rtrim(config('app.url'), '/');
-            $photoUrl = $baseUrl . '/api/v1/matriculas/' . $this->cod_alumno . '/foto';
+            // Devolver ruta relativa para que el frontend construya la URL completa con su NEXT_PUBLIC_API_BASE_URL
+            // El frontend Next.js usará: NEXT_PUBLIC_API_BASE_URL + '/matriculas/' + cod_alumno + '/foto'
+            $photoUrl = '/matriculas/' . $this->cod_alumno . '/foto';
         }
 
         return [

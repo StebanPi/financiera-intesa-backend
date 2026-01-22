@@ -719,9 +719,8 @@ class MatriculaController extends Controller
         $matricula->photo_path = $filename;
         $matricula->save();
 
-        // Usar config('app.url') para asegurar URL absoluta correcta en producción
-        $baseUrl = rtrim(config('app.url'), '/');
-        $photoUrl = $baseUrl . '/api/v1/matriculas/' . $cod_alumno . '/foto';
+        // Devolver ruta relativa para que el frontend construya la URL completa con su NEXT_PUBLIC_API_BASE_URL
+        $photoUrl = '/matriculas/' . $cod_alumno . '/foto';
         
         return response()->json([
             'success' => true,
