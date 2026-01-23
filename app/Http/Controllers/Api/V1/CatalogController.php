@@ -144,18 +144,10 @@ class CatalogController extends Controller
             return ApiResponse::error('VALIDATION_ERROR', 'Los datos enviados no son válidos.', $v->errors()->toArray(), 422);
         }
 
-        try {
-            $model = $cfg['model'];
-            $item = $model::create($v->validated());
-            $res = $cfg['resource'];
-            return ApiResponse::success(new $res($item), 'Creado.', null, 201);
-        } catch (\Exception $e) {
-            return ApiResponse::error('SERVER_ERROR', 'Error al crear el recurso: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ], 500);
-        }
+        $model = $cfg['model'];
+        $item = $model::create($v->validated());
+        $res = $cfg['resource'];
+        return ApiResponse::success(new $res($item), 'Creado.', null, 201);
     }
 
     /**
