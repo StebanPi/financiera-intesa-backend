@@ -23,10 +23,10 @@ class ConceptoCatalogRequest extends FormRequest
     public static function getRules(bool $isStore): array
     {
         return [
-            'nombre' => [ $isStore ? 'required' : 'sometimes', 'string' ],
-            'estado' => [ $isStore ? 'required' : 'sometimes', 'string' ],
-            'orderTable' => [ $isStore ? 'required' : 'sometimes', 'string' ],
-            'consecutivo' => [ $isStore ? 'required' : 'sometimes', 'string' ],
+            'nombre' => [ $isStore ? 'required' : 'sometimes', 'string', 'max:255' ],
+            'estado' => [ $isStore ? 'required' : 'sometimes', 'integer', 'in:0,1' ],
+            'orderTable' => [ $isStore ? 'required' : 'sometimes', 'integer', 'in:0,1' ],
+            'consecutivo' => [ $isStore ? 'required' : 'sometimes', 'integer', 'in:0,1' ],
         ];
     }
 }

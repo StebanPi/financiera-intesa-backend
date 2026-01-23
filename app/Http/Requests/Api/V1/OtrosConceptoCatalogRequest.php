@@ -23,8 +23,8 @@ class OtrosConceptoCatalogRequest extends FormRequest
     public static function getRules(bool $isStore): array
     {
         return [
-            'nombre' => [ $isStore ? 'required' : 'sometimes', 'string' ],
-            'estado' => [ $isStore ? 'required' : 'sometimes', 'string' ],
+            'nombre' => [ $isStore ? 'required' : 'sometimes', 'string', 'max:255' ],
+            'estado' => [ $isStore ? 'required' : 'sometimes', 'integer', 'in:0,1' ],
             'debe' => [ $isStore ? 'required' : 'nullable', 'integer', 'exists:debes,id' ],
             'haber' => [ $isStore ? 'required' : 'nullable', 'integer', 'exists:habers,id' ],
         ];
