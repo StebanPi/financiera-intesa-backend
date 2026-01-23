@@ -78,6 +78,7 @@ class CatalogController extends Controller
     ]
     public function index(Request $request, string $resource): JsonResponse
     {
+        error_log("CatalogController::index - resource: $resource");
         $cfg = $this->config($resource);
         if (!$cfg) {
             return ApiResponse::error('NOT_FOUND', 'Recurso no encontrado.', null, 404);
@@ -144,10 +145,16 @@ class CatalogController extends Controller
             return ApiResponse::error('VALIDATION_ERROR', 'Los datos enviados no son válidos.', $v->errors()->toArray(), 422);
         }
 
-        $model = $cfg['model'];
-        $item = $model::create($v->validated());
-        $res = $cfg['resource'];
-        return ApiResponse::success(new $res($item), 'Creado.', null, 201);
+        try {
+            $model = $cfg['model'];
+            error_log("CatalogController::store - creating item for model: $model");
+            $item = $model::create($v->validated());
+            $res = $cfg['resource'];
+            return ApiResponse::success(new $res($item), 'Creado.', null, 201);
+        } catch (\Throwable $e) {
+            error_log("CatalogController::store - ERROR: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**
@@ -307,6 +314,7 @@ class CatalogController extends Controller
     ]
     public function showInstitution(): JsonResponse
     {
+        error_log("CatalogController::showInstitution");
         $item = InstitutionSetting::getSettings();
         return ApiResponse::success(new InstitutionCatalogResource($item));
     }
