@@ -24,14 +24,69 @@ Resumen de **todos los endpoints de la API v1** necesarios para hacer funcional 
 | `GET`    | `/matriculas?search=&programa=&horario=&tipo_documento=&per_page=15` | **Index**: listar y filtrar matrículas |
 | `GET`    | `/matriculas/{cod_alumno}` | **Show / Ficha**: ver una matrícula |
 | `POST`   | `/matriculas` | **Create**: matricular nuevo estudiante |
-| `PUT` / `PATCH` | `/matriculas/{cod_alumno}` | **Ficha**: actualizar datos |
+| `PUT` / `PATCH` | `/matriculas/{cod_alumno}` | **Ficha**: actualizar datos (ver tabla de campos abajo) |
 | `DELETE` | `/matriculas/{cod_alumno}?confirmar_cascada=1` | **Index**: eliminar (opcional cascada) |
 | `GET`    | `/matriculas/{cod_alumno}/foto` | **Show / Ficha**: obtener foto del estudiante (stream imagen) |
 | `POST`   | `/matriculas/{cod_alumno}/foto` | **Ficha**: subir foto (multipart, campo `foto`) |
 | `GET`    | `/matriculas/{cod_alumno}/pdf` | **Ficha**: stream PDF ficha de matrícula |
 
 **Nota:** `cod_alumno` suele ser el número de documento. Sin `confirmar_cascada`, el `DELETE` puede devolver 409 si hay abonos/cuotas y pedir confirmación.  
-**Foto:** El campo `photo_url` en la respuesta de `GET /matriculas/{cod_alumno}` apunta a `GET /matriculas/{cod_alumno}/foto` (endpoint de la API) para evitar problemas con URLs relativas en producción.
+**Foto:** El campo `photo_url` en la respuesta de `GET /matriculas/{cod_alumno}` devuelve una **ruta relativa** `/matriculas/{cod_alumno}/foto` que el frontend Next.js debe construir con su `NEXT_PUBLIC_API_BASE_URL`. Ejemplo: `NEXT_PUBLIC_API_BASE_URL + photo_url` = `https://apifinanciera.institutointesa.edu.co/api/v1/matriculas/1067603652/foto`.
+
+### Campos para `PUT / PATCH /matriculas/{cod_alumno}`
+
+Todos los campos son **opcionales** (solo envía los que quieres actualizar). El endpoint solo actualiza los campos enviados.
+
+| Campo | Tipo | Validación | Notas |
+|-------|------|------------|-------|
+| `nombre_completo` | `string` | `max:255` | Nombre completo del estudiante |
+| `numero_documento` | `string` | `max:255`, `unique` (excepto el actual) | Número de documento (debe ser único) |
+| `tipo_documento` | `string` | `in:CC,TI,PPT` | Tipo de documento: CC, TI o PPT |
+| `departamento` | `string` | `nullable`, `max:255` | Departamento de residencia |
+| `estado_civil` | `string` | `nullable`, `max:255` | Estado civil |
+| `ocupacion` | `string` | `nullable`, `max:255` | Ocupación |
+| `nivel_formacion` | `string` | `nullable`, `max:255` | Nivel de formación académica |
+| `tiene_discapacidad` | `string` | `nullable`, `in:No,Sí,Prefiero no decir` | Si tiene discapacidad |
+| `tipo_discapacidad` | `string` | `nullable`, `max:255` | Tipo de discapacidad (requerido si `tiene_discapacidad=Sí`) |
+| `programa` | `string` | `max:255`, debe existir en catálogo activo | Programa académico |
+| `sede` | `string` | `in:Barrancabermeja,Aguachica,Virtual` | Sede del estudiante |
+| `estado_estudiante` | `string` | `in:Activo,Inactivo,Por Certificar,Certificado,Retirado,Suspendido,Todos` | Estado del estudiante |
+| `horario` | `string` | `max:255`, debe existir en catálogo activo | Horario de clases |
+| `talla_uniforme` | `string` | `nullable`, `in:XS,S,M,L,XL,XXL,XXXL` | Talla del uniforme |
+| `semestre_actual` | `string` | `in:I,II,Ninguno (curso)` | Semestre actual |
+| `anio` | `string` | `max:255` | Año académico |
+| `numero_grupo` | `string` | `max:255`, debe existir en catálogo activo | Número de grupo |
+| `contraseña_plataforma` | `string` | `nullable`, `max:255` | Contraseña para plataforma |
+
+**Campos adicionales disponibles en el modelo** (no validados en UpdateRequest, pero se pueden enviar):
+- `lugar_expedicion_documento` (string, nullable)
+- `fecha_nacimiento` (date, formato: `YYYY-MM-DD`)
+- `direccion_barrio` (string, nullable)
+- `ciudad_residencia` (string, nullable)
+- `correo_gmail` (string, nullable)
+- `telefono_personal` (string, nullable)
+- `telefono_emergencia` (string, nullable)
+- `estrato` (string, nullable)
+- `nivel_sisben` (string, nullable)
+- `eps` (string, nullable)
+- `grupo_sanguineo` (string, nullable)
+- `discapacidad_descripcion` (string, nullable)
+
+**Ejemplo de payload:**
+```json
+{
+  "nombre_completo": "Juan Pérez García",
+  "programa": "Auxiliar de Primera Infancia",
+  "sede": "Barrancabermeja",
+  "estado_estudiante": "Activo",
+  "horario": "Diurno",
+  "semestre_actual": "I",
+  "anio": "2024",
+  "numero_grupo": "101",
+  "correo_gmail": "juan.perez@email.com",
+  "telefono_personal": "3001234567"
+}
+```
 
 ---
 
