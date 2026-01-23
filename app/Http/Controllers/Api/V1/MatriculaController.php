@@ -487,4 +487,47 @@ class MatriculaController extends Controller
     {
         return $this->matriculaService->streamPdf($cod_alumno);
     }
+
+    /**
+     * GET /matriculas/form-data
+     */
+    #[
+        OA\Get(
+            path: '/api/v1/matriculas/form-data',
+            summary: 'Obtener datos para formularios',
+            description: 'Devuelve listas de valores (enums) necesarios para poblar los selects en los formularios de matrícula.',
+            tags: ['Matriculas'],
+            security: [['bearerAuth' => []]],
+            responses: [
+                new OA\Response(
+                    response: 200,
+                    description: 'Datos de formulario obtenidos exitosamente',
+                    content: new OA\JsonContent(
+                        properties: [
+                            new OA\Property(property: 'tipo_documento', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'sede', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'estado_estudiante', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'semestre_actual', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'talla_uniforme', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'tiene_discapacidad', type: 'array', items: new OA\Items(type: 'string')),
+                        ]
+                    )
+                ),
+                new OA\Response(response: 401, description: 'No autenticado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            ]
+        )
+    ]
+    public function formData(): JsonResponse
+    {
+        $data = [
+            'tipo_documento' => ['CC', 'TI', 'PPT'],
+            'sede' => ['Barrancabermeja', 'Aguachica', 'Virtual'],
+            'estado_estudiante' => ['Activo', 'Inactivo', 'Por Certificar', 'Certificado', 'Retirado', 'Suspendido', 'Todos'],
+            'semestre_actual' => ['I', 'II', 'Ninguno (curso)'],
+            'talla_uniforme' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
+            'tiene_discapacidad' => ['No', 'Sí', 'Prefiero no decir'],
+        ];
+
+        return ApiResponse::success($data);
+    }
 }
