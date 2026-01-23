@@ -159,7 +159,10 @@ Route::prefix('v1')->group(function () {
     // ---- 3) Admin: users (auth:sanctum + permission:users.manage) ----
     Route::middleware(['auth:sanctum', 'permission:users.manage'])->prefix('admin')->group(function () {
         Route::get('users', [UserController::class, 'index']);
+        Route::post('users', [UserController::class, 'store']);
         Route::get('users/{user}', [UserController::class, 'show']);
+        Route::match(['put', 'patch'], 'users/{user}', [UserController::class, 'update']);
+        Route::delete('users/{user}', [UserController::class, 'destroy']);
     });
 
     // ---- 4) Admin: roles, permissions, asignación (auth:sanctum + permission:roles.manage) ----
