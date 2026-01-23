@@ -23,8 +23,8 @@ class ElaboradoCatalogRequest extends FormRequest
     public static function getRules(bool $isStore): array
     {
         return [
-            'nombre' => [ $isStore ? 'required' : 'sometimes', 'string' ],
-            'estado' => [ $isStore ? 'required' : 'sometimes', 'string' ],
+            'nombre' => [ $isStore ? 'required' : 'sometimes', 'string', 'max:255' ],
+            'estado' => [ $isStore ? 'required' : 'sometimes', 'integer', 'in:0,1' ],
         ];
     }
 }

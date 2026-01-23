@@ -23,8 +23,8 @@ class DebeCatalogRequest extends FormRequest
     public static function getRules(bool $isStore): array
     {
         return [
-            'cuenta' => [ $isStore ? 'required' : 'sometimes', 'string' ],
-            'nombre' => [ $isStore ? 'required' : 'sometimes', 'string' ],
+            'cuenta' => [ $isStore ? 'required' : 'sometimes', 'string', 'max:255' ],
+            'nombre' => [ $isStore ? 'required' : 'sometimes', 'string', 'max:255' ],
         ];
     }
 }

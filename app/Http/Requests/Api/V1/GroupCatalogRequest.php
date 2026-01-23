@@ -24,7 +24,7 @@ class GroupCatalogRequest extends FormRequest
     {
         return [
             'name' => [ $isStore ? 'required' : 'sometimes', 'string', 'max:255' ],
-            'active' => [ 'nullable', 'boolean' ],
+            'active' => [ 'nullable', 'integer', 'in:0,1' ],
         ];
     }
 }
