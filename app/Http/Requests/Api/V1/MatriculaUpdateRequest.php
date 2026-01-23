@@ -30,7 +30,7 @@ class MatriculaUpdateRequest extends FormRequest
             'numero_documento' => ['sometimes', 'string', 'max:255', Rule::unique('matriculas', 'numero_documento')->ignore($cod, 'cod_alumno')],
             'lugar_expedicion_documento' => ['nullable', 'string', 'max:255'],
             'tipo_documento' => ['sometimes', 'in:CC,TI,PPT'],
-            'fecha_nacimiento' => ['sometimes', 'date'],
+            'fecha_nacimiento' => ['sometimes', 'nullable', 'date'],
             'direccion_barrio' => ['nullable', 'string', 'max:255'],
             'ciudad_residencia' => ['nullable', 'string', 'max:255'],
             'departamento' => ['nullable', 'string', 'max:255'],
