@@ -69,6 +69,48 @@ class MatriculaService
     }
 
     /**
+     * Obtener toda la información de la matrícula (Costos, Cartera, Abonos, Otros Ingresos).
+     */
+    public function getFullEnrollmentData(string $cod_alumno): array
+    {
+        $matricula = $this->getByCodAlumno($cod_alumno);
+        $costs = Cost::where('cod_alumno', $cod_alumno)->orderBy('numero_semestre', 'asc')->get();
+        
+        $entryData = [];
+        $otherEntryData = [];
+        $pursesData = [];
+
+        if ($costs->isNotEmpty()) {
+            $costIds = $costs->pluck('id')->toArray();
+            
+            // Abonos (Entries)
+            $entryData = Entry::whereIn('id_cost', $costIds)
+                ->orderBy('fecha_recibo', 'desc')
+                ->get();
+            
+            // Otros Ingresos (OtherEntries)
+            $otherEntryData = OtherEntry::whereIn('id_cost', $costIds)
+                ->orderBy('fecha_recibo', 'desc')
+                ->get();
+
+            // Cartera (Purses) - Usamos el primer costo (semestre actual/principal) para la vista principal
+            // o consolidamos todos? En Blade se usa $Cost = $Costs[0].
+            $pursesData = Purse::whereIn('id_cost', $costIds)
+                ->orderBy('id_cost', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+        }
+
+        return [
+            'matricula' => $matricula,
+            'costs' => $costs,
+            'entries' => $entryData,
+            'other_entries' => $otherEntryData,
+            'purses' => $pursesData,
+        ];
+    }
+
+    /**
      * Crear matrícula. cod_alumno = numero_documento. Reutiliza IDs eliminados.
      *
      * @param  array<string, mixed>  $data  Datos ya validados (campos fillable de Matricula)

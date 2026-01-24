@@ -144,4 +144,30 @@ class ConsecutiveController extends Controller
 
         return ApiResponse::success(new ConsecutiveResource($con->fresh()), 'Consecutivo actualizado.', null, 200);
     }
+
+    /**
+     * GET /consecutives/type/{type} — buscar por tipo (entry/discharge).
+     */
+    #[
+        OA\Get(
+            path: '/api/v1/consecutives/type/{type}',
+            summary: 'Obtener consecutivo por tipo',
+            description: 'Obtiene los datos de un consecutivo filtrando por su tipo (entry o discharge).',
+            tags: ['Consecutives'],
+            security: [['bearerAuth' => []]],
+            parameters: [
+                new OA\Parameter(name: 'type', in: 'path', required: true, description: 'Tipo de consecutivo', schema: new OA\Schema(type: 'string', enum: ['entry', 'discharge'])),
+            ],
+            responses: [
+                new OA\Response(response: 200, description: 'Datos del consecutivo', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
+                new OA\Response(response: 404, description: 'Consecutivo no encontrado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            ]
+        )
+    ]
+    public function showByType(string $type): JsonResponse
+    {
+        $con = consecutive::where('type', $type)->firstOrFail();
+
+        return ApiResponse::success(new ConsecutiveResource($con));
+    }
 }

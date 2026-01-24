@@ -86,6 +86,7 @@ Route::prefix('v1')->group(function () {
         Route::match(['put', 'patch'], 'costs/{id}', [CostController::class, 'update'])->whereNumber('id');
         Route::delete('costs/{id}', [CostController::class, 'destroy'])->whereNumber('id');
         Route::get('consecutives', [ConsecutiveController::class, 'index']);
+        Route::get('consecutives/type/{type}', [ConsecutiveController::class, 'showByType'])->where('type', 'entry|discharge');
         Route::post('consecutives', [ConsecutiveController::class, 'store']);
         Route::get('consecutives/{id}', [ConsecutiveController::class, 'show'])->whereNumber('id');
         Route::match(['put', 'patch'], 'consecutives/{id}', [ConsecutiveController::class, 'update'])->whereNumber('id');
@@ -148,6 +149,7 @@ Route::prefix('v1')->group(function () {
         // GET /foto está fuera del middleware (arriba línea 48) para acceso público, no duplicar aquí
         Route::get('matriculas/form-data', [MatriculaController::class, 'formData']); // [NEW] Helper para formulario
         Route::get('matriculas', [MatriculaController::class, 'index']);
+        Route::get('enrollments/{cod_alumno}', [MatriculaController::class, 'showFull'])->where('cod_alumno', '[A-Za-z0-9\-]+');
         Route::get('matriculas/{cod_alumno}/pdf', [MatriculaController::class, 'streamPdf'])->where('cod_alumno', '[A-Za-z0-9\-]+');
         // GET /foto está fuera del middleware (arriba línea 48) para acceso público
         Route::post('matriculas/{cod_alumno}/foto', [MatriculaController::class, 'uploadFoto'])->where('cod_alumno', '[A-Za-z0-9\-]+');
@@ -178,6 +180,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'permission:settings.manage'])->prefix('settings')->group(function () {
         Route::get('institution', [CatalogController::class, 'showInstitution']);
         Route::put('institution', [CatalogController::class, 'updateInstitution']);
+        Route::get('financial-options', [CatalogController::class, 'financialOptions']);
         Route::get('{resource}', [CatalogController::class, 'index']);
         Route::post('{resource}', [CatalogController::class, 'store']);
         Route::get('{resource}/{id}', [CatalogController::class, 'show'])->whereNumber('id');

@@ -6,6 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\MatriculaStoreRequest;
 use App\Http\Requests\Api\V1\MatriculaUpdateRequest;
 use App\Http\Resources\V1\MatriculaResource;
+use App\Http\Resources\V1\CostResource;
+use App\Http\Resources\V1\EntryResource;
+use App\Http\Resources\V1\OtherEntryResource;
+use App\Http\Resources\V1\PurseResource;
 use App\Services\MatriculaService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -164,6 +168,41 @@ class MatriculaController extends Controller
         $matricula = $this->matriculaService->getByCodAlumno($cod_alumno);
 
         return ApiResponse::success(new MatriculaResource($matricula));
+    }
+
+    /**
+     * GET /api/v1/enrollments/{cod_alumno} — consolidado completo.
+     */
+    #[
+        OA\Get(
+            path: '/api/v1/enrollments/{cod_alumno}',
+            summary: 'Obtener datos completos de matrícula',
+            description: 'Obtiene el estudiante, sus costos, cartera, abonos y otros ingresos en una sola respuesta consolidada.',
+            tags: ['Matriculas'],
+            security: [['bearerAuth' => []]],
+            parameters: [
+                new OA\Parameter(name: 'cod_alumno', in: 'path', required: true, description: 'Código del alumno', schema: new OA\Schema(type: 'string')),
+            ],
+            responses: [
+                new OA\Response(response: 200, description: 'Datos consolidados', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
+                new OA\Response(response: 401, description: 'No autenticado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+                new OA\Response(response: 404, description: 'No encontrado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            ]
+        )
+    ]
+    public function showFull(string $cod_alumno): JsonResponse
+    {
+        $data = $this->matriculaService->getFullEnrollmentData($cod_alumno);
+
+        $response = [
+            'matricula' => new MatriculaResource($data['matricula']),
+            'costs' => CostResource::collection($data['costs'])->resolve(),
+            'entries' => EntryResource::collection($data['entries'])->resolve(),
+            'other_entries' => OtherEntryResource::collection($data['other_entries'])->resolve(),
+            'purses' => PurseResource::collection($data['purses'])->resolve(),
+        ];
+
+        return ApiResponse::success($response);
     }
 
     /**
@@ -403,7 +442,7 @@ class MatriculaController extends Controller
                 abort(500, 'Error al leer la foto.');
             }
 
-            $mimeType = $storage->mimeType($photoPath);
+            $mimeType = \Illuminate\Support\Facades\Storage::disk('public')->mimeType($photoPath);
             if (!$mimeType) {
                 // Intentar detectar el tipo MIME por extensión
                 $extension = strtolower(pathinfo($photoPath, PATHINFO_EXTENSION));

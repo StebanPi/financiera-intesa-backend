@@ -320,6 +320,35 @@ class CatalogController extends Controller
     }
 
     /**
+     * GET /settings/financial-options — todas las opciones financieras para formularios.
+     */
+    #[
+        OA\Get(
+            path: '/api/v1/settings/financial-options',
+            summary: 'Obtener opciones financieras',
+            description: 'Obtiene todas las opciones necesarias para los formularios financieros (conceptos, elaborados, cuentas debe/haber, otros conceptos).',
+            tags: ['Settings'],
+            security: [['bearerAuth' => []]],
+            responses: [
+                new OA\Response(response: 200, description: 'Opciones financieras', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
+                new OA\Response(response: 401, description: 'No autenticado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            ]
+        )
+    ]
+    public function financialOptions(): JsonResponse
+    {
+        $data = [
+            'conceptos' => ConceptoCatalogResource::collection(concepto::where('estado', '1')->get())->resolve(),
+            'elaborados' => ElaboradoCatalogResource::collection(elaborado::where('estado', '1')->get())->resolve(),
+            'debes' => DebeCatalogResource::collection(debe::all())->resolve(),
+            'habers' => HaberCatalogResource::collection(haber::all())->resolve(),
+            'otros_conceptos' => OtrosConceptoCatalogResource::collection(otrosConcepto::where('estado', '1')->get())->resolve(),
+        ];
+
+        return ApiResponse::success($data);
+    }
+
+    /**
      * PUT /settings/institution — actualizar institución.
      */
     #[
