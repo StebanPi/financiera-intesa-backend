@@ -134,7 +134,13 @@ class ConsecutiveController extends Controller
     public function update(ConsecutiveUpdateRequest $request, int $id): JsonResponse
     {
         $con = consecutive::findOrFail($id);
-        $con->update($request->validated());
+        $data = $request->validated();
+        
+        if (isset($data['num_start'])) {
+            $data['num_current'] = $data['num_start'];
+        }
+
+        $con->update($data);
 
         return ApiResponse::success(new ConsecutiveResource($con->fresh()), 'Consecutivo actualizado.', null, 200);
     }
