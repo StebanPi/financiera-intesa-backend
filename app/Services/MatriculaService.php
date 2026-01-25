@@ -85,11 +85,13 @@ class MatriculaService
             
             // Abonos (Entries)
             $entryData = Entry::whereIn('id_cost', $costIds)
+                ->with(['conceptoObj', 'elaboradoObj', 'cost'])
                 ->orderBy('fecha_recibo', 'desc')
                 ->get();
             
             // Otros Ingresos (OtherEntries)
             $otherEntryData = OtherEntry::whereIn('id_cost', $costIds)
+                ->with(['conceptoObj', 'elaboradoObj', 'cost'])
                 ->orderBy('fecha_recibo', 'desc')
                 ->get();
 

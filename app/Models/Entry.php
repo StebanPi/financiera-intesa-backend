@@ -27,5 +27,20 @@ class Entry extends Model
     public function construct($con)
     {
         $this->connection = $con;
-    }  
+    }
+
+    public function conceptoObj()
+    {
+        return $this->belongsTo('App\Models\Concepto', 'concepto');
+    }
+
+    public function elaboradoObj()
+    {
+        return $this->belongsTo('App\Models\Elaborado', 'elaborado_por');
+    }
+
+    public function cost()
+    {
+        return $this->belongsTo('App\Models\Cost', 'id_cost');
+    }
 }
