@@ -25,8 +25,8 @@ class OtrosConceptoCatalogRequest extends FormRequest
         return [
             'nombre' => [ $isStore ? 'required' : 'sometimes', 'string', 'max:255' ],
             'estado' => [ $isStore ? 'required' : 'sometimes', 'integer', 'in:0,1' ],
-            'debe' => [ $isStore ? 'required' : 'nullable', 'integer', 'exists:debes,id' ],
-            'haber' => [ $isStore ? 'required' : 'nullable', 'integer', 'exists:habers,id' ],
+            'debe' => [ $isStore ? 'required' : 'sometimes', 'integer', 'exists:debes,id' ],
+            'haber' => [ $isStore ? 'required' : 'sometimes', 'integer', 'exists:habers,id' ],
         ];
     }
 }

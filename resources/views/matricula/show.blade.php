@@ -320,7 +320,7 @@ date_default_timezone_set("America/Bogota");
     </div>
 
 
-  <!-- Modal -->
+  <!-- Modal Añadir Abono -->
   <div class="modal fade " id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
 
     <div class="modal-dialog mw-100 w-50" role="document">
@@ -469,7 +469,7 @@ date_default_timezone_set("America/Bogota");
     </div>
   </div>
 
-   <!-- Modal -->
+   <!-- Modal Ver Abono -->
    <div class="modal fade" id="exampleModal2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog mw-100 w-50" role="document">
       <div class="modal-content">

@@ -18,6 +18,8 @@ class ConceptoCatalogResource extends JsonResource
             'estado' => $this->estado,
             'orderTable' => $this->orderTable,
             'consecutivo' => $this->consecutivo,
+            'debe' => $this->debe,
+            'haber' => $this->haber,
         ];
     }
 }

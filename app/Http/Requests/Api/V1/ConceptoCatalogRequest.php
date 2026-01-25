@@ -27,6 +27,8 @@ class ConceptoCatalogRequest extends FormRequest
             'estado' => [ $isStore ? 'required' : 'sometimes', 'integer', 'in:0,1' ],
             'orderTable' => [ $isStore ? 'required' : 'sometimes', 'integer', 'in:0,1' ],
             'consecutivo' => [ $isStore ? 'required' : 'sometimes', 'integer', 'in:0,1' ],
+            'debe' => [ $isStore ? 'required' : 'sometimes', 'integer', 'exists:debes,id' ],
+            'haber' => [ $isStore ? 'required' : 'sometimes', 'integer', 'exists:habers,id' ],
         ];
     }
 }
