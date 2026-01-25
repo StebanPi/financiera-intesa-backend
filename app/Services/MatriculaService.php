@@ -93,12 +93,23 @@ class MatriculaService
                 ->orderBy('fecha_recibo', 'desc')
                 ->get();
 
-            // Cartera (Purses) - Usamos el primer costo (semestre actual/principal) para la vista principal
-            // o consolidamos todos? En Blade se usa $Cost = $Costs[0].
-            $pursesData = Purse::whereIn('id_cost', $costIds)
-                ->orderBy('id_cost', 'asc')
-                ->orderBy('id', 'asc')
-                ->get();
+            // Cartera (Calculada con CarteraService)
+            // Obtiene cuotas, estados (Al día, En Mora), saldos y totales
+            $pursesData = CarteraService::calcularCartera(null, $cod_alumno);
+        } else {
+             // Estructura vacía si no hay costos
+             $pursesData = [
+                'cuotas' => [],
+                'totales' => [
+                    'total_abono' => 0,
+                    'cuotas_total' => 0,
+                    'total_abonado' => 0,
+                    'saldo_pendiente' => 0,
+                    'saldo_a_favor' => 0,
+                    'saldo_en_mora' => 0,
+                ],
+                'hoy' => date('Y-m-d'),
+            ];
         }
 
         return [
@@ -106,7 +117,7 @@ class MatriculaService
             'costs' => $costs,
             'entries' => $entryData,
             'other_entries' => $otherEntryData,
-            'purses' => $pursesData,
+            'cartera' => $pursesData, // Ahora contiene el objeto completo calculado (cuotas + totales)
         ];
     }
 

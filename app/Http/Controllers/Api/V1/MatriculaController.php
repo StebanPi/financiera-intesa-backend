@@ -199,7 +199,7 @@ class MatriculaController extends Controller
             'costs' => CostResource::collection($data['costs'])->resolve(),
             'entries' => EntryResource::collection($data['entries'])->resolve(),
             'other_entries' => OtherEntryResource::collection($data['other_entries'])->resolve(),
-            'purses' => PurseResource::collection($data['purses'])->resolve(),
+            'cartera' => $data['cartera'], // Objeto calculado (no requiere Resource simple)
         ];
 
         return ApiResponse::success($response);
