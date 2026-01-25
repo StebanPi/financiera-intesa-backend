@@ -36,7 +36,7 @@ class OtherEntry extends Model
 
     public function elaboradoObj()
     {
-        return $this->belongsTo('App\Models\Elaborado', 'elaborado_por');
+        return $this->belongsTo('App\Models\elaborado', 'elaborado_por');
     }
 
     public function cost()

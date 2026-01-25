@@ -31,12 +31,12 @@ class Entry extends Model
 
     public function conceptoObj()
     {
-        return $this->belongsTo('App\Models\Concepto', 'concepto');
+        return $this->belongsTo('App\Models\concepto', 'concepto');
     }
 
     public function elaboradoObj()
     {
-        return $this->belongsTo('App\Models\Elaborado', 'elaborado_por');
+        return $this->belongsTo('App\Models\elaborado', 'elaborado_por');
     }
 
     public function cost()
