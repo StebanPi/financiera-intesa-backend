@@ -125,9 +125,22 @@ class FinancialReceiptController extends Controller
         }
 
         $html = view('prints.financial-receipt-pos', $viewData)->render();
+        
         $dompdf = new Dompdf();
+        
+        // Configurar opciones para cargar imágenes correctamente
+        $options = $dompdf->getOptions();
+        $options->setChroot(public_path());
+        $options->setIsRemoteEnabled(true);
+        $options->setIsHtml5ParserEnabled(true);
+        $dompdf->setOptions($options);
+
+        // Calcular ancho en puntos (1mm = 72pt/25.4mm ≈ 2.83465pt)
+        $widthPoints = round($paper * 2.83465, 2);
+        
         $dompdf->loadHtml($html);
-        $dompdf->setPaper([0, 0, 80, 1000], 'portrait'); // ~80mm width for thermal
+        // [0, 0, ancho, alto] en puntos. 1000pt de alto es suficiente para la mayoría de tickets.
+        $dompdf->setPaper([0, 0, $widthPoints, 1000], 'portrait'); 
         $dompdf->render();
 
         $filename = 'financial-receipt-' . $type . '-' . $id . '.pdf';

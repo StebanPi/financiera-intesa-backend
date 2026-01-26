@@ -155,7 +155,16 @@
     <div class="receipt-container">
         <!-- Logo INTESA arriba del header -->
         <div class="logo-intesa" style="text-align: center; margin-bottom: 5px;">
-            <img src="{{ asset('dimages/LogoIntesa.png') }}" alt="INTESA" style="max-width: 60px; height: auto;">
+            @php
+                $logoIntesaPath = public_path('dimages/LogoIntesa.png');
+                $logoIntesaData = '';
+                if (file_exists($logoIntesaPath)) {
+                    $logoIntesaData = 'data:image/png;base64,' . base64_encode(file_get_contents($logoIntesaPath));
+                }
+            @endphp
+            @if($logoIntesaData)
+                <img src="{{ $logoIntesaData }}" alt="INTESA" style="max-width: 60px; height: auto;">
+            @endif
         </div>
         
         <!-- Separador superior -->
@@ -163,8 +172,12 @@
         
         <div class="header">
             @if($institution->logo_path && file_exists(public_path($institution->logo_path)))
+                @php
+                    $instLogoPath = public_path($institution->logo_path);
+                    $instLogoData = 'data:image/' . pathinfo($instLogoPath, PATHINFO_EXTENSION) . ';base64,' . base64_encode(file_get_contents($instLogoPath));
+                @endphp
                 <div class="logo">
-                    <img src="{{ asset($institution->logo_path) }}" alt="Logo">
+                    <img src="{{ $instLogoData }}" alt="Logo">
                 </div>
             @endif
             
