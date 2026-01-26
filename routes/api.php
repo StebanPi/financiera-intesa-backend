@@ -91,6 +91,7 @@ Route::prefix('v1')->group(function () {
         Route::get('consecutives/{id}', [ConsecutiveController::class, 'show'])->whereNumber('id');
         Route::match(['put', 'patch'], 'consecutives/{id}', [ConsecutiveController::class, 'update'])->whereNumber('id');
         Route::get('purses', [PurseController::class, 'index']);
+        Route::post('purse/edit', [PurseController::class, 'update'])->name('purse.edit');
         Route::get('purses/totales', [PurseController::class, 'totales']);
         Route::get('purses/cartera', [PurseController::class, 'cartera']);
         Route::get('purses/{id}/history', [PurseController::class, 'history'])->whereNumber('id');

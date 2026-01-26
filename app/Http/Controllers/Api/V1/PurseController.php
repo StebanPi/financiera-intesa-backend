@@ -14,6 +14,9 @@ use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
+use App\Http\Controllers\TableChangeController;
+use App\Http\Controllers\DateController;
+use Illuminate\Support\Str;
 
 class PurseController extends Controller
 {
@@ -246,5 +249,137 @@ class PurseController extends Controller
             
             return ApiResponse::error('Error al obtener información de cartera: ' . $e->getMessage(), 500);
         }
+    }
+    /**
+     * POST /purse/edit
+     * Actualiza una cuota y opcionalmente las siguientes (cascada).
+     */
+    #[
+        OA\Post(
+            path: '/api/v1/purse/edit',
+            summary: 'Actualizar cartera',
+            description: 'Actualiza los datos de una cuota (fecha, valor, comentario). Puede actualizar en cascada si ModifyInputLabel="todos".',
+            tags: ['Purses'],
+            security: [['bearerAuth' => []]],
+            requestBody: new OA\RequestBody(
+                required: true,
+                content: new OA\JsonContent(
+                    required: ['id', 'fecha_pago', 'cuota'],
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', description: 'ID de la cartera'),
+                        new OA\Property(property: 'fecha_pago', type: 'string', format: 'date', example: '2023-01-15'),
+                        new OA\Property(property: 'cuota', type: 'string', example: '500000'),
+                        new OA\Property(property: 'comentario', type: 'string', nullable: true),
+                        new OA\Property(property: 'ModifyInputLabel', type: 'string', enum: ['todos'], nullable: true, description: 'Enviar "todos" para actualización en cascada'),
+                    ]
+                )
+            ),
+            responses: [
+                new OA\Response(response: 200, description: 'Actualizado correctamente', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
+                new OA\Response(response: 404, description: 'Cartera no encontrada', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+                new OA\Response(response: 422, description: 'Datos inválidos', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            ]
+        )
+    ]
+    public function update(Request $request): JsonResponse
+    {
+        $request->validate([
+            'id' => 'required|integer|exists:purses,id',
+            'fecha_pago' => 'required|date',
+            'cuota' => 'required', // Puede venir como string con puntos
+        ]);
+
+        try {
+            // Modifico el purse principal
+            $purse = Purse::findOrFail($request->id);
+            $purse->fecha_pago = $request->fecha_pago;
+            $purse->cuota = Str::replace('.', '', $request->cuota);
+            $purse->comentario = $request->comentario;
+            $purse->save();
+
+            TableChangeController::StoreEdit('purses', $purse->id);
+
+            $new = historyPurse::create([
+                'id_purse' => $purse->id,
+                'fecha_pago' => $purse->fecha_pago,
+                'estado' => $purse->estado,
+                'cuota' => $purse->cuota,
+                'abonado' => $purse->abonado,
+                'comentario' => $purse->comentario
+            ]);
+
+            if ($new) {
+                TableChangeController::StoreAdd('history_purses', $new->id);
+            }
+
+            // Necesito modificar los demas purses (Cascada)
+            if ($request->ModifyInputLabel == "todos") {
+                $arrayPurses = Purse::where([
+                    ['id_cost', "=", $purse->id_cost],
+                    ['id', ">", $purse->id]
+                ])->get();
+
+                $fechaActuals = $purse->fecha_pago;
+
+                foreach ($arrayPurses as $item) {
+                    $fechaActual = explode("-", $fechaActuals);
+                    $Mes = $fechaActual[1];
+                    $Año = $fechaActual[0];
+                    
+                    // Lógica traída de DateController
+                    $Año = DateController::Is_nextYear($Año, $Mes);
+                    $Mes = DateController::nextMes($Mes, true);
+                    
+                    if ($Mes < 10 && strlen($Mes) == 1) {
+                        $Mes = "0" . $Mes;
+                    }
+                    
+                    // Validar y ajustar la fecha
+                    $fechaActuals = $this->validateAndAdjustDate((int)$Año, (int)$Mes, (int)$fechaActual[2]);
+
+                    $item->fecha_pago = $fechaActuals;
+                    $item->cuota = Str::replace('.', '', $request->cuota);
+                    $item->comentario = $request->comentario;
+                    $item->save();
+
+                    TableChangeController::StoreEdit('purses', $item->id);
+
+                    $new1 = historyPurse::create([
+                        'id_purse' => $item->id,
+                        'fecha_pago' => $fechaActuals,
+                        'estado' => $item->estado,
+                        'cuota' => $item->cuota,
+                        'abonado' => $item->abonado,
+                        'comentario' => $item->comentario
+                    ]);
+
+                    if ($new1) {
+                        TableChangeController::StoreAdd('history_purses', $new1->id);
+                    }
+                }
+            }
+
+            return ApiResponse::success(new PurseResource($purse), 'Pago actualizado correctamente');
+
+        } catch (\Exception $e) {
+            \Log::error('Error en PurseController::update', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return ApiResponse::error('Error al actualizar: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Helper para ajustar fechas (lógica interna)
+     */
+    private function validateAndAdjustDate($year, $month, $day)
+    {
+        if (checkdate($month, $day, $year)) {
+            return sprintf('%04d-%02d-%02d', $year, $month, $day);
+        }
+        $lastDay = date('t', mktime(0, 0, 0, $month, 1, $year));
+        return sprintf('%04d-%02d-%02d', $year, $month, $lastDay);
     }
 }
