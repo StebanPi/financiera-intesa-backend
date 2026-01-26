@@ -97,34 +97,51 @@ class FinancialReceiptController extends Controller
         $paperWidth = $paper . 'mm';
         $fechaFormateada = $this->financialReceiptService->formatDate($data['fecha'] ?? null);
 
-        $viewData = [
-            'paper' => $paper,
-            'paperWidth' => $paperWidth,
-            'offsetLeft' => $offsetLeft,
-            'consecutivo' => $data['consecutivo'] ?? null,
-            'fecha' => $fechaFormateada,
-            'valor' => $data['valor'] ?? null,
-            'concepto' => $data['concepto'] ?? null,
-            'descripcion' => $data['descripcion'] ?? null,
-            'tipo_recibo' => $type,
-        ];
+        // Determinar la vista específica según el tipo para usar exactamente el mismo HTML que la versión web
+        $viewName = match($type) {
+            'entry' => 'prints.entry-pos',
+            'other-entry' => 'prints.other-entry-pos',
+            'egreso' => 'prints.financial-receipt-pos',
+            'third' => 'prints.financial-receipt-pos',
+        };
+
+        // Para entry y other-entry, simplificar viewData para coincidir con la versión web
         if (in_array($type, ['entry', 'other-entry'])) {
-            $viewData['estudiante_cedula'] = $data['estudiante_cedula'] ?? null;
-            $viewData['estudiante_nombre'] = $data['estudiante_nombre'] ?? null;
-            $viewData['tipo_documento'] = $data['tipo_documento'] ?? null;
-            $viewData['programa'] = $data['programa'] ?? null;
-        }
-        if ($type === 'egreso') {
-            $viewData['proveedor_nombre'] = $data['proveedor_nombre'] ?? null;
-            $viewData['forma'] = $data['forma'] ?? null;
-        }
-        if ($type === 'third') {
-            $viewData['tercero_nombre'] = $data['tercero_nombre'] ?? null;
-            $viewData['tercero_documento'] = $data['tercero_documento'] ?? null;
-            $viewData['forma'] = $data['forma'] ?? null;
+            $viewData = [
+                'consecutivo' => $data['consecutivo'] ?? null,
+                'estudiante_cedula' => $data['estudiante_cedula'] ?? null,
+                'estudiante_nombre' => $data['estudiante_nombre'] ?? null,
+                'programa' => $data['programa'] ?? null,
+                'concepto' => $data['concepto'] ?? null,
+                'descripcion' => $data['descripcion'] ?? null,
+                'valor' => $data['valor'] ?? null,
+                'fecha' => $fechaFormateada,
+            ];
+        } else {
+            // Para egreso y third, usar vista unificada con parámetros completos
+            $viewData = [
+                'paper' => $paper,
+                'paperWidth' => $paperWidth,
+                'offsetLeft' => $offsetLeft,
+                'consecutivo' => $data['consecutivo'] ?? null,
+                'fecha' => $fechaFormateada,
+                'valor' => $data['valor'] ?? null,
+                'concepto' => $data['concepto'] ?? null,
+                'descripcion' => $data['descripcion'] ?? null,
+                'tipo_recibo' => $type,
+            ];
+            if ($type === 'egreso') {
+                $viewData['proveedor_nombre'] = $data['proveedor_nombre'] ?? null;
+                $viewData['forma'] = $data['forma'] ?? null;
+            }
+            if ($type === 'third') {
+                $viewData['tercero_nombre'] = $data['tercero_nombre'] ?? null;
+                $viewData['tercero_documento'] = $data['tercero_documento'] ?? null;
+                $viewData['forma'] = $data['forma'] ?? null;
+            }
         }
 
-        $html = view('prints.financial-receipt-pos', $viewData)->render();
+        $html = view($viewName, $viewData)->render();
         
         $dompdf = new Dompdf();
         
