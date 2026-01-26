@@ -319,14 +319,26 @@ class PurseController extends Controller
                     ['id', ">", $purse->id]
                 ])->orderBy('id', 'asc')->get();
 
+                // Obtener el día original del purse principal
+                $diaOriginal = (int)(new \DateTime($purse->fecha_pago))->format('d');
                 $fechaActual = new \DateTime($purse->fecha_pago);
 
                 foreach ($arrayPurses as $item) {
-                    // Sumar un mes a la fecha actual
-                    $fechaActual->modify('+1 month');
+                    // Obtener año y mes actual
+                    $year = (int)$fechaActual->format('Y');
+                    $month = (int)$fechaActual->format('m');
                     
-                    // Formatear la fecha como Y-m-d
-                    $fechaActuals = $fechaActual->format('Y-m-d');
+                    // Incrementar el mes
+                    $month++;
+                    if ($month > 12) {
+                        $month = 1;
+                        $year++;
+                    }
+                    
+                    // Usar el día original, ajustándolo si el mes no tiene suficientes días
+                    $fechaActuals = $this->validateAndAdjustDate($year, $month, $diaOriginal);
+                    $fechaActual = new \DateTime($fechaActuals);
+                    
 
                     $item->fecha_pago = $fechaActuals;
                     $item->cuota = Str::replace('.', '', $request->cuota);
