@@ -130,20 +130,23 @@
                     $saldo = intval($cost[0]->valor_neto) - intval($suma);
                 }
             @endphp
-        </tbody>
+        <tfoot>
+            <tr style="background-color: #E3FBC3; font-size: 12px;">
+                <td style="text-align: center; padding: 3px; border: 1px solid black; border-left: 0; border-bottom: 0;"></td>
+                <td style="text-align: center; padding: 3px; border: 1px solid black; border-bottom: 0;"></td>
+                <td style="text-align: center; padding: 3px; border: 1px solid black; border-bottom: 0;"></td>
+                <td style="text-align: center; padding: 3px; border: 1px solid black; font-weight: 600;">Total Abonado</td>
+                <td style="text-align: right; padding: 3px; border: 1px solid black; font-weight: 600;">${{ App\Http\Controllers\MoneyController::main($suma) }}</td>
+            </tr>
+            <tr style="background-color: #f8f9fa; font-size: 12px;">
+                <td style="text-align: center; padding: 3px; border: 1px solid black; border-left: 0; border-top: 0; border-bottom: 0;"></td>
+                <td style="text-align: center; padding: 3px; border: 1px solid black; border-top: 0; border-bottom: 0;"></td>
+                <td style="text-align: center; padding: 3px; border: 1px solid black; border-top: 0; border-bottom: 0;"></td>
+                <td style="text-align: center; padding: 3px; border: 1px solid black; font-weight: 600;">Saldo Pendiente</td>
+                <td style="text-align: right; padding: 3px; border: 1px solid black; font-weight: 600;">${{ App\Http\Controllers\MoneyController::main($saldo) }}</td>
+            </tr>
+        </tfoot>
     </table>
-
-    <div style="width: 50%; margin-top: 15px; display: inline-block; float: right;">
-        <table style="width: 100%; font-size: 12px; border-collapse: collapse; border: 1px solid black;">
-            <tr>
-                <td style="text-align: center; padding: 4px; border: 1px solid black; font-size: 12px; background-color: #f8f9fa;">Total Abonado</td>
-                <td style="text-align: right; padding: 4px; border: 1px solid black; font-size: 12px; font-weight: 600; background-color: #f8f9fa;">${{ App\Http\Controllers\MoneyController::main($suma) }}</td>
-            </tr>
-            <tr>
-                <td style="text-align: center; padding: 4px; border: 1px solid black; font-size: 12px; background-color: #f8f9fa;">Saldo Pendiente</td>
-                <td style="text-align: right; padding: 4px; border: 1px solid black; font-size: 12px; font-weight: 600; background-color: #f8f9fa;">${{ App\Http\Controllers\MoneyController::main($saldo) }}</td>
-            </tr>
-        </table>   
-    </div>
+    <div style="clear:both;"></div>
     
 @endsection
