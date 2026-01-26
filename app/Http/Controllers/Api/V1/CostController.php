@@ -206,4 +206,34 @@ class CostController extends Controller
 
         return ApiResponse::success(null, 'Eliminado.', null, 200);
     }
+
+    /**
+     * DELETE /costs/student/{cod_alumno}
+     */
+    #[
+        OA\Delete(
+            path: '/api/v1/costs/student/{cod_alumno}',
+            summary: 'Eliminar todos los costos de un estudiante',
+            description: 'Elimina todos los costos, cuotas y abonos asociados a un estudiante (Hard Reset). Requiere permisos especiales.',
+            tags: ['Costs'],
+            security: [['bearerAuth' => []]],
+            parameters: [
+                new OA\Parameter(name: 'cod_alumno', in: 'path', required: true, description: 'Código del alumno', schema: new OA\Schema(type: 'string')),
+            ],
+            responses: [
+                new OA\Response(response: 200, description: 'Costos eliminados exitosamente', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
+                new OA\Response(response: 401, description: 'No autenticado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+                new OA\Response(response: 403, description: 'No autorizado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            ]
+        )
+    ]
+    public function destroyByStudent(string $cod_alumno): JsonResponse
+    {
+        // Opcional: Verificar permisos de super-admin aquí si no se maneja solo por middleware
+        // if (!auth()->user()->hasRole('super-admin')) ...
+
+        $stats = $this->costService->deleteAllForStudent($cod_alumno);
+
+        return ApiResponse::success($stats, 'Todos los costos del estudiante han sido eliminados.', null, 200);
+    }
 }

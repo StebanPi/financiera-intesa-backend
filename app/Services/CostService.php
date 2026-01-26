@@ -220,4 +220,54 @@ class CostService
         Purse::where('id_cost', $cost->id)->delete();
         $cost->delete();
     }
+
+    /**
+     * Elimina todos los costos y relaciones financieras de un estudiante
+     * Similar a eliminarCostosEstudiante del controlador legacy
+     */
+    public function deleteAllForStudent(string $cod_alumno): array
+    {
+        $costs = Cost::where('cod_alumno', $cod_alumno)->get();
+        
+        $eliminados = [
+            'history_purses' => 0,
+            'purses' => 0,
+            'entries' => 0,
+            'other_entries' => 0,
+            'costs' => 0
+        ];
+
+        if ($costs->isEmpty()) {
+            return $eliminados;
+        }
+
+        foreach ($costs as $cost) {
+             // 1. Eliminar history_purses asociados a los purses del cost
+             $purseIds = Purse::where('id_cost', $cost->id)->pluck('id')->toArray();
+             if (!empty($purseIds)) {
+                 $eliminados['history_purses'] += historyPurse::whereIn('id_purse', $purseIds)->count();
+                 historyPurse::whereIn('id_purse', $purseIds)->delete();
+             }
+
+             // 2. Eliminar purses asociados al cost
+             $eliminados['purses'] += Purse::where('id_cost', $cost->id)->count();
+             Purse::where('id_cost', $cost->id)->delete();
+
+             // 3. Eliminar entries asociados al cost
+             $replicasEntries = Entry::where('id_cost', $cost->id)->get(); // Puede haber multiples
+             $eliminados['entries'] += $replicasEntries->count();
+             Entry::where('id_cost', $cost->id)->delete();
+
+             // 4. Eliminar other_entries asociados al cost
+             $replicasOther = OtherEntry::where('id_cost', $cost->id)->get();
+             $eliminados['other_entries'] += $replicasOther->count();
+             OtherEntry::where('id_cost', $cost->id)->delete();
+             
+             // 5. Eliminar el cost
+             $cost->delete();
+             $eliminados['costs']++;
+        }
+
+        return $eliminados;
+    }
 }

@@ -84,6 +84,7 @@ Route::prefix('v1')->group(function () {
         Route::post('costs', [CostController::class, 'store']);
         Route::get('costs/{id}', [CostController::class, 'show'])->whereNumber('id');
         Route::match(['put', 'patch'], 'costs/{id}', [CostController::class, 'update'])->whereNumber('id');
+        Route::delete('costs/student/{cod_alumno}', [CostController::class, 'destroyByStudent'])->where('cod_alumno', '[A-Za-z0-9\-]+');
         Route::delete('costs/{id}', [CostController::class, 'destroy'])->whereNumber('id');
         Route::get('consecutives', [ConsecutiveController::class, 'index']);
         Route::get('consecutives/type/{type}', [ConsecutiveController::class, 'showByType'])->where('type', 'entry|discharge');
