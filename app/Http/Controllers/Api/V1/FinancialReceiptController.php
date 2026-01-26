@@ -141,6 +141,14 @@ class FinancialReceiptController extends Controller
             }
         }
 
+        // Si se solicita formato HTML (igual que la versión web), retornar HTML directamente
+        if ($request->query('format') === 'html' || in_array($type, ['entry', 'other-entry'])) {
+            $html = view($viewName, $viewData)->render();
+            return response($html, 200)
+                ->header('Content-Type', 'text/html; charset=UTF-8');
+        }
+
+        // Para tipos que requieren PDF (egreso, third), usar Dompdf
         $html = view($viewName, $viewData)->render();
         
         $dompdf = new Dompdf();
