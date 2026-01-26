@@ -105,14 +105,29 @@ class FinancialReceiptController extends Controller
             'third' => 'prints.financial-receipt-pos',
         };
 
-        // Para entry y other-entry, simplificar viewData para coincidir con la versión web
-        if (in_array($type, ['entry', 'other-entry'])) {
+        // Para entry y other-entry, usar viewData específico según cada vista
+        if ($type === 'entry') {
             $viewData = [
                 'paper' => $paper,
                 'offsetLeft' => $offsetLeft,
                 'consecutivo' => $data['consecutivo'] ?? null,
                 'estudiante_cedula' => $data['estudiante_cedula'] ?? null,
                 'estudiante_nombre' => $data['estudiante_nombre'] ?? null,
+                'programa' => $data['programa'] ?? null,
+                'concepto' => $data['concepto'] ?? null,
+                'descripcion' => $data['descripcion'] ?? null,
+                'valor' => $data['valor'] ?? null,
+                'fecha' => $fechaFormateada,
+            ];
+        } elseif ($type === 'other-entry') {
+            // other-entry usa persona_cedula y persona_nombre en lugar de estudiante_*
+            $viewData = [
+                'paper' => $paper,
+                'offsetLeft' => $offsetLeft,
+                'consecutivo' => $data['consecutivo'] ?? null,
+                'persona_cedula' => $data['estudiante_cedula'] ?? null,
+                'persona_nombre' => $data['estudiante_nombre'] ?? null,
+                'tipo_documento' => $data['tipo_documento'] ?? null,
                 'programa' => $data['programa'] ?? null,
                 'concepto' => $data['concepto'] ?? null,
                 'descripcion' => $data['descripcion'] ?? null,
