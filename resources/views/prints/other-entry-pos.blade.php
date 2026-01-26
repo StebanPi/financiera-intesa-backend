@@ -1,11 +1,18 @@
 @php
-    // Detectar parámetro paper de la query string (76 o 80), por defecto 76
-    $paper = request()->query('paper', '76');
-    $paper = in_array($paper, ['76', '80']) ? $paper : '76';
+    // Detectar parámetro paper: primero de variable pasada, luego de query string
+    $paper = $paper ?? request()->query('paper', '80');
+    $paper = in_array($paper, ['76', '80']) ? $paper : '80';
     $paperWidth = $paper . 'mm';
-    // Offset izquierdo para compensar el margen físico no imprimible de la impresora
-    // 76mm => 2mm, 80mm => 1.5mm (ajustable según necesidad)
-    $offsetLeft = ($paper == '76') ? '2mm' : '1.5mm';
+    // Offset izquierdo: primero de variable pasada, luego calcular según paper
+    // El offset pasado desde el controlador ya viene en formato 'Xmm'
+    if (!isset($offsetLeft) || $offsetLeft === null) {
+        $offsetFromQuery = request()->query('offset');
+        if ($offsetFromQuery !== null) {
+            $offsetLeft = $offsetFromQuery . 'mm';
+        } else {
+            $offsetLeft = '8mm'; // Default 8mm para ambos tamaños
+        }
+    }
     $institution = institution_settings();
 @endphp
 <!DOCTYPE html>

@@ -108,6 +108,8 @@ class FinancialReceiptController extends Controller
         // Para entry y other-entry, simplificar viewData para coincidir con la versión web
         if (in_array($type, ['entry', 'other-entry'])) {
             $viewData = [
+                'paper' => $paper,
+                'offsetLeft' => $offsetLeft,
                 'consecutivo' => $data['consecutivo'] ?? null,
                 'estudiante_cedula' => $data['estudiante_cedula'] ?? null,
                 'estudiante_nombre' => $data['estudiante_nombre'] ?? null,
