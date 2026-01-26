@@ -12,6 +12,10 @@ use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
+use Dompdf\Dompdf;
+use Illuminate\Support\Facades\DB;
+use App\Models\InstitutionSetting;
+use Illuminate\Support\Str;
 
 class EntryController extends Controller
 {
@@ -173,5 +177,97 @@ class EntryController extends Controller
         $this->entryService->delete($id);
 
         return ApiResponse::success(null, 'Eliminado.', null, 200);
+    }
+
+    /**
+     * GET /entries/abonos/{cod_alumno}/pdf
+     * Genera PDF consolidado de abonos para un estudiante
+     */
+    public function streamAbonosPdf(string $cod_alumno)
+    {
+        try {
+            // 1. Obtener todos los costos del estudiante
+            $costs = Cost::where('cod_alumno', $cod_alumno)->get();
+            
+            // Si no hay costos, intentamos buscar si hay abonos huérfanos, 
+            // pero para el saldo necesitamos costos. Si no hay, asumimos 0.
+            $totalNeto = 0;
+            $id_cost_ref = 0;
+            
+            if ($costs->count() > 0) {
+                // Calcular total neto (Suma de todos los semestres)
+                // Limpiamos puntos por si acaso se guardan como string formateado
+                $totalNeto = $costs->sum(function($c) {
+                    return (int) str_replace('.', '', $c->valor_neto);
+                });
+                $id_cost_ref = $costs->first()->id;
+            }
+
+            // 2. Crear objeto fake cost para la vista
+            // La vista usa $cost[0]->valor_neto para el saldo check
+            $fakeCost = new \stdClass();
+            $fakeCost->valor_neto = $totalNeto;
+            $passedCost = [$fakeCost];
+
+            // 3. Obtener todos los abonos del estudiante
+            // Hacemos JOIN con costs para filtrar por cod_alumno
+            $entries = DB::connection('mysql')->select(
+                'SELECT entries.id, entries.id_cost, conceptos.nombre AS concepto, entries.descripcion, entries.no_recibo, entries.fecha_recibo, entries.valor, elaborados.nombre AS elaborado_por, CONCAT(debes.cuenta, " - ", debes.nombre) AS debe, CONCAT(habers.cuenta, " - ", habers.nombre) AS haber, entries.created_at 
+                 FROM entries 
+                 INNER JOIN costs ON costs.id = entries.id_cost
+                 INNER JOIN conceptos ON conceptos.id = entries.concepto 
+                 INNER JOIN elaborados ON elaborados.id = entries.elaborado_por 
+                 INNER JOIN debes ON debes.id = entries.debe 
+                 INNER JOIN habers ON habers.id = entries.haber 
+                 WHERE costs.cod_alumno = ? 
+                 ORDER BY entries.no_recibo ASC',
+                [$cod_alumno]
+            );
+
+            // 4. Obtener datos del estudiante
+            $data = [];
+            $matricula = \App\Models\Matricula::where('cod_alumno', $cod_alumno)->first();
+            if ($matricula) {
+                $data = [(object)[
+                    'cedula' => $matricula->numero_documento ?? '', 
+                    'nombre' => $matricula->nombre_completo ?? 'N/A', 
+                    'nombre_programa' => $matricula->programa ?? ''
+                ]];
+            }
+
+            // 5. Configuración
+            $institucion = InstitutionSetting::getSettings();
+
+            // 6. Generar HTML
+            // Reutilizamos la vista existente PDFs.pdf_abonos
+            $dompdf = new Dompdf();
+            $html = view('PDFs.pdf_abonos', [
+                'id_cost' => $id_cost_ref,
+                'student' => $data,
+                'cost' => $passedCost, // Array con 1 objeto que tiene la suma total
+                'entries' => $entries,
+                'institucion' => $institucion
+            ])->render();
+            
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            
+            $nombreEstudiante = 'Estudiante';
+            if (!empty($data) && isset($data[0]) && isset($data[0]->nombre)) {
+                $nombreEstudiante = Str::slug($data[0]->nombre);
+            }
+            $filename = 'informe-abonos-' . $nombreEstudiante . '.pdf';
+            
+            $output = $dompdf->output();
+            
+            return response($output, 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+
+        } catch (\Exception $e) {
+            \Log::error('Error en EntryController::streamAbonosPdf', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            abort(500, 'Error al generar el documento PDF: ' . $e->getMessage());
+        }
     }
 }

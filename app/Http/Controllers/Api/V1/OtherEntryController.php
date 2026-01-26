@@ -12,6 +12,10 @@ use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
+use Dompdf\Dompdf;
+use Illuminate\Support\Facades\DB;
+use App\Models\InstitutionSetting;
+use Illuminate\Support\Str;
 
 class OtherEntryController extends Controller
 {
@@ -173,5 +177,71 @@ class OtherEntryController extends Controller
         $this->otherEntryService->delete($id);
 
         return ApiResponse::success(null, 'Eliminado.', null, 200);
+    }
+
+    /**
+     * GET /other-entries/pdf/{cod_alumno}
+     * Genera PDF consolidado de otros ingresos para un estudiante
+     */
+    public function streamOtrosIngresosPdf(string $cod_alumno)
+    {
+        try {
+            // 1. Obtener datos del estudiante
+            $data = [];
+            $matricula = \App\Models\Matricula::where('cod_alumno', $cod_alumno)->first();
+            if ($matricula) {
+                $data = [(object)[
+                    'cedula' => $matricula->numero_documento ?? '', 
+                    'nombre' => $matricula->nombre_completo ?? 'N/A', 
+                    'nombre_programa' => $matricula->programa ?? ''
+                ]];
+            }
+
+            // 2. Obtener otros ingresos del estudiante
+            // JOIN con costs para filtrar por cod_alumno
+            $entries = DB::connection('mysql')->select(
+                'SELECT other_entries.id, other_entries.id_cost, otros_conceptos.nombre AS concepto, other_entries.descripcion, other_entries.no_recibo, other_entries.fecha_recibo, other_entries.valor, elaborados.nombre AS elaborado_por, CONCAT(debes.cuenta, " - ", debes.nombre) AS debe, CONCAT(habers.cuenta, " - ", habers.nombre) AS haber, other_entries.created_at 
+                 FROM other_entries 
+                 INNER JOIN costs ON costs.id = other_entries.id_cost
+                 INNER JOIN otros_conceptos ON otros_conceptos.id = other_entries.concepto 
+                 INNER JOIN elaborados ON elaborados.id = other_entries.elaborado_por 
+                 INNER JOIN debes ON debes.id = other_entries.debe 
+                 INNER JOIN habers ON habers.id = other_entries.haber 
+                 WHERE costs.cod_alumno = ? 
+                 ORDER BY other_entries.no_recibo ASC',
+                [$cod_alumno]
+            );
+
+            // 3. Configuración de institución
+            $institucion = InstitutionSetting::getSettings();
+
+            // 4. Generar HTML
+            $dompdf = new Dompdf();
+            $html = view('PDFs.pdf_otrosAbonos', [
+                'student' => $data,
+                'entries' => $entries,
+                'institucion' => $institucion
+            ])->render();
+            
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            
+            $nombreEstudiante = 'Estudiante';
+            if (!empty($data) && isset($data[0]) && isset($data[0]->nombre)) {
+                $nombreEstudiante = Str::slug($data[0]->nombre);
+            }
+            $filename = 'informe-otros-ingresos-' . $nombreEstudiante . '.pdf';
+            
+            $output = $dompdf->output();
+            
+            return response($output, 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+
+        } catch (\Exception $e) {
+            \Log::error('Error en OtherEntryController::streamOtrosIngresosPdf', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            abort(500, 'Error al generar el documento PDF: ' . $e->getMessage());
+        }
     }
 }

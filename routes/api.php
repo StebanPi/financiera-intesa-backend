@@ -97,10 +97,12 @@ Route::prefix('v1')->group(function () {
         Route::get('purses/cartera/{cod_alumno}/pdf', [PurseController::class, 'streamCarteraPdf'])->where('cod_alumno', '[A-Za-z0-9\-]+');
         Route::get('purses/{id}/history', [PurseController::class, 'history'])->whereNumber('id');
         Route::get('purses/{id}', [PurseController::class, 'show'])->whereNumber('id');
+        Route::get('entries/abonos/{cod_alumno}/pdf', [EntryController::class, 'streamAbonosPdf'])->where('cod_alumno', '[A-Za-z0-9\-]+');
         Route::get('entries', [EntryController::class, 'index']);
         Route::post('entries', [EntryController::class, 'store']);
         Route::get('entries/{id}', [EntryController::class, 'show'])->whereNumber('id');
         Route::delete('entries/{id}', [EntryController::class, 'destroy'])->whereNumber('id');
+        Route::get('other-entries/pdf/{cod_alumno}', [OtherEntryController::class, 'streamOtrosIngresosPdf'])->where('cod_alumno', '[A-Za-z0-9\-]+');
         Route::get('other-entries', [OtherEntryController::class, 'index']);
         Route::post('other-entries', [OtherEntryController::class, 'store']);
         Route::get('other-entries/{id}', [OtherEntryController::class, 'show'])->whereNumber('id');
