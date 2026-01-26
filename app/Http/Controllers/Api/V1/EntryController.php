@@ -250,7 +250,7 @@ class EntryController extends Controller
             ])->render();
             
             $dompdf->loadHtml($html);
-            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->setPaper('A4', 'landscape');
             $dompdf->render();
             
             $nombreEstudiante = 'Estudiante';
