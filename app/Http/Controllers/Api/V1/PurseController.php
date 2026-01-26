@@ -317,25 +317,16 @@ class PurseController extends Controller
                 $arrayPurses = Purse::where([
                     ['id_cost', "=", $purse->id_cost],
                     ['id', ">", $purse->id]
-                ])->get();
+                ])->orderBy('id', 'asc')->get();
 
-                $fechaActuals = $purse->fecha_pago;
+                $fechaActual = new \DateTime($purse->fecha_pago);
 
                 foreach ($arrayPurses as $item) {
-                    $fechaActual = explode("-", $fechaActuals);
-                    $Mes = $fechaActual[1];
-                    $Año = $fechaActual[0];
+                    // Sumar un mes a la fecha actual
+                    $fechaActual->modify('+1 month');
                     
-                    // Lógica traída de DateController
-                    $Año = DateController::Is_nextYear($Año, $Mes);
-                    $Mes = DateController::nextMes($Mes, true);
-                    
-                    if ($Mes < 10 && strlen($Mes) == 1) {
-                        $Mes = "0" . $Mes;
-                    }
-                    
-                    // Validar y ajustar la fecha
-                    $fechaActuals = $this->validateAndAdjustDate((int)$Año, (int)$Mes, (int)$fechaActual[2]);
+                    // Formatear la fecha como Y-m-d
+                    $fechaActuals = $fechaActual->format('Y-m-d');
 
                     $item->fecha_pago = $fechaActuals;
                     $item->cuota = Str::replace('.', '', $request->cuota);
