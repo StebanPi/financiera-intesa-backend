@@ -94,6 +94,7 @@ Route::prefix('v1')->group(function () {
         Route::post('purse/edit', [PurseController::class, 'update'])->name('api.purse.update');
         Route::get('purses/totales', [PurseController::class, 'totales']);
         Route::get('purses/cartera', [PurseController::class, 'cartera']);
+        Route::get('purses/cartera/{cod_alumno}/pdf', [PurseController::class, 'streamCarteraPdf'])->where('cod_alumno', '[A-Za-z0-9\-]+');
         Route::get('purses/{id}/history', [PurseController::class, 'history'])->whereNumber('id');
         Route::get('purses/{id}', [PurseController::class, 'show'])->whereNumber('id');
         Route::get('entries', [EntryController::class, 'index']);

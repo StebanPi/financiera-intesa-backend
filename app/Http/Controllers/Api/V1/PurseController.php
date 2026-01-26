@@ -17,6 +17,9 @@ use OpenApi\Attributes as OA;
 use App\Http\Controllers\TableChangeController;
 use App\Http\Controllers\DateController;
 use Illuminate\Support\Str;
+use Dompdf\Dompdf;
+use Illuminate\Support\Facades\DB;
+use App\Models\InstitutionSetting;
 
 class PurseController extends Controller
 {
@@ -375,9 +378,178 @@ class PurseController extends Controller
     }
 
     /**
+     * GET /purses/cartera/{cod_alumno}/pdf — stream PDF de cartera
+     */
+    #[
+        OA\Get(
+            path: '/api/v1/purses/cartera/{cod_alumno}/pdf',
+            summary: 'Obtener PDF de cartera',
+            description: 'Genera y devuelve un PDF de la cartera del estudiante especificado usando la plantilla Blade existente. El PDF se devuelve como binario para visualización inline.',
+            tags: ['Purses'],
+            security: [['bearerAuth' => []]],
+            parameters: [
+                new OA\Parameter(
+                    name: 'cod_alumno',
+                    in: 'path',
+                    required: true,
+                    description: 'Código del alumno',
+                    schema: new OA\Schema(type: 'string', example: '12345678')
+                ),
+            ],
+            responses: [
+                new OA\Response(
+                    response: 200,
+                    description: 'PDF generado exitosamente',
+                    content: new OA\MediaType(
+                        mediaType: 'application/pdf',
+                        schema: new OA\Schema(type: 'string', format: 'binary')
+                    ),
+                    headers: [
+                        new OA\Header(
+                            header: 'Content-Disposition',
+                            schema: new OA\Schema(type: 'string'),
+                            description: 'inline; filename="informe-cartera-Estudiante.pdf"'
+                        ),
+                    ]
+                ),
+                new OA\Response(
+                    response: 401,
+                    description: 'No autenticado',
+                    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+                ),
+                new OA\Response(
+                    response: 500,
+                    description: 'Error al generar PDF',
+                    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+                ),
+            ]
+        )
+    ]
+    public function streamCarteraPdf(string $cod_alumno)
+    {
+        try {
+            // Obtener datos del estudiante
+            // Usamos la misma lógica que en ViewPdf del controlador legacy pero adaptada a la API
+            // Primero buscamos en la tabla local matriculas
+            $data = [];
+            
+            try {
+                $matricula = \App\Models\Matricula::where('cod_alumno', $cod_alumno)->first();
+                if ($matricula) {
+                    $data = [
+                        (object)[
+                            'cedula' => $matricula->numero_documento ?? '',
+                            'nombre' => $matricula->nombre_completo ?? 'N/A',
+                            'nombre_programa' => $matricula->programa ?? ''
+                        ]
+                    ];
+                } else {
+                    // FALLBACK: Intentar en mysql2 (solo si está configurado y disponible)
+                    // Esta parte se mantiene por compatibilidad con el sistema legacy si es necesaria
+                    try {
+                        // Verificamos si existe la conexión mysql2 antes de intentar usarla
+                        $hasMysql2 = config('database.connections.mysql2');
+                        if ($hasMysql2) {
+                            $Sql = 'SELECT alumno.cedula, alumno.nombre, programa.nombre_programa 
+                                    FROM alumno 
+                                    INNER JOIN relacion_programa_estudiante ON relacion_programa_estudiante.Alumno_cod = alumno.cod_alumno 
+                                    INNER JOIN programa ON programa.cod_programa = relacion_programa_estudiante.programa_cod 
+                                    WHERE alumno.cod_alumno = "'.$cod_alumno.'"';
+                            $Student = DB::connection('mysql2')->select($Sql);
+                            
+                            if (!empty($Student) && isset($Student[0])) {
+                                $data = $Student;
+                            }
+                        }
+                    } catch (\Exception $e2) {
+                        // Silenciosamente fallar si mysql2 no está disponible, ya que es un fallback
+                        \Log::warning('Fallback a mysql2 falló en streamCarteraPdf: ' . $e2->getMessage());
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error buscando datos de estudiante en streamCarteraPdf: ' . $e->getMessage());
+            }
+
+            // Obtener todos los costs del estudiante para mostrar todas las cuotas
+            // Nota: costs guarda cod_alumno como string
+            $cost = DB::table('costs')->where('cod_alumno', $cod_alumno)->orderBy('numero_semestre', 'asc')->get();
+            
+            // Usar el servicio para calcular cartera con todos los semestres del estudiante
+            $carteraData = CarteraService::calcularCartera(null, $cod_alumno);
+            
+            // Preparar datos para el PDF (mantener compatibilidad con la vista Blade existente)
+            $entries = [ (object)['TotalAbono' => $carteraData['totales']['total_abono']] ];
+            $purses = [];
+            
+            // Convertir array de arrays a array de objetos para la vista
+            foreach($carteraData['cuotas'] as $cuota) {
+                $purses[] = (object)[
+                    'id' => $cuota['id'],
+                    'id_cost' => $cuota['id_cost'],
+                    'numero_semestre' => $cuota['numero_semestre'] ?? 1,
+                    'fecha_pago' => $cuota['fecha_pago'],
+                    'cuota' => $cuota['cuota'],
+                    'abonado' => $cuota['abonado'],
+                    'estado_pago' => $cuota['estado_pago'],
+                    'estado' => $cuota['estado'],
+                    'is_vencida' => $cuota['is_vencida'],
+                    'comentario' => $cuota['comentario'] ?? ''
+                ];
+            }
+            
+            // Obtener configuración de la institución
+            $institucion = InstitutionSetting::getSettings();
+            
+            // ID cost ficticio para la vista (no se usa realmente si pasamos $purses y $cost)
+            $id_cost_ref = count($cost) > 0 ? $cost[0]->id : 0;
+
+            // Generar el PDF
+            $dompdf = new Dompdf();
+            $html = view('PDFs.pdf_cartera', [
+                'id_cost' => $id_cost_ref,
+                'student' => $data,
+                'cost' => $cost,
+                'entries' => $entries,
+                'purses' => $purses,
+                'totales' => $carteraData['totales'], // Pasar totales calculados
+                'hoy' => $carteraData['hoy'], // Pasar fecha de hoy
+                'institucion' => $institucion // Pasar configuración de institución
+            ])->render();
+            
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            
+            // Nombre del archivo
+            $nombreEstudiante = 'Estudiante';
+            if (!empty($data) && isset($data[0]) && isset($data[0]->nombre)) {
+                $nombreEstudiante = Str::slug($data[0]->nombre); // Limpiar nombre para filename
+            }
+            
+            $filename = 'informe-cartera-' . $nombreEstudiante . '.pdf';
+            
+            // Obtener el PDF como string binario
+            $output = $dompdf->output();
+            
+            return response($output, 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en PurseController::streamCarteraPdf', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            abort(500, 'Error al generar el documento PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Helper para ajustar fechas (lógica interna)
      */
     private function validateAndAdjustDate($year, $month, $day)
+
     {
         if (checkdate($month, $day, $year)) {
             return sprintf('%04d-%02d-%02d', $year, $month, $day);
