@@ -31,7 +31,6 @@
         // Procesar según el formato detectado
         if($hasComma && $hasDot) {
             // Tiene ambos: el punto es separador de miles, la coma es decimal
-            // Ejemplo: "1.500.000,50" -> "1500000.50"
             $parts = explode(',', $cleaned);
             $integerPart = str_replace('.', '', $parts[0]);
             $decimalPart = $parts[1] ?? '0';
@@ -39,7 +38,7 @@
         } elseif($hasDot && !$hasComma) {
             // Solo tiene punto(s)
             if($dotCount > 1) {
-                // Múltiples puntos = separadores de miles: "1.500.000" -> "1500000"
+                // Múltiples puntos = separadores de miles
                 $cleaned = str_replace('.', '', $cleaned);
             } elseif($dotCount == 1) {
                 // Un solo punto: determinar si es decimal o separador de miles
@@ -47,28 +46,24 @@
                 $length = strlen($cleaned);
                 $digitsAfterDot = $length - $dotPosition - 1;
                 
-                // Si hay más de 3 dígitos después del punto, probablemente es decimal
-                // Si hay 3 o menos dígitos después del punto y el número total tiene 4+ dígitos, es separador de miles
                 if($digitsAfterDot > 3) {
-                    // Es decimal: "1234.5678" -> mantener
-                    // No hacer nada
+                    // Es decimal
                 } else {
-                    // Probablemente es separador de miles: "1.234" -> "1234"
+                    // Probablemente es separador de miles
                     $cleaned = str_replace('.', '', $cleaned);
                 }
             }
         } elseif($hasComma && !$hasDot) {
-            // Solo tiene coma: puede ser decimal o separador de miles
-            // Si tiene más de 3 dígitos después de la coma, es decimal
+            // Solo tiene coma
             $commaPosition = strpos($cleaned, ',');
             $length = strlen($cleaned);
             $digitsAfterComma = $length - $commaPosition - 1;
             
             if($digitsAfterComma > 3) {
-                // Es decimal: convertir coma a punto
+                // Es decimal
                 $cleaned = str_replace(',', '.', $cleaned);
             } else {
-                // Probablemente es separador de miles (formato europeo): "1,234" -> "1234"
+                // Probablemente es separador de miles
                 $cleaned = str_replace(',', '', $cleaned);
             }
         }
@@ -82,8 +77,24 @@
         }
         
         // Formatear con puntos como separadores de miles y sin decimales
-        // number_format() automáticamente agrega separadores solo cuando el número tiene 4+ dígitos
         return '$' . number_format($numericValue, 0, ',', '.');
+    }
+    
+    // Función para limpiar valores
+    function cleanMoneyValue($value) {
+        if($value === null || $value === '' || $value === 0) {
+            return 0;
+        }
+        // Si ya es numérico y no es string, retornar directamente
+        if(is_numeric($value) && !is_string($value)) {
+            return (float)$value;
+        }
+        // Si es string, limpiar formato
+        $str = trim((string)$value);
+        // Remover puntos (separadores de miles) y comas (decimales)
+        $cleaned = str_replace(['.', ',', '$', ' '], '', $str);
+        $numeric = (float)$cleaned;
+        return is_finite($numeric) && !is_nan($numeric) ? $numeric : 0;
     }
     
     // Obtener fecha formateada
@@ -91,6 +102,15 @@
     
     // Obtener persona responsable (emergencia)
     $personaResponsable = $matricula->telefono_emergencia ? 'Contacto: ' . $matricula->telefono_emergencia : 'N/A';
+
+    // Calcular total de cuotas de todos los semestres
+    $totalCuotas = $costs->sum('numero_cuotas');
+
+    // Agrupar costos para paginación (2 por página)
+    $semestreGroups = $costs->chunk(2);
+    if($semestreGroups->isEmpty()) {
+       $semestreGroups = collect([]); 
+    }
 @endphp
 
 <style>
@@ -110,9 +130,9 @@
     }
     
     .container-pdf {
-        margin-top: 60px;
         width: 100%;
         max-width: 100%;
+        margin-top: 60px; /* Margen superior para evitar solapamiento con header si lo hubiera */
     }
     
     .title-planilla {
@@ -220,6 +240,7 @@
         padding: 3px;
     }
     
+    /* Estilos para layout dinámico de semestres */
     .financing-row {
         display: table;
         width: 100%;
@@ -239,11 +260,23 @@
         text-align: right;
         font-weight: 700;
     }
-    
-    .financing-value.highlight {
-        background: #ffff00;
-        padding: 2px 5px;
+
+    .semestre-number {
+        font-size: 10px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 6px;
+        background: #f0f0f0;
+        padding: 3px;
+        border-bottom: 1px solid #000;
     }
+
+    .financing-full { width: 100%; }
+    .financing-split { display: table; width: 100%; table-layout: fixed; }
+    .financing-column { display: table-cell; width: 49%; vertical-align: top; }
+    .financing-left { padding-right: 5px; }
+    .financing-right { padding-left: 5px; }
+    .financing-separator { display: table-cell; width: 1px; border-left: 1px solid #000; }
     
     /* Zona inferior izquierda - QR y datos bancarios */
     .bottom-section {
@@ -302,8 +335,26 @@
         font-size: 10px;
         margin-top: 5px;
     }
+
+    .page-break {
+        page-break-after: always;
+        page-break-inside: avoid;
+    }
 </style>
 
+@if($semestreGroups->isEmpty())
+    <div class="container-pdf">
+        <h2 class="title-planilla">FICHA DE MATRÍCULA</h2>
+        <div style="text-align:center; margin-top:50px;">
+            <p>No se encontraron registros financieros para este estudiante.</p>
+        </div>
+    </div>
+@else
+
+@foreach($semestreGroups as $group)
+@php
+    $headerCost = $group->first(); 
+@endphp
 <div class="container-pdf">
     <!-- Encabezado Superior -->
     <h2 class="title-planilla">FICHA DE MATRÍCULA</h2>
@@ -400,12 +451,12 @@
             
             <div class="info-row">
                 <span class="info-label">Periodos de pago:</span>
-                <span class="info-value">{{ $cost->periodo ?? 'N/A' }}</span>
+                <span class="info-value">{{ $headerCost->periodo ?? 'N/A' }}</span>
             </div>
             
             <div class="info-row">
                 <span class="info-label"># de cuotas:</span>
-                <span class="info-value">{{ $cost->numero_cuotas ?? 'N/A' }}</span>
+                <span class="info-value">{{ $totalCuotas ?? 'N/A' }}</span>
             </div>
             
             <!-- Foto del estudiante -->
@@ -423,62 +474,18 @@
     
     <!-- Bloque Condiciones de Financiación -->
     <div class="financing-section">
-        <div class="financing-title">Condiciones de Financiación</div>
-        
-        @php
-            // Función para limpiar valores que vienen formateados desde MoneyController::datas()
-            // Estos valores pueden venir como strings con formato "1.500.000" o "600"
-            function cleanMoneyValue($value) {
-                if($value === null || $value === '' || $value === 0) {
-                    return 0;
-                }
-                // Si ya es numérico y no es string, retornar directamente
-                if(is_numeric($value) && !is_string($value)) {
-                    return (float)$value;
-                }
-                // Si es string, limpiar formato
-                $str = trim((string)$value);
-                // Remover puntos (separadores de miles) y comas (decimales)
-                $cleaned = str_replace(['.', ',', '$', ' '], '', $str);
-                $numeric = (float)$cleaned;
-                return is_finite($numeric) && !is_nan($numeric) ? $numeric : 0;
-            }
-            
-            // Limpiar valores del cost antes de formatear
-            // Estos valores vienen formateados desde MoneyController::datas()
-            $valorSemestre = $cost ? cleanMoneyValue($cost->valor_semestre ?? 0) : 0;
-            $descuento = $cost ? cleanMoneyValue($cost->descuento ?? 0) : 0;
-            $saldoFinanciar = $cost ? cleanMoneyValue($cost->saldo_financiar ?? 0) : 0;
-            $valorCuotas = $cost ? cleanMoneyValue($cost->valor_cuotas ?? 0) : 0;
-        @endphp
-        
-        <div class="financing-row">
-            <div class="financing-label">Costos por semestre:</div>
-            <div class="financing-value">{{ formatMoney($valorSemestre) }}</div>
+        <div class="financing-title">
+            Condiciones de Financiación
+            @if($semestreGroups->count() > 1)
+                (Página {{ $loop->iteration }} de {{ $loop->count }})
+            @endif
         </div>
         
-        <div class="financing-row">
-            <div class="financing-label">Descuento:</div>
-            <div class="financing-value">{{ formatMoney($descuento) }}</div>
-        </div>
-        
-        <div class="financing-row">
-            <div class="financing-label">Crédito por semestre:</div>
-            <div class="financing-value">{{ formatMoney($valorSemestre) }}</div>
-        </div>
-        
-        <div class="financing-row">
-            <div class="financing-label">Valor a financiar:</div>
-            <div class="financing-value">{{ formatMoney($saldoFinanciar) }}</div>
-        </div>
-        
-        <div class="financing-row">
-            <div class="financing-label">Valor de cuota:</div>
-            <div class="financing-value">{{ formatMoney($valorCuotas) }}</div>
-        </div>
+        @include('matricula.partials.pdf-semestres', ['semestres' => $group])
     </div>
     
-    <!-- Zona Inferior -->
+    @if($loop->last)
+    <!-- Zona Inferior (Solo en la última página) -->
     <div class="bottom-section">
         <!-- Columna Izquierda: Texto de Aceptación y Firma -->
         <div class="bottom-left">
@@ -510,6 +517,11 @@
                 </div>
                 
                 <!-- QR Code -->
+                @if(isset($qrCodeBase64) && $qrCodeBase64)
+                <div class="qr-container">
+                    <img src="{{ $qrCodeBase64 }}" alt="QR Code">
+                </div>
+                @endif
                 
                 <!-- Información Bancaria -->
                 <div style="text-align: left; width: 100%; margin-top: 15px;">
@@ -532,6 +544,15 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
+
+@if(!$loop->last)
+    <div class="page-break"></div>
+@endif
+
+@endforeach
+
+@endif
 
 @endsection

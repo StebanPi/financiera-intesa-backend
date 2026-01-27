@@ -264,12 +264,21 @@ class MatriculaService
         $matricula = $this->getByCodAlumno($cod_alumno);
         $institucion = InstitutionSetting::getSettings();
 
-        $cost = DB::table('costs')->where('cod_alumno', $cod_alumno)->first();
+        $costs = DB::table('costs')
+            ->where('cod_alumno', $cod_alumno)
+            ->orderBy('numero_semestre', 'asc')
+            ->get();
+
+        // Formatear todos los costs
+        $costs->transform(function ($c) {
+            return MoneyController::datas($c, ['valor_semestre', 'valor_total_semestre', 'descuento', 'valor_neto', 'saldo_financiar', 'valor_cuotas']);
+        });
+
         $carteraData = null;
-        if ($cost) {
-            $cost = MoneyController::datas($cost, ['valor_semestre', 'valor_total_semestre', 'descuento', 'valor_neto', 'saldo_financiar', 'valor_cuotas']);
+        if ($costs->isNotEmpty()) {
             try {
-                $carteraData = CarteraService::calcularCartera($cost->id);
+                // Calcular cartera con el primer costo para mantener compatibilidad si es necesario
+                $carteraData = CarteraService::calcularCartera($costs->first()->id);
             } catch (\Throwable $e) {
                 \Log::error('CarteraService PDF: ' . $e->getMessage());
             }
@@ -303,7 +312,7 @@ class MatriculaService
         $html = view('matricula.ficha-pdf', [
             'matricula' => $matricula,
             'institucion' => $institucion,
-            'cost' => $cost,
+            'costs' => $costs,
             'carteraData' => $carteraData,
             'photoBase64' => $photoBase64,
             'qrCodeBase64' => $qrCodeBase64,
