@@ -48,7 +48,7 @@ class MatriculaUpdateRequest extends FormRequest
             'tipo_discapacidad' => ['nullable', 'string', 'max:255'],
             'discapacidad_descripcion' => ['nullable', 'string', 'max:1000'],
             'programa' => ['sometimes', 'string', 'max:255', Rule::in($validPrograms)],
-            'sede' => ['sometimes', 'in:Barrancabermeja,Aguachica,Virtual'],
+            'sede' => ['sometimes', 'in:Barrancabermeja,Aguachica'],
             'estado_estudiante' => ['sometimes', 'in:Activo,Inactivo,Por Certificar,Certificado,Retirado,Suspendido,Todos'],
             'horario' => ['sometimes', 'string', 'max:255', Rule::in($validSchedules)],
             'talla_uniforme' => ['nullable', 'in:XS,S,M,L,XL,XXL,XXXL'],
@@ -56,6 +56,7 @@ class MatriculaUpdateRequest extends FormRequest
             'anio' => ['sometimes', 'string', 'max:255'],
             'numero_grupo' => ['sometimes', 'string', 'max:255', Rule::in($validGroups)],
             'contraseña_plataforma' => ['nullable', 'string', 'max:255'],
+            'modalidad' => ['sometimes', 'in:presencial,virtual'],
         ];
     }
 }

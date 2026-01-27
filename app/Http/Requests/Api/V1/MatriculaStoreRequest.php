@@ -34,7 +34,7 @@ class MatriculaStoreRequest extends FormRequest
             'nivel_formacion' => ['nullable', 'string', 'max:255'],
             'tiene_discapacidad' => ['nullable', 'in:No,Sí,Prefiero no decir'],
             'programa' => ['required', 'string', 'max:255', Rule::in($validPrograms)],
-            'sede' => ['required', 'in:Barrancabermeja,Aguachica,Virtual'],
+            'sede' => ['required', 'in:Barrancabermeja,Aguachica'],
             'estado_estudiante' => ['required', 'in:Activo,Inactivo,Por Certificar,Certificado,Retirado,Suspendido,Todos'],
             'horario' => ['required', 'string', 'max:255', Rule::in($validSchedules)],
             'talla_uniforme' => ['nullable', 'in:XS,S,M,L,XL,XXL,XXXL'],
@@ -43,6 +43,7 @@ class MatriculaStoreRequest extends FormRequest
             'numero_grupo' => ['required', 'string', 'max:255', Rule::in($validGroups)],
             'contraseña_plataforma' => ['nullable', 'string', 'max:255'],
             'tipo_discapacidad' => ['required_if:tiene_discapacidad,Sí', 'nullable', 'string', 'max:255'],
+            'modalidad' => ['required', 'in:presencial,virtual'],
         ];
     }
 
@@ -73,6 +74,8 @@ class MatriculaStoreRequest extends FormRequest
             'anio.required' => 'El año es obligatorio.',
             'numero_grupo.required' => 'El número de grupo es obligatorio.',
             'numero_grupo.in' => 'El grupo seleccionado no es válido o no está activo.',
+            'modalidad.required' => 'La modalidad es obligatoria.',
+            'modalidad.in' => 'La modalidad seleccionada no es válida.',
         ];
     }
 }

@@ -450,6 +450,11 @@
             </div>
             
             <div class="info-row">
+                <span class="info-label">Modalidad:</span>
+                <span class="info-value">{{ ucfirst($matricula->modalidad ?? 'presencial') }}</span>
+            </div>
+            
+            <div class="info-row">
                 <span class="info-label">Periodos de pago:</span>
                 <span class="info-value">{{ $headerCost->periodo ?? 'N/A' }}</span>
             </div>

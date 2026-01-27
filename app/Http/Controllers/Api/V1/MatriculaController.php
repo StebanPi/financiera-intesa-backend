@@ -100,7 +100,7 @@ class MatriculaController extends Controller
                         new OA\Property(property: 'nivel_formacion', type: 'string', nullable: true),
                         new OA\Property(property: 'tiene_discapacidad', type: 'string', enum: ['No', 'Sí', 'Prefiero no decir'], nullable: true),
                         new OA\Property(property: 'programa', type: 'string', example: 'Técnico en Sistemas'),
-                        new OA\Property(property: 'sede', type: 'string', enum: ['Barrancabermeja', 'Aguachica', 'Virtual'], example: 'Barrancabermeja'),
+                        new OA\Property(property: 'sede', type: 'string', enum: ['Barrancabermeja', 'Aguachica'], example: 'Barrancabermeja'),
                         new OA\Property(property: 'estado_estudiante', type: 'string', enum: ['Activo', 'Inactivo', 'Por Certificar', 'Certificado', 'Retirado', 'Suspendido', 'Todos'], example: 'Activo'),
                         new OA\Property(property: 'horario', type: 'string', example: 'Diurno'),
                         new OA\Property(property: 'talla_uniforme', type: 'string', enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'], nullable: true),
@@ -109,6 +109,7 @@ class MatriculaController extends Controller
                         new OA\Property(property: 'numero_grupo', type: 'string', example: '101'),
                         new OA\Property(property: 'contraseña_plataforma', type: 'string', nullable: true),
                         new OA\Property(property: 'tipo_discapacidad', type: 'string', nullable: true),
+                        new OA\Property(property: 'modalidad', type: 'string', enum: ['presencial', 'virtual'], example: 'presencial'),
                     ]
                 )
             ),
@@ -226,12 +227,13 @@ class MatriculaController extends Controller
                         new OA\Property(property: 'numero_documento', type: 'string', nullable: true),
                         new OA\Property(property: 'tipo_documento', type: 'string', enum: ['CC', 'TI', 'PPT'], nullable: true),
                         new OA\Property(property: 'programa', type: 'string', nullable: true),
-                        new OA\Property(property: 'sede', type: 'string', enum: ['Barrancabermeja', 'Aguachica', 'Virtual'], nullable: true),
+                        new OA\Property(property: 'sede', type: 'string', enum: ['Barrancabermeja', 'Aguachica'], nullable: true),
                         new OA\Property(property: 'estado_estudiante', type: 'string', enum: ['Activo', 'Inactivo', 'Por Certificar', 'Certificado', 'Retirado', 'Suspendido', 'Todos'], nullable: true),
                         new OA\Property(property: 'horario', type: 'string', nullable: true),
                         new OA\Property(property: 'semestre_actual', type: 'string', enum: ['I', 'II', 'Ninguno (curso)'], nullable: true),
                         new OA\Property(property: 'anio', type: 'string', nullable: true),
                         new OA\Property(property: 'numero_grupo', type: 'string', nullable: true),
+                        new OA\Property(property: 'modalidad', type: 'string', enum: ['presencial', 'virtual'], nullable: true),
                     ]
                 )
             ),
@@ -560,11 +562,12 @@ class MatriculaController extends Controller
     {
         $data = [
             'tipo_documento' => ['CC', 'TI', 'PPT'],
-            'sede' => ['Barrancabermeja', 'Aguachica', 'Virtual'],
+            'sede' => ['Barrancabermeja', 'Aguachica'],
             'estado_estudiante' => ['Activo', 'Inactivo', 'Por Certificar', 'Certificado', 'Retirado', 'Suspendido', 'Todos'],
             'semestre_actual' => ['I', 'II', 'Ninguno (curso)'],
             'talla_uniforme' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
             'tiene_discapacidad' => ['No', 'Sí', 'Prefiero no decir'],
+            'modalidad' => ['presencial', 'virtual'],
         ];
 
         return ApiResponse::success($data);

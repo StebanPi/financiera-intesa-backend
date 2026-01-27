@@ -41,7 +41,8 @@ class Matricula extends Model
         'talla_uniforme',
         'semestre_actual',
         'anio',
-        'numero_grupo'
+        'numero_grupo',
+        'modalidad'
     ];
 
     /**
