@@ -551,6 +551,14 @@ class MatriculaController extends Controller
                             new OA\Property(property: 'semestre_actual', type: 'array', items: new OA\Items(type: 'string')),
                             new OA\Property(property: 'talla_uniforme', type: 'array', items: new OA\Items(type: 'string')),
                             new OA\Property(property: 'tiene_discapacidad', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'modalidad', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'departamento', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'estado_civil', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'ocupacion', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'nivel_formacion', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'estrato', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'grupo_sanguineo', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'anio', type: 'array', items: new OA\Items(type: 'string')),
                         ]
                     )
                 ),
@@ -568,6 +576,18 @@ class MatriculaController extends Controller
             'talla_uniforme' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
             'tiene_discapacidad' => ['No', 'Sí', 'Prefiero no decir'],
             'modalidad' => ['presencial', 'virtual'],
+            'departamento' => [
+                'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bolívar', 'Boyacá', 'Caldas', 'Caquetá', 'Casanare', 'Cauca', 
+                'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca', 'Guainía', 'Guaviare', 'Huila', 'La Guajira', 'Magdalena', 'Meta', 
+                'Nariño', 'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda', 'San Andrés y Providencia', 'Santander', 
+                'Sucre', 'Tolima', 'Valle del Cauca', 'Vaupés', 'Vichada'
+            ],
+            'estado_civil' => ['Soltero(a)', 'Casado(a)', 'Unión Libre', 'Divorciado(a)', 'Viudo(a)'],
+            'ocupacion' => ['Estudiante', 'Empleado', 'Independiente', 'Desempleado', 'Pensionado', 'Hogar'],
+            'nivel_formacion' => ['Primaria', 'Bachiller', 'Técnico', 'Tecnólogo', 'Profesional', 'Especialización', 'Maestría', 'Doctorado'],
+            'estrato' => ['1', '2', '3', '4', '5', '6'],
+            'grupo_sanguineo' => ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+            'anio' => [date('Y'), (string)(date('Y') + 1)],
         ];
 
         return ApiResponse::success($data);
