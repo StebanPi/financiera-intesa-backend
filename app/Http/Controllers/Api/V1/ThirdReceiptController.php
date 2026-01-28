@@ -118,6 +118,46 @@ class ThirdReceiptController extends Controller
     }
 
     #[
+        OA\Put(
+            path: '/api/v1/third-receipts/{id}',
+            summary: 'Actualizar recibo de tercero',
+            description: 'Actualiza los datos de un recibo de tercero existente.',
+            tags: ['Third Receipts'],
+            security: [['bearerAuth' => []]],
+            parameters: [
+                new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID del recibo', schema: new OA\Schema(type: 'integer')),
+            ],
+            requestBody: new OA\RequestBody(
+                required: false,
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'third', type: 'integer', example: 1, nullable: true),
+                        new OA\Property(property: 'concepto', type: 'integer', example: 1, nullable: true),
+                        new OA\Property(property: 'detalles', type: 'string', example: 'Detalles actualizados', nullable: true),
+                        new OA\Property(property: 'valor', type: 'number', format: 'float', example: 60000, nullable: true),
+                        new OA\Property(property: 'debe', type: 'integer', example: 1, nullable: true),
+                        new OA\Property(property: 'haber', type: 'integer', example: 1, nullable: true),
+                        new OA\Property(property: 'elaborado_por', type: 'integer', example: 1, nullable: true),
+                        new OA\Property(property: 'forma', type: 'string', enum: ['Efectivo', 'Bancos'], nullable: true),
+                        new OA\Property(property: 'fecha_recibo', type: 'string', format: 'date', example: '2024-01-16', nullable: true),
+                    ]
+                )
+            ),
+            responses: [
+                new OA\Response(response: 200, description: 'Recibo actualizado exitosamente', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
+                new OA\Response(response: 401, description: 'No autenticado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+                new OA\Response(response: 404, description: 'Recibo no encontrado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+                new OA\Response(response: 422, description: 'Errores de validación', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            ]
+        )
+    ]
+    public function update(\App\Http\Requests\Api\V1\ThirdReceiptUpdateRequest $request, int $id): JsonResponse
+    {
+        $r = $this->thirdReceiptService->update($id, $request->validated());
+        return ApiResponse::success(new ThirdReceiptResource($r), 'Recibo de tercero actualizado.', null, 200);
+    }
+
+    #[
         OA\Delete(
             path: '/api/v1/third-receipts/{id}',
             summary: 'Eliminar recibo de tercero',

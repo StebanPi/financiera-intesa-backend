@@ -60,4 +60,24 @@ class ThirdReceiptService
         $r = ThirdReceipts::where('type', 'entry')->findOrFail($id);
         $r->delete();
     }
+
+    /** @param array<string, mixed> $data */
+    public function update(int $id, array $data): ThirdReceipts
+    {
+        $receipt = ThirdReceipts::where('type', 'entry')->findOrFail($id);
+
+        if (isset($data['forma'])) {
+            if ($data['forma'] === 'Consignación') {
+                $data['forma'] = 'Bancos';
+            }
+        }
+
+        if (isset($data['valor'])) {
+            $data['valor'] = is_string($data['valor']) ? Str::replace('.', '', $data['valor']) : $data['valor'];
+        }
+
+        $receipt->update($data);
+
+        return $receipt->fresh();
+    }
 }
