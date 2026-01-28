@@ -137,6 +137,7 @@ Route::prefix('v1')->group(function () {
         Route::get('third-receipts', [ThirdReceiptController::class, 'index']);
         Route::post('third-receipts', [ThirdReceiptController::class, 'store']);
         Route::get('third-receipts/{id}', [ThirdReceiptController::class, 'show'])->whereNumber('id');
+        Route::match(['put', 'patch'], 'third-receipts/{id}', [ThirdReceiptController::class, 'update'])->whereNumber('id');
         Route::delete('third-receipts/{id}', [ThirdReceiptController::class, 'destroy'])->whereNumber('id');
         Route::get('concept-entry-receipts', [ConceptEntryReceiptController::class, 'index']);
         Route::post('concept-entry-receipts', [ConceptEntryReceiptController::class, 'store']);
