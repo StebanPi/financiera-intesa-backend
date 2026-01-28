@@ -37,7 +37,7 @@ class ThirdReceiptController extends Controller
     ]
     public function index(Request $request): JsonResponse
     {
-        $q = ThirdReceipts::where('type', 'entry')->with(['thirdObject', 'conceptoObject']);
+        $q = ThirdReceipts::where('type', 'entry')->with(['thirdObject', 'conceptoObject', 'elaboradoObject']);
         if ($request->filled('third')) {
             $q->where('third', $request->third);
         }
