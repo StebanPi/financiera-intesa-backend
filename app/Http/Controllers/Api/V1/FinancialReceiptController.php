@@ -159,7 +159,7 @@ class FinancialReceiptController extends Controller
         }
 
         // Si se solicita formato HTML (igual que la versión web), retornar HTML directamente
-        if ($request->query('format') === 'html' || in_array($type, ['entry', 'other-entry'])) {
+        if ($request->query('format') === 'html' || in_array($type, ['entry', 'other-entry', 'egreso', 'third'])) {
             $html = view($viewName, $viewData)->render();
             return response($html, 200)
                 ->header('Content-Type', 'text/html; charset=UTF-8');
