@@ -25,6 +25,8 @@ class ThirdEntryController extends Controller
             security: [['bearerAuth' => []]],
             parameters: [
                 new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Elementos por página', schema: new OA\Schema(type: 'integer', example: 15)),
+                new OA\Parameter(name: 'cedula', in: 'query', required: false, description: 'Filtrar por cédula', schema: new OA\Schema(type: 'string')),
+                new OA\Parameter(name: 'nombre', in: 'query', required: false, description: 'Filtrar por nombre', schema: new OA\Schema(type: 'string')),
             ],
             responses: [
                 new OA\Response(response: 200, description: 'Lista de terceros', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
@@ -35,7 +37,18 @@ class ThirdEntryController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = min((int) $request->get('per_page', 15), 100);
-        $paginator = thirdEntry::with('thirdActivity')->orderBy('created_at', 'desc')->paginate($perPage);
+        $query = thirdEntry::with('thirdActivity')->orderBy('created_at', 'desc');
+
+        if ($request->filled('cedula')) {
+            $query->where('cedula', 'like', '%' . $request->cedula . '%');
+        }
+
+        if ($request->filled('nombre')) {
+            $query->where('nombre', 'like', '%' . $request->nombre . '%');
+        }
+
+        $paginator = $query->paginate($perPage);
+
         return ApiResponse::success(
             ThirdEntryResource::collection($paginator->items())->resolve(),
             null,
@@ -54,10 +67,14 @@ class ThirdEntryController extends Controller
             requestBody: new OA\RequestBody(
                 required: true,
                 content: new OA\JsonContent(
-                    required: ['nombre', 'third_activity_id'],
+                    required: ['nombre', 'actividad'],
                     properties: [
+                        new OA\Property(property: 'cedula', type: 'string', example: '123456789'),
                         new OA\Property(property: 'nombre', type: 'string', example: 'Tercero Ejemplo'),
-                        new OA\Property(property: 'third_activity_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'direccion', type: 'string', example: 'Calle 123'),
+                        new OA\Property(property: 'telefono', type: 'string', example: '5551234'),
+                        new OA\Property(property: 'actividad', type: 'integer', example: 1),
+                        new OA\Property(property: 'mas', type: 'string', example: 'Info adicional'),
                     ]
                 )
             ),
@@ -111,8 +128,12 @@ class ThirdEntryController extends Controller
                 required: false,
                 content: new OA\JsonContent(
                     properties: [
+                        new OA\Property(property: 'cedula', type: 'string', nullable: true),
                         new OA\Property(property: 'nombre', type: 'string', nullable: true),
-                        new OA\Property(property: 'third_activity_id', type: 'integer', nullable: true),
+                        new OA\Property(property: 'direccion', type: 'string', nullable: true),
+                        new OA\Property(property: 'telefono', type: 'string', nullable: true),
+                        new OA\Property(property: 'actividad', type: 'integer', nullable: true),
+                        new OA\Property(property: 'mas', type: 'string', nullable: true),
                     ]
                 )
             ),

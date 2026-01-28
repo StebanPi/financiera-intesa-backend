@@ -17,6 +17,8 @@ class ThirdEntryResource extends JsonResource
             'direccion' => $this->direccion,
             'telefono' => $this->telefono,
             'actividad' => $this->actividad,
+            'activity_name' => $this->thirdActivity?->nombre,
+            'full_activity' => new ThirdActivityResource($this->whenLoaded('thirdActivity')),
             'mas' => $this->mas,
         ];
     }
