@@ -37,6 +37,8 @@ class MatriculaController extends Controller
                 new OA\Parameter(name: 'programa', in: 'query', required: false, description: 'Filtrar por programa', schema: new OA\Schema(type: 'string', example: 'Técnico en Sistemas')),
                 new OA\Parameter(name: 'horario', in: 'query', required: false, description: 'Filtrar por horario', schema: new OA\Schema(type: 'string', example: 'Diurno')),
                 new OA\Parameter(name: 'tipo_documento', in: 'query', required: false, description: 'Filtrar por tipo de documento', schema: new OA\Schema(type: 'string', enum: ['CC', 'TI', 'PPT'])),
+                new OA\Parameter(name: 'sede', in: 'query', required: false, description: 'Filtrar por sede', schema: new OA\Schema(type: 'string', enum: ['Barrancabermeja', 'Aguachica'])),
+                new OA\Parameter(name: 'modalidad', in: 'query', required: false, description: 'Filtrar por modalidad', schema: new OA\Schema(type: 'string', enum: ['presencial', 'virtual'])),
                 new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Elementos por página', schema: new OA\Schema(type: 'integer', example: 15)),
             ],
             responses: [

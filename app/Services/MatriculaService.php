@@ -51,6 +51,14 @@ class MatriculaService
             $query->where('tipo_documento', $request->tipo_documento);
         }
 
+        if ($request->filled('sede')) {
+            $query->where('sede', $request->sede);
+        }
+
+        if ($request->filled('modalidad')) {
+            $query->where('modalidad', $request->modalidad);
+        }
+
         $sort = $request->get('sort', 'nombre_completo');
         $order = strtolower($request->get('order', 'asc')) === 'desc' ? 'desc' : 'asc';
         $query->orderBy($sort, $order);
