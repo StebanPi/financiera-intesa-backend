@@ -138,7 +138,7 @@ class AttendanceSheetController extends Controller
 
             return response($pdfBinary, 200)
                 ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'inline; filename="' . $nombreArchivo . '"');
+                ->header('Content-Disposition', 'attachment; filename="' . $nombreArchivo . '"');
         } catch (Throwable $e) {
             \Log::error('Error al generar PDF de planilla de asistencia (API): ' . $e->getMessage());
             \Log::error('Stack trace: ' . $e->getTraceAsString());

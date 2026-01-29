@@ -237,7 +237,7 @@ class OtherEntryController extends Controller
             
             return response($output, 200)
                 ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
 
         } catch (\Exception $e) {
             \Log::error('Error en OtherEntryController::streamOtrosIngresosPdf', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);

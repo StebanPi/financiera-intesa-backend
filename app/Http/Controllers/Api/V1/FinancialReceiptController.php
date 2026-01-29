@@ -9,6 +9,7 @@ use Dompdf\Dompdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
 
 class FinancialReceiptController extends Controller
@@ -185,12 +186,19 @@ class FinancialReceiptController extends Controller
         $dompdf->setPaper([0, 0, $widthPoints, 1000], 'portrait'); 
         $dompdf->render();
 
-        $filename = 'financial-receipt-' . $type . '-' . $id . '.pdf';
+        $name = match($type) {
+            'entry', 'other-entry' => $data['estudiante_nombre'] ?? 'Estudiante',
+            'egreso' => $data['proveedor_nombre'] ?? 'Proveedor',
+            'third' => $data['tercero_nombre'] ?? 'Tercero',
+            default => 'Recibo',
+        };
+        $consecutivo = $data['consecutivo'] ?? $id;
+        $filename = Str::slug("Recibo-{$type}-{$consecutivo}-{$name}") . '.pdf';
         $pdfBinary = $dompdf->output();
 
         return response($pdfBinary, 200)
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
     private function validateType(string $type): void

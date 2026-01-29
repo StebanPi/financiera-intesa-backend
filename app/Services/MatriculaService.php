@@ -332,11 +332,11 @@ class MatriculaService
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
-        $filename = 'matricula-' . $cod_alumno . '.pdf';
+        $filename = \Illuminate\Support\Str::slug("Ficha Matricula {$matricula->nombre_completo} {$cod_alumno}") . '.pdf';
         $pdfBinary = $dompdf->output();
 
         return response($pdfBinary, 200)
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 }
