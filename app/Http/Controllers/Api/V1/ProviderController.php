@@ -148,7 +148,14 @@ class ProviderController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $p = EgresoProvider::findOrFail($id);
-        $p->delete();
-        return ApiResponse::success(null, 'Eliminado.', null, 200);
+        try {
+            $p->delete();
+            return ApiResponse::success(null, 'Eliminado.', null, 200);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() == 23000) {
+                return ApiResponse::error('No se puede eliminar el proveedor porque tiene recibos asociados.', 409);
+            }
+            throw $e;
+        }
     }
 }

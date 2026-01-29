@@ -37,7 +37,7 @@ class DischargeController extends Controller
     ]
     public function index(Request $request): JsonResponse
     {
-        $q = EgresoReceipt::query()->with('provider');
+        $q = EgresoReceipt::query()->with(['provider', 'conceptoObject', 'elaboradoObject']);
         if ($request->filled('proveedor_id')) {
             $q->where('proveedor_id', $request->proveedor_id);
         }
@@ -111,8 +111,46 @@ class DischargeController extends Controller
     ]
     public function show(int $id): JsonResponse
     {
-        $r = EgresoReceipt::with(['provider', 'conceptoObject'])->findOrFail($id);
+        $r = EgresoReceipt::with(['provider', 'conceptoObject', 'elaboradoObject'])->findOrFail($id);
         return ApiResponse::success(new DischargeResource($r));
+    }
+
+    #[
+        OA\Put(
+            path: '/api/v1/discharges/{id}',
+            summary: 'Actualizar egreso',
+            description: 'Actualiza un egreso existente.',
+            tags: ['Discharges'],
+            security: [['bearerAuth' => []]],
+            parameters: [
+                new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID del egreso', schema: new OA\Schema(type: 'integer')),
+            ],
+            requestBody: new OA\RequestBody(
+                required: false,
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'fecha_recibo', type: 'string', format: 'date', example: '2024-01-15'),
+                        new OA\Property(property: 'proveedor_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'forma', type: 'string', enum: ['Efectivo', 'Bancos'], example: 'Efectivo'),
+                        new OA\Property(property: 'concepto', type: 'integer', example: 1),
+                        new OA\Property(property: 'descripcion', type: 'string', nullable: true),
+                        new OA\Property(property: 'valor', type: 'number', format: 'float', example: 100000),
+                        new OA\Property(property: 'elaborado_por', type: 'integer', example: 1),
+                    ]
+                )
+            ),
+            responses: [
+                new OA\Response(response: 200, description: 'Egreso actualizado exitosamente', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
+                new OA\Response(response: 401, description: 'No autenticado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+                new OA\Response(response: 404, description: 'Egreso no encontrado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+                new OA\Response(response: 422, description: 'Errores de validación', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            ]
+        )
+    ]
+    public function update(\App\Http\Requests\Api\V1\DischargeUpdateRequest $request, int $id): JsonResponse
+    {
+        $r = $this->dischargeService->update($id, $request->validated());
+        return ApiResponse::success(new DischargeResource($r), 'Actualizado.');
     }
 
     #[

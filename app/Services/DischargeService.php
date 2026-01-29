@@ -59,6 +59,29 @@ class DischargeService
         return $receipt->fresh();
     }
 
+    public function update(int $id, array $data): EgresoReceipt
+    {
+        $r = EgresoReceipt::findOrFail($id);
+
+        if (isset($data['concepto']) && $data['concepto'] != $r->concepto) {
+            $concept = EgresoConcept::findOrFail($data['concepto']);
+            if (!$concept->debe || !$concept->haber) {
+                throw ValidationException::withMessages([
+                    'concepto' => ['El concepto seleccionado no tiene debe y haber configurados.'],
+                ]);
+            }
+            $data['debe'] = $concept->debe;
+            $data['haber'] = $concept->haber;
+        }
+
+        if (isset($data['valor'])) {
+            $data['valor'] = is_string($data['valor']) ? Str::replace('.', '', $data['valor']) : $data['valor'];
+        }
+
+        $r->update($data);
+        return $r->fresh();
+    }
+
     public function delete(int $id): void
     {
         $r = EgresoReceipt::findOrFail($id);

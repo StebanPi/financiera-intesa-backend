@@ -122,6 +122,7 @@ Route::prefix('v1')->group(function () {
         Route::get('discharges', [DischargeController::class, 'index']);
         Route::post('discharges', [DischargeController::class, 'store']);
         Route::get('discharges/{id}', [DischargeController::class, 'show'])->whereNumber('id');
+        Route::match(['put', 'patch'], 'discharges/{id}', [DischargeController::class, 'update'])->whereNumber('id');
         Route::delete('discharges/{id}', [DischargeController::class, 'destroy'])->whereNumber('id');
         // Terceros: entries, activities, receipts (consecutivo entry), concept-entry, concept-discharge
         Route::get('third-entries', [ThirdEntryController::class, 'index']);
