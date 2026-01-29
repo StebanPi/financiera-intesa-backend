@@ -42,9 +42,11 @@ class AccountingExcelService
         // Obtener datos de entries filtrados por fecha_recibo y sede
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->where(DB::raw('UPPER(entries.sede)'), strtoupper($sede))
+            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
+            ->distinct()
             ->select(
                 'entries.*',
                 'costs.cod_alumno',
@@ -135,9 +137,11 @@ class AccountingExcelService
 
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->where(DB::raw('UPPER(other_entries.sede)'), strtoupper($sede))
+            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
+            ->distinct()
             ->select(
                 'other_entries.*',
                 'costs.cod_alumno',
@@ -247,24 +251,28 @@ class AccountingExcelService
         // Entries con concepto
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->where(DB::raw('UPPER(entries.sede)'), strtoupper($sede))
+            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
+            ->distinct()
             ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre')
             ->get();
 
         // Other entries con concepto
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->where(DB::raw('UPPER(other_entries.sede)'), strtoupper($sede))
+            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
+            ->distinct()
             ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre')
             ->get();
 
         // Third receipts type='entry'
         $thirdEntries = ThirdReceipts::where('type', 'entry')
-            ->where('sede', $sede)
+            ->where(DB::raw('UPPER(sede)'), strtoupper($sede))
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->with('thirdObject')
             ->get();
@@ -376,7 +384,7 @@ class AccountingExcelService
         $this->clearTemplateData($sheet, 2, 1000);
 
         $egresos = EgresoReceipt::with('provider')
-            ->where('sede', $sede)
+            ->where(DB::raw('UPPER(sede)'), strtoupper($sede))
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->orderBy('fecha_recibo')
             ->orderBy('no_recibo')
@@ -689,110 +697,6 @@ class AccountingExcelService
     }
 
     /**
-     * Genera arqueo (diario/semanal/mensual)
-     */
-    protected function generateArqueo($startDate, $endDate, $title, $sede = 'BARRANCABERMEJA')
-    {
-        // Validar que existan bases para todos los días del rango
-        $missingDates = $this->getMissingCashBases($startDate, $endDate, $sede);
-        if (!empty($missingDates)) {
-            throw new \Exception('Faltan bases diarias para las siguientes fechas: ' . implode(', ', $missingDates));
-        }
-
-        $templateFile = $this->templatePath . '/arqueo_diario informe_semanal informe_mensual.xlsx';
-        $spreadsheet = $this->loadTemplate($templateFile);
-        $sheet = $spreadsheet->getActiveSheet();
-
-        // Limpiar datos existentes de la plantilla (desde fila 4 hasta 1000)
-        $this->clearTemplateData($sheet, 4, 1000);
-
-        // Cambiar título según tipo
-        $sheet->setCellValue('A1', $title);
-
-        // Generar rango de fechas
-        $dates = [];
-        $current = Carbon::parse($startDate);
-        $end = Carbon::parse($endDate);
-        
-        while ($current->lte($end)) {
-            $dates[] = $current->format('Y-m-d');
-            $current->addDay();
-        }
-
-        // Obtener todos los movimientos
-        $movements = $this->getMovementsForArqueo($startDate, $endDate, $sede);
-
-        // Empezar desde fila 4
-        $row = 4;
-
-        foreach ($dates as $date) {
-            // Obtener base del día (cada día inicia con su base)
-            $cashBase = CashBase::where('fecha', $date)->where('sede', $sede)->first();
-            $baseEfectivo = $cashBase ? $cashBase->base_efectivo : 0;
-            $baseBanco = $cashBase ? $cashBase->base_banco : 0;
-
-            // Fila BASE DE EFECTIVO
-            $sheet->setCellValue("A{$row}", date('d/m/Y', strtotime($date)));
-            $sheet->setCellValue("B{$row}", "BASE DE EFECTIVO");
-            $sheet->setCellValue("G{$row}", $baseEfectivo); // Valor numérico para fórmulas
-            $sheet->setCellValue("K{$row}", $baseEfectivo); // Saldo inicial del día
-            $row++;
-
-            // Fila BASE DE BANCO
-            $sheet->setCellValue("A{$row}", date('d/m/Y', strtotime($date)));
-            $sheet->setCellValue("B{$row}", "BASE DE BANCO");
-            $sheet->setCellValue("H{$row}", $baseBanco); // Valor numérico para fórmulas
-            $sheet->setCellValue("L{$row}", $baseBanco); // Saldo inicial del día
-            $row++;
-
-            // Movimientos del día
-            $dayMovements = array_filter($movements, function($m) use ($date) {
-                return $m['fecha'] === $date;
-            });
-
-            // Obtener primera fila de saldo del día (después de las bases)
-            $firstSaldoRow = $row - 1; // La última fila de bases es el saldo inicial
-            $firstMovRow = $row; // Primera fila de movimientos del día
-            
-            foreach ($dayMovements as $mov) {
-                $forma = StudentResolverService::normalizePaymentForm($mov['forma'] ?? 'Efectivo');
-                $isIngreso = $mov['tipo'] === 'ingreso';
-                
-                $sheet->setCellValue("A{$row}", date('d/m/Y', strtotime($mov['fecha'])));
-                $sheet->setCellValue("B{$row}", $mov['nombre']);
-                $sheet->setCellValue("C{$row}", $mov['ocupacion']);
-                $sheet->setCellValue("D{$row}", $mov['concepto']);
-                $sheet->setCellValue("E{$row}", $mov['descripcion']);
-                $sheet->setCellValue("F{$row}", $mov['no_recibo']);
-
-                if ($isIngreso) {
-                    if ($forma === 'Efectivo') {
-                        $sheet->setCellValue("G{$row}", $mov['valor']);
-                    } else {
-                        $sheet->setCellValue("H{$row}", $mov['valor']);
-                    }
-                } else {
-                    if ($forma === 'Efectivo') {
-                        $sheet->setCellValue("I{$row}", $mov['valor']);
-                    } else {
-                        $sheet->setCellValue("J{$row}", $mov['valor']);
-                    }
-                }
-
-                // Fórmulas de saldo acumulado desde el inicio del día
-                $sheet->setCellValue("K{$row}", "=K{$firstSaldoRow}+SUM(G{$firstMovRow}:G{$row})-SUM(I{$firstMovRow}:I{$row})");
-                $sheet->setCellValue("L{$row}", "=L{$firstSaldoRow}+SUM(H{$firstMovRow}:H{$row})-SUM(J{$firstMovRow}:J{$row})");
-                
-                $row++;
-            }
-
-            $row++; // Espacio entre días
-        }
-
-        return $this->download($spreadsheet, "{$title} {$startDate} a {$endDate}.xlsx");
-    }
-
-    /**
      * Obtiene movimientos para arqueo (ingresos y egresos)
      */
     protected function getMovementsForArqueo($startDate, $endDate, $sede = 'BARRANCABERMEJA')
@@ -803,8 +707,9 @@ class AccountingExcelService
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
-            ->where('matriculas.sede', $sede)
+            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
+            ->distinct()
             ->select('entries.*', 'costs.cod_alumno')
             ->get();
 
@@ -827,8 +732,9 @@ class AccountingExcelService
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
-            ->where('matriculas.sede', $sede)
+            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
+            ->distinct()
             ->select('other_entries.*', 'costs.cod_alumno')
             ->get();
 
@@ -850,7 +756,7 @@ class AccountingExcelService
 
         // Ingresos: third_receipts type='entry'
         $thirdEntries = ThirdReceipts::where('type', 'entry')
-            ->where('sede', $sede)
+            ->where(DB::raw('UPPER(sede)'), strtoupper($sede))
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->with('thirdObject')
             ->get();
@@ -872,7 +778,7 @@ class AccountingExcelService
 
         // Egresos: egreso_receipts
         $egresos = EgresoReceipt::with('provider')
-            ->where('sede', $sede)
+            ->where(DB::raw('UPPER(sede)'), strtoupper($sede))
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->get();
 

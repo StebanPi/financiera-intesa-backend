@@ -27,6 +27,7 @@ class EntryStoreRequest extends FormRequest
             'debe' => ['required', 'integer', 'exists:debes,id'],
             'haber' => ['required', 'integer', 'exists:habers,id'],
             'forma' => ['nullable', 'string', 'in:Efectivo,Bancos,Consignación'],
+            'sede' => ['nullable', 'string'],
         ];
     }
 
