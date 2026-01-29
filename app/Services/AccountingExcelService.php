@@ -328,7 +328,7 @@ class AccountingExcelService
                 'programa' => 'TERCERO',
                 'tipo_ingreso' => 'TERCERO',
                 'tipo' => $forma, // Forma de pago: Efectivo/Bancos
-                'concepto' => $entry->conceptoObject->name ?? 'TERCERO',
+                'concepto' => $entry->conceptoObject?->name ?? 'TERCERO',
                 'descripcion' => $entry->detalles ?? '',
                 'no_recibo' => $entry->no_recibo,
                 'valor' => $entry->valor
@@ -409,7 +409,7 @@ class AccountingExcelService
             $sheet->setCellValue("A{$row}", date('d/m/Y', strtotime($egreso->fecha_recibo)));
             $sheet->setCellValue("B{$row}", $provider ? $provider->nombre : 'N/A');
             $sheet->setCellValue("C{$row}", $forma); // TIPO (Efectivo/Bancos)
-            $sheet->setCellValue("D{$row}", $egreso->conceptoObject->nombre ?? $egreso->concepto);
+            $sheet->setCellValue("D{$row}", $egreso->conceptoObject?->nombre ?? $egreso->concepto);
             $sheet->setCellValue("E{$row}", $egreso->descripcion ?? '');
             $sheet->setCellValue("F{$row}", $egreso->no_recibo);
             
@@ -877,7 +877,7 @@ class AccountingExcelService
                 'fecha' => $entry->fecha_recibo,
                 'nombre' => $third ? $third->nombre : 'N/A',
                 'ocupacion' => 'TERCERO',
-                'concepto' => $entry->conceptoObject->name ?? 'TERCERO',
+                'concepto' => $entry->conceptoObject?->name ?? 'TERCERO',
                 'descripcion' => $entry->detalles ?? '',
                 'no_recibo' => $entry->no_recibo,
                 'valor' => $entry->valor,
@@ -898,7 +898,7 @@ class AccountingExcelService
                 'fecha' => $egreso->fecha_recibo,
                 'nombre' => $provider ? $provider->nombre : 'N/A',
                 'ocupacion' => 'PROVEEDOR',
-                'concepto' => $egreso->conceptoObject->nombre ?? $egreso->concepto,
+                'concepto' => $egreso->conceptoObject?->nombre ?? $egreso->concepto,
                 'descripcion' => $egreso->descripcion ?? '',
                 'no_recibo' => $egreso->no_recibo,
                 'valor' => $egreso->valor,
