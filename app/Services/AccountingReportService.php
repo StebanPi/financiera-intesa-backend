@@ -23,7 +23,7 @@ class AccountingReportService
         $query = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->where('entries.sede', $sede)
+            ->where(DB::raw('UPPER(entries.sede)'), strtoupper($sede))
             ->select(
                 'entries.*',
                 'costs.cod_alumno',
@@ -41,12 +41,7 @@ class AccountingReportService
         $grouped = [];
         foreach ($entries as $entry) {
             $student = StudentResolverService::getStudentData($entry->cod_alumno);
-            
-            if (!$student || empty($student->nombre_programa) || trim($student->nombre_programa) === '') {
-                continue;
-            }
-            
-            $programa = $student->nombre_programa;
+            $programa = ($student && !empty($student->nombre_programa)) ? $student->nombre_programa : 'SIN PROGRAMA';
             
             if (!isset($grouped[$programa])) {
                 $grouped[$programa] = [];
@@ -119,7 +114,7 @@ class AccountingReportService
         $query = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->where('other_entries.sede', $sede)
+            ->where(DB::raw('UPPER(other_entries.sede)'), strtoupper($sede))
             ->select(
                 'other_entries.*',
                 'costs.cod_alumno',

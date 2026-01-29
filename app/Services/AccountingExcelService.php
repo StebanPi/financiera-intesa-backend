@@ -43,7 +43,7 @@ class AccountingExcelService
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->where('entries.sede', $sede)
+            ->where(DB::raw('UPPER(entries.sede)'), strtoupper($sede))
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->select(
                 'entries.*',
@@ -149,7 +149,7 @@ class AccountingExcelService
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->where('other_entries.sede', $sede)
+            ->where(DB::raw('UPPER(other_entries.sede)'), strtoupper($sede))
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
             ->select(
                 'other_entries.*',
@@ -261,7 +261,7 @@ class AccountingExcelService
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->where('entries.sede', $sede)
+            ->where(DB::raw('UPPER(entries.sede)'), strtoupper($sede))
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre')
             ->get();
@@ -270,7 +270,7 @@ class AccountingExcelService
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->where('other_entries.sede', $sede)
+            ->where(DB::raw('UPPER(other_entries.sede)'), strtoupper($sede))
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
             ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre')
             ->get();
