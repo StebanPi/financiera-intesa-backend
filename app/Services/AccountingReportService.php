@@ -52,8 +52,8 @@ class AccountingReportService
             $grouped[$programa][] = [
                 'no_recibo' => $entry->no_recibo,
                 'fecha_recibo' => $entry->fecha_recibo,
-                'cedula' => $student->cedula ?? '',
-                'nombre' => $student->nombre ?? 'N/A',
+                'cedula' => $student?->cedula ?? '',
+                'nombre' => $student?->nombre ?? 'N/A',
                 'tipo' => $forma,
                 'descripcion' => $entry->concepto_nombre ?? '',
                 'valor' => $entry->valor,

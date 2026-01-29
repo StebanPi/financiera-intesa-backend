@@ -19,8 +19,8 @@ class StudentResolverService
             return null;
         }
 
+        // Primero intentar desde mysql2 (alumno + relacion_programa_estudiante + programa)
         try {
-            // Primero intentar desde mysql2 (alumno + relacion_programa_estudiante + programa)
             $data = DB::connection('mysql2')->select(
                 'SELECT alumno.cedula, alumno.nombre, programa.nombre_programa 
                  FROM alumno 
@@ -53,8 +53,13 @@ class StudentResolverService
                     'nombre_programa' => ''
                 ];
             }
+        } catch (\Throwable $e) {
+            // Silenciosamente ignorar fallo de conexión externa y seguir al fallback local
+            \Log::warning('External DB student lookup failed: ' . $e->getMessage());
+        }
 
-            // Fallback: buscar en la tabla local matriculas
+        // Fallback: buscar en la tabla local matriculas
+        try {
             $matricula = Matricula::where('cod_alumno', $codAlumno)->first();
             if ($matricula) {
                 return (object)[
@@ -63,12 +68,11 @@ class StudentResolverService
                     'nombre_programa' => $matricula->programa ?? ''
                 ];
             }
-
-            return null;
-        } catch (\Exception $e) {
-            \Log::error('Error al obtener datos del estudiante: ' . $e->getMessage());
-            return null;
+        } catch (\Throwable $e) {
+            \Log::error('Local student lookup failed: ' . $e->getMessage());
         }
+
+        return null;
     }
 
     /**

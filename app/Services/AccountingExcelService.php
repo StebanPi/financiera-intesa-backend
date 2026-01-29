@@ -58,20 +58,7 @@ class AccountingExcelService
         $grouped = [];
         foreach ($entries as $entry) {
             $student = StudentResolverService::getStudentData($entry->cod_alumno);
-            
-            // Si no se encuentra el estudiante, saltar este abono
-            if (!$student) {
-                \Log::warning("Abono #{$entry->no_recibo} sin estudiante válido (cod_alumno: {$entry->cod_alumno})");
-                continue;
-            }
-            
-            // Si el estudiante no tiene programa, saltar este abono
-            if (empty($student->nombre_programa) || trim($student->nombre_programa) === '') {
-                \Log::warning("Abono #{$entry->no_recibo} sin programa (cod_alumno: {$entry->cod_alumno}, estudiante: {$student->nombre})");
-                continue;
-            }
-            
-            $programa = $student->nombre_programa;
+            $programa = ($student && !empty($student->nombre_programa)) ? $student->nombre_programa : 'SIN PROGRAMA';
             
             if (!isset($grouped[$programa])) {
                 $grouped[$programa] = [];
@@ -102,8 +89,8 @@ class AccountingExcelService
                 // A=No Recibo, B=Fecha, C=Cedula, D=Nombre, E=Tipo, F=Descripción, G=Valor
                 $sheet->setCellValue("A{$row}", $entry->no_recibo);
                 $sheet->setCellValue("B{$row}", date('d/m/Y', strtotime($entry->fecha_recibo)));
-                $sheet->setCellValue("C{$row}", $student ? $student->cedula : '');
-                $sheet->setCellValue("D{$row}", $student ? $student->nombre : 'N/A');
+                $sheet->setCellValue("C{$row}", $student?->cedula ?? '');
+                $sheet->setCellValue("D{$row}", $student?->nombre ?? 'N/A');
                 $sheet->setCellValue("E{$row}", $forma); // Tipo = forma de pago
                 $sheet->setCellValue("F{$row}", $entry->concepto_nombre); // Descripción = concepto
                 $sheet->setCellValue("G{$row}", $entry->valor); // Valor numérico para fórmulas
