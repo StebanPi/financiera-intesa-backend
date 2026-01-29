@@ -25,7 +25,7 @@ class AccountingReportService
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
+            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
             ->distinct()
             ->select(
                 'entries.*',
@@ -119,7 +119,7 @@ class AccountingReportService
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
+            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
             ->distinct()
             ->select(
                 'other_entries.*',
@@ -213,7 +213,7 @@ class AccountingReportService
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
+            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
             ->distinct()
             ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre');
 
@@ -228,7 +228,7 @@ class AccountingReportService
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
+            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
             ->distinct()
             ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre');
 
@@ -240,7 +240,7 @@ class AccountingReportService
 
         // Third receipts
         $thirdEntriesQuery = ThirdReceipts::where('type', 'entry')
-            ->where(DB::raw('UPPER(sede)'), strtoupper($sede));
+            ->whereRaw('UPPER(sede) = ?', [strtoupper($sede)]);
 
         if ($startDate && $endDate) {
             $thirdEntriesQuery->whereBetween('fecha_recibo', [$startDate, $endDate]);
@@ -333,7 +333,7 @@ class AccountingReportService
      */
     public function buildTotalEgresosDataset($startDate = null, $endDate = null, $sede = 'BARRANCABERMEJA')
     {
-        $query = EgresoReceipt::with('provider')->where(DB::raw('UPPER(sede)'), strtoupper($sede));
+        $query = EgresoReceipt::with('provider')->whereRaw('UPPER(sede) = ?', [strtoupper($sede)]);
 
         if ($startDate && $endDate) {
             $query->whereBetween('fecha_recibo', [$startDate, $endDate]);
@@ -711,7 +711,7 @@ class AccountingReportService
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
-            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
+            ->where('matriculas.sede', $sede)
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->distinct()
             ->select('entries.*', 'costs.cod_alumno')
@@ -736,7 +736,7 @@ class AccountingReportService
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
-            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
+            ->where('matriculas.sede', $sede)
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
             ->distinct()
             ->select('other_entries.*', 'costs.cod_alumno')
@@ -759,8 +759,7 @@ class AccountingReportService
         }
 
         // Ingresos: third_receipts type='entry'
-        $thirdEntries = ThirdReceipts::where('type', 'entry')
-            ->where(DB::raw('UPPER(sede)'), strtoupper($sede))
+        $thirdEntries = ThirdReceipts::where('type', 'entry')->where('sede', $sede)
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->with('thirdObject')
             ->get();
@@ -782,7 +781,7 @@ class AccountingReportService
 
         // Egresos: egreso_receipts
         $egresos = EgresoReceipt::with('provider')
-            ->where(DB::raw('UPPER(sede)'), strtoupper($sede))
+            ->where('sede', $sede)
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->get();
 
