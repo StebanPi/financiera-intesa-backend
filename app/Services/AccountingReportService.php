@@ -22,9 +22,8 @@ class AccountingReportService
     {
         $query = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->where('matriculas.sede', $sede)
+            ->where('entries.sede', $sede)
             ->select(
                 'entries.*',
                 'costs.cod_alumno',
@@ -119,9 +118,8 @@ class AccountingReportService
     {
         $query = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->where('matriculas.sede', $sede)
+            ->where('other_entries.sede', $sede)
             ->select(
                 'other_entries.*',
                 'costs.cod_alumno',
@@ -471,10 +469,10 @@ class AccountingReportService
 
         // Obtener movimientos anteriores al rango del reporte
         $startDateCarbon = Carbon::parse($startDate);
-        $initialDateCarbon = Carbon::parse($initialBalance->start_date->format('Y-m-d'));
+        $initialDateCarbon = Carbon::parse($initialBalance->start_date);
         
         if ($startDateCarbon->gt($initialDateCarbon)) {
-            $previousStartDate = $initialBalance->start_date->format('Y-m-d');
+            $previousStartDate = Carbon::parse($initialBalance->start_date)->format('Y-m-d');
             $previousEndDate = $startDateCarbon->copy()->subDay()->format('Y-m-d');
             
             $previousMovements = $this->getMovementsForArqueo($previousStartDate, $previousEndDate, $sede);

@@ -42,16 +42,15 @@ class AccountingExcelService
         // Obtener datos de entries filtrados por fecha_recibo y sede
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->where('matriculas.sede', $sede)
+            ->where('entries.sede', $sede)
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->select(
                 'entries.*',
                 'costs.cod_alumno',
                 'conceptos.nombre as concepto_nombre'
             )
-            ->orderBy('costs.cod_alumno')
+            ->orderBy('entries.fecha_recibo')
             ->get();
 
         // Agrupar por programa
@@ -149,9 +148,8 @@ class AccountingExcelService
 
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->where('matriculas.sede', $sede)
+            ->where('other_entries.sede', $sede)
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
             ->select(
                 'other_entries.*',
@@ -159,7 +157,7 @@ class AccountingExcelService
                 'otros_conceptos.nombre as concepto_nombre'
             )
             ->orderBy('otros_conceptos.nombre')
-            ->orderBy('costs.cod_alumno')
+            ->orderBy('other_entries.fecha_recibo')
             ->get();
 
         // Agrupar por CONCEPTO -> PROGRAMA
@@ -262,9 +260,8 @@ class AccountingExcelService
         // Entries con concepto
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->where('matriculas.sede', $sede)
+            ->where('entries.sede', $sede)
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre')
             ->get();
@@ -272,9 +269,8 @@ class AccountingExcelService
         // Other entries con concepto
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->where('matriculas.sede', $sede)
+            ->where('other_entries.sede', $sede)
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
             ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre')
             ->get();
@@ -528,10 +524,10 @@ class AccountingExcelService
         $openingSaldoBanco = $initialBalance->base_banco;
 
         $startDateCarbon = Carbon::parse($startDate);
-        $initialDateCarbon = Carbon::parse($initialBalance->start_date->format('Y-m-d'));
+        $initialDateCarbon = Carbon::parse($initialBalance->start_date);
         
         if ($startDateCarbon->gt($initialDateCarbon)) {
-            $previousStartDate = $initialBalance->start_date->format('Y-m-d');
+            $previousStartDate = Carbon::parse($initialBalance->start_date)->format('Y-m-d');
             $previousEndDate = $startDateCarbon->copy()->subDay()->format('Y-m-d');
             
             $previousMovements = $this->getMovementsForArqueo($previousStartDate, $previousEndDate, $sede);

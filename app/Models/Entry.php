@@ -19,7 +19,8 @@ class Entry extends Model
         'elaborado_por',
         'debe',
         'haber',
-        'forma'
+        'forma',
+        'sede'
     ];
 
     protected $connection;

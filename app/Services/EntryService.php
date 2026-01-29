@@ -57,6 +57,7 @@ class EntryService
                 'debe' => $data['debe'],
                 'haber' => $data['haber'],
                 'forma' => $forma,
+                'sede' => $data['sede'] ?? 'BARRANCABERMEJA',
             ]);
 
             $this->costService->ensurePursesForCost((int) $data['id_cost']);

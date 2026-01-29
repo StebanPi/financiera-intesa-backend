@@ -49,6 +49,7 @@ class OtherEntryService
                 'debe' => $data['debe'],
                 'haber' => $data['haber'],
                 'forma' => $forma,
+                'sede' => $data['sede'] ?? 'BARRANCABERMEJA',
             ]);
         });
 

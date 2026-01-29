@@ -22,6 +22,18 @@ return new class extends Migration
                 $table->string('sede')->default('BARRANCABERMEJA')->after('valor');
             }
         });
+
+        Schema::table('entries', function (Blueprint $table) {
+            if (!Schema::hasColumn('entries', 'sede')) {
+                $table->string('sede')->default('BARRANCABERMEJA')->after('valor');
+            }
+        });
+
+        Schema::table('other_entries', function (Blueprint $table) {
+            if (!Schema::hasColumn('other_entries', 'sede')) {
+                $table->string('sede')->default('BARRANCABERMEJA')->after('valor');
+            }
+        });
     }
 
     /**
@@ -37,6 +49,18 @@ return new class extends Migration
 
         Schema::table('third_receipts', function (Blueprint $table) {
             if (Schema::hasColumn('third_receipts', 'sede')) {
+                $table->dropColumn('sede');
+            }
+        });
+
+        Schema::table('entries', function (Blueprint $table) {
+            if (Schema::hasColumn('entries', 'sede')) {
+                $table->dropColumn('sede');
+            }
+        });
+
+        Schema::table('other_entries', function (Blueprint $table) {
+            if (Schema::hasColumn('other_entries', 'sede')) {
                 $table->dropColumn('sede');
             }
         });
