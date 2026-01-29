@@ -18,11 +18,13 @@ class AccountingReportService
      * Construye dataset para preview de Abonos
      * Agrupa por PROGRAMA
      */
-    public function buildAbonosDataset($startDate = null, $endDate = null)
+    public function buildAbonosDataset($startDate = null, $endDate = null, $sede = 'BARRANCABERMEJA')
     {
         $query = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
+            ->where('matriculas.sede', $sede)
             ->select(
                 'entries.*',
                 'costs.cod_alumno',
@@ -113,11 +115,13 @@ class AccountingReportService
      * Construye dataset para preview de Otros Ingresos
      * Agrupa por CONCEPTO -> PROGRAMA
      */
-    public function buildOtrosIngresosDataset($startDate = null, $endDate = null)
+    public function buildOtrosIngresosDataset($startDate = null, $endDate = null, $sede = 'BARRANCABERMEJA')
     {
         $query = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
+            ->where('matriculas.sede', $sede)
             ->select(
                 'other_entries.*',
                 'costs.cod_alumno',
@@ -203,12 +207,14 @@ class AccountingReportService
      * Construye dataset para preview de Total Ingresos
      * Tabla plana con SUMA acumulada
      */
-    public function buildTotalIngresosDataset($startDate = null, $endDate = null)
+    public function buildTotalIngresosDataset($startDate = null, $endDate = null, $sede = 'BARRANCABERMEJA')
     {
         // Entries
         $entriesQuery = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
+            ->where('matriculas.sede', $sede)
             ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre');
 
         if ($startDate && $endDate) {
@@ -220,7 +226,9 @@ class AccountingReportService
         // Other entries
         $otherEntriesQuery = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
+            ->where('matriculas.sede', $sede)
             ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre');
 
         if ($startDate && $endDate) {
@@ -230,7 +238,7 @@ class AccountingReportService
         $otherEntries = $otherEntriesQuery->get();
 
         // Third receipts
-        $thirdEntriesQuery = ThirdReceipts::where('type', 'entry');
+        $thirdEntriesQuery = ThirdReceipts::where('type', 'entry')->where('sede', $sede);
 
         if ($startDate && $endDate) {
             $thirdEntriesQuery->whereBetween('fecha_recibo', [$startDate, $endDate]);
@@ -321,9 +329,9 @@ class AccountingReportService
      * Construye dataset para preview de Total Egresos
      * Tabla plana con SUMA acumulada
      */
-    public function buildTotalEgresosDataset($startDate = null, $endDate = null)
+    public function buildTotalEgresosDataset($startDate = null, $endDate = null, $sede = 'BARRANCABERMEJA')
     {
-        $query = EgresoReceipt::with('provider');
+        $query = EgresoReceipt::with('provider')->where('sede', $sede);
 
         if ($startDate && $endDate) {
             $query->whereBetween('fecha_recibo', [$startDate, $endDate]);
@@ -376,65 +384,65 @@ class AccountingReportService
     /**
      * Construye dataset para preview de Arqueo Diario
      */
-    public function buildArqueoDiarioDataset($date)
+    public function buildArqueoDiarioDataset($date, $sede = 'BARRANCABERMEJA')
     {
-        return $this->buildArqueoDataset($date, $date);
+        return $this->buildArqueoDataset($date, $date, $sede);
     }
 
     /**
      * Construye dataset para preview de Arqueo Semanal (legacy - usa bases diarias)
      */
-    public function buildArqueoSemanalDataset($anyDate)
+    public function buildArqueoSemanalDataset($anyDate, $sede = 'BARRANCABERMEJA')
     {
         $carbon = Carbon::parse($anyDate);
         $start = $carbon->copy()->startOfWeek()->format('Y-m-d'); // Lunes
         $end = $carbon->copy()->endOfWeek()->format('Y-m-d'); // Domingo
         
-        return $this->buildArqueoDataset($start, $end);
+        return $this->buildArqueoDataset($start, $end, $sede);
     }
 
     /**
      * Construye dataset para preview de Arqueo Mensual (legacy - usa bases diarias)
      */
-    public function buildArqueoMensualDataset($month, $year)
+    public function buildArqueoMensualDataset($month, $year, $sede = 'BARRANCABERMEJA')
     {
         $start = Carbon::create($year, $month, 1)->startOfMonth()->format('Y-m-d');
         $end = Carbon::create($year, $month, 1)->endOfMonth()->format('Y-m-d');
         
-        return $this->buildArqueoDataset($start, $end);
+        return $this->buildArqueoDataset($start, $end, $sede);
     }
 
     /**
      * Construye dataset para Informe Semanal (nueva lógica con base inicial)
      */
-    public function buildInformeSemanalDataset($anyDate)
+    public function buildInformeSemanalDataset($anyDate, $sede = 'BARRANCABERMEJA')
     {
         $carbon = Carbon::parse($anyDate);
         $start = $carbon->copy()->startOfWeek()->format('Y-m-d'); // Lunes
         $end = $carbon->copy()->endOfWeek()->format('Y-m-d'); // Domingo
         
-        return $this->buildInformeMovimientosDataset($start, $end);
+        return $this->buildInformeMovimientosDataset($start, $end, $sede);
     }
 
     /**
      * Construye dataset para Informe Mensual (nueva lógica con base inicial)
      */
-    public function buildInformeMensualDataset($month, $year)
+    public function buildInformeMensualDataset($month, $year, $sede = 'BARRANCABERMEJA')
     {
         $start = Carbon::create($year, $month, 1)->startOfMonth()->format('Y-m-d');
         $end = Carbon::create($year, $month, 1)->endOfMonth()->format('Y-m-d');
         
-        return $this->buildInformeMovimientosDataset($start, $end);
+        return $this->buildInformeMovimientosDataset($start, $end, $sede);
     }
 
     /**
      * Construye dataset para informe de movimientos (sin bases diarias)
      * Usa base inicial única y calcula saldos acumulados
      */
-    public function buildInformeMovimientosDataset($startDate, $endDate)
+    public function buildInformeMovimientosDataset($startDate, $endDate, $sede = 'BARRANCABERMEJA')
     {
         // Verificar si existe base inicial
-        $initialBalance = InitialBalance::getActive();
+        $initialBalance = InitialBalance::getActive($sede);
         if (!$initialBalance) {
             return [
                 'missing_initial_base' => true,
@@ -469,7 +477,7 @@ class AccountingReportService
             $previousStartDate = $initialBalance->start_date->format('Y-m-d');
             $previousEndDate = $startDateCarbon->copy()->subDay()->format('Y-m-d');
             
-            $previousMovements = $this->getMovementsForArqueo($previousStartDate, $previousEndDate);
+            $previousMovements = $this->getMovementsForArqueo($previousStartDate, $previousEndDate, $sede);
 
             foreach ($previousMovements as $mov) {
                 $forma = StudentResolverService::normalizePaymentForm($mov['forma'] ?? 'Efectivo');
@@ -496,7 +504,7 @@ class AccountingReportService
         }
 
         // Obtener movimientos del rango del reporte
-        $movements = $this->getMovementsForArqueo($startDate, $endDate);
+        $movements = $this->getMovementsForArqueo($startDate, $endDate, $sede);
 
         // Procesar movimientos y calcular saldos acumulados
         $rows = [];
@@ -589,10 +597,10 @@ class AccountingReportService
     /**
      * Construye dataset genérico para arqueo (diario/semanal/mensual)
      */
-    protected function buildArqueoDataset($startDate, $endDate)
+    protected function buildArqueoDataset($startDate, $endDate, $sede = 'BARRANCABERMEJA')
     {
         // Validar bases
-        $missingDates = $this->getMissingCashBases($startDate, $endDate);
+        $missingDates = $this->getMissingCashBases($startDate, $endDate, $sede);
         if (!empty($missingDates)) {
             return [
                 'missing_dates' => $missingDates,
@@ -612,13 +620,13 @@ class AccountingReportService
         }
 
         // Obtener movimientos
-        $movements = $this->getMovementsForArqueo($startDate, $endDate);
+        $movements = $this->getMovementsForArqueo($startDate, $endDate, $sede);
 
         $result = [];
         $totalRows = 0;
 
         foreach ($dates as $date) {
-            $cashBase = CashBase::where('fecha', $date)->first();
+            $cashBase = CashBase::where('fecha', $date)->where('sede', $sede)->first();
             $baseEfectivo = $cashBase ? $cashBase->base_efectivo : 0;
             $baseBanco = $cashBase ? $cashBase->base_banco : 0;
 
@@ -693,13 +701,15 @@ class AccountingReportService
     /**
      * Obtiene movimientos para arqueo
      */
-    protected function getMovementsForArqueo($startDate, $endDate)
+    protected function getMovementsForArqueo($startDate, $endDate, $sede = 'BARRANCABERMEJA')
     {
         $movements = [];
 
         // Ingresos: entries
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->where('matriculas.sede', $sede)
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->select('entries.*', 'costs.cod_alumno')
             ->get();
@@ -722,6 +732,8 @@ class AccountingReportService
         // Ingresos: other_entries
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->where('matriculas.sede', $sede)
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
             ->select('other_entries.*', 'costs.cod_alumno')
             ->get();
@@ -743,7 +755,7 @@ class AccountingReportService
         }
 
         // Ingresos: third_receipts type='entry'
-        $thirdEntries = ThirdReceipts::where('type', 'entry')
+        $thirdEntries = ThirdReceipts::where('type', 'entry')->where('sede', $sede)
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->with('thirdObject')
             ->get();
@@ -765,6 +777,7 @@ class AccountingReportService
 
         // Egresos: egreso_receipts
         $egresos = EgresoReceipt::with('provider')
+            ->where('sede', $sede)
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->get();
 
@@ -798,7 +811,7 @@ class AccountingReportService
     /**
      * Obtiene fechas faltantes de bases diarias
      */
-    protected function getMissingCashBases($startDate, $endDate)
+    protected function getMissingCashBases($startDate, $endDate, $sede = 'BARRANCABERMEJA')
     {
         $dates = [];
         $current = Carbon::parse($startDate);
@@ -810,7 +823,10 @@ class AccountingReportService
         }
 
         // Obtener fechas existentes y normalizar al formato Y-m-d para comparación
-        $existingBases = CashBase::whereIn('fecha', $dates)->get();
+        $existingBases = CashBase::where('sede', $sede)
+            ->whereIn('fecha', $dates)
+            ->get();
+            
         $existingDates = $existingBases->map(function($base) {
             return $base->fecha->format('Y-m-d');
         })->toArray();

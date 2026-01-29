@@ -8,6 +8,8 @@ use App\Http\Requests\Api\V1\DateRangeRequest;
 use App\Http\Requests\Api\V1\MonthYearRequest;
 use App\Http\Requests\Api\V1\SingleDateRequest;
 use App\Models\CashBase;
+use App\Models\InitialBalance;
+use Illuminate\Support\Facades\DB;
 use App\Services\AccountingExcelService;
 use App\Services\AccountingReportService;
 use App\Support\ApiResponse;
@@ -53,9 +55,12 @@ class AccountingApiController extends Controller
             ]
         )
     ]
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $todayBase = CashBase::where('fecha', date('Y-m-d'))->first();
+        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $todayBase = CashBase::where('fecha', date('Y-m-d'))
+            ->where('sede', $sede)
+            ->first();
         $data = [
             'today_base' => $todayBase ? [
                 'fecha' => $todayBase->fecha->format('Y-m-d'),
@@ -103,8 +108,9 @@ class AccountingApiController extends Controller
     {
         $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
         $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        $sede = $request->get('sede', 'BARRANCABERMEJA');
 
-        $ds = $this->reportService->buildAbonosDataset($fechaInicio, $fechaFin);
+        $ds = $this->reportService->buildAbonosDataset($fechaInicio, $fechaFin, $sede);
         $rows = [];
         foreach ($ds['grouped'] as $programa => $items) {
             foreach ($items as $i) {
@@ -152,8 +158,9 @@ class AccountingApiController extends Controller
     {
         $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
         $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        $sede = $request->get('sede', 'BARRANCABERMEJA');
 
-        $ds = $this->reportService->buildOtrosIngresosDataset($fechaInicio, $fechaFin);
+        $ds = $this->reportService->buildOtrosIngresosDataset($fechaInicio, $fechaFin, $sede);
         $rows = [];
         foreach ($ds['grouped'] as $concepto => $programas) {
             foreach ($programas as $programa => $items) {
@@ -203,8 +210,9 @@ class AccountingApiController extends Controller
     {
         $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
         $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        $sede = $request->get('sede', 'BARRANCABERMEJA');
 
-        $ds = $this->reportService->buildTotalIngresosDataset($fechaInicio, $fechaFin);
+        $ds = $this->reportService->buildTotalIngresosDataset($fechaInicio, $fechaFin, $sede);
         $totals = ['total' => $ds['total'], 'total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']];
         $params = ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin];
         return ApiResponse::success(['rows' => $ds['entries'], 'totals' => $totals, 'params' => $params], 'OK', ['total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']]);
@@ -246,8 +254,9 @@ class AccountingApiController extends Controller
     {
         $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
         $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        $sede = $request->get('sede', 'BARRANCABERMEJA');
 
-        $ds = $this->reportService->buildTotalEgresosDataset($fechaInicio, $fechaFin);
+        $ds = $this->reportService->buildTotalEgresosDataset($fechaInicio, $fechaFin, $sede);
         $totals = ['total' => $ds['total'], 'total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']];
         $params = ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin];
         return ApiResponse::success(['rows' => $ds['items'], 'totals' => $totals, 'params' => $params], 'OK', ['total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']]);
@@ -288,7 +297,8 @@ class AccountingApiController extends Controller
     public function arqueoDiario(SingleDateRequest $request): JsonResponse
     {
         $fecha = $request->fecha;
-        $ds = $this->reportService->buildArqueoDiarioDataset($fecha);
+        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $ds = $this->reportService->buildArqueoDiarioDataset($fecha, $sede);
 
         if (!empty($ds['missing_dates'])) {
             return ApiResponse::error(
@@ -339,7 +349,8 @@ class AccountingApiController extends Controller
     public function informeSemanal(SingleDateRequest $request): JsonResponse
     {
         $fecha = $request->fecha;
-        $ds = $this->reportService->buildInformeSemanalDataset($fecha);
+        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $ds = $this->reportService->buildInformeSemanalDataset($fecha, $sede);
 
         if (!empty($ds['missing_initial_base'])) {
             return ApiResponse::error(
@@ -392,7 +403,8 @@ class AccountingApiController extends Controller
     public function informeMensual(MonthYearRequest $request): JsonResponse
     {
         [$mes, $anio] = $request->getMesAnio();
-        $ds = $this->reportService->buildInformeMensualDataset($mes, $anio);
+        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $ds = $this->reportService->buildInformeMensualDataset($mes, $anio, $sede);
 
         if (!empty($ds['missing_initial_base'])) {
             return ApiResponse::error(
@@ -471,7 +483,8 @@ class AccountingApiController extends Controller
     public function abonosDownload(DateRangeRequiredRequest $request)
     {
         try {
-            $r = $this->excelService->generateAbonosReport($request->fecha_inicio, $request->fecha_fin);
+            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $r = $this->excelService->generateAbonosReport($request->fecha_inicio, $request->fecha_fin, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
         } catch (\Throwable $e) {
@@ -514,7 +527,8 @@ class AccountingApiController extends Controller
     public function otrosIngresosDownload(DateRangeRequiredRequest $request)
     {
         try {
-            $r = $this->excelService->generateOtrosIngresosReport($request->fecha_inicio, $request->fecha_fin);
+            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $r = $this->excelService->generateOtrosIngresosReport($request->fecha_inicio, $request->fecha_fin, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
         } catch (\Throwable $e) {
@@ -557,7 +571,8 @@ class AccountingApiController extends Controller
     public function totalIngresosDownload(DateRangeRequiredRequest $request)
     {
         try {
-            $r = $this->excelService->generateTotalIngresosReport($request->fecha_inicio, $request->fecha_fin);
+            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $r = $this->excelService->generateTotalIngresosReport($request->fecha_inicio, $request->fecha_fin, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
         } catch (\Throwable $e) {
@@ -600,7 +615,8 @@ class AccountingApiController extends Controller
     public function egresosDownload(DateRangeRequiredRequest $request)
     {
         try {
-            $r = $this->excelService->generateTotalEgresosReport($request->fecha_inicio, $request->fecha_fin);
+            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $r = $this->excelService->generateTotalEgresosReport($request->fecha_inicio, $request->fecha_fin, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
         } catch (\Throwable $e) {
@@ -642,7 +658,8 @@ class AccountingApiController extends Controller
     public function arqueoDiarioDownload(SingleDateRequest $request)
     {
         try {
-            $r = $this->excelService->generateArqueoDiario($request->fecha);
+            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $r = $this->excelService->generateArqueoDiario($request->fecha, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
         } catch (\Throwable $e) {
@@ -684,7 +701,8 @@ class AccountingApiController extends Controller
     public function informeSemanalDownload(SingleDateRequest $request)
     {
         try {
-            $r = $this->excelService->generateInformeSemanal($request->fecha);
+            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $r = $this->excelService->generateInformeSemanal($request->fecha, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
         } catch (\Throwable $e) {
@@ -729,12 +747,212 @@ class AccountingApiController extends Controller
     {
         try {
             [$mes, $anio] = $request->getMesAnio();
-            $r = $this->excelService->generateInformeMensual($mes, $anio);
+            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $r = $this->excelService->generateInformeMensual($mes, $anio, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
         } catch (\Throwable $e) {
             return $this->handleExcelError($e, $request);
         }
+    }
+
+    /**
+     * GET /api/v1/accounting/initial-balance
+     * Obtiene la configuración de la base inicial.
+     */
+    #[
+        OA\Get(
+            path: '/api/v1/accounting/initial-balance',
+            summary: 'Obtener base inicial',
+            description: 'Obtiene la configuración actual de la base inicial de contabilidad.',
+            tags: ['Accounting'],
+            security: [['bearerAuth' => []]],
+            responses: [
+                new OA\Response(
+                    response: 200,
+                    description: 'Configuración de base inicial',
+                    content: new OA\JsonContent(
+                        properties: [
+                            new OA\Property(property: 'data', type: 'object', properties: [
+                                new OA\Property(property: 'exists', type: 'boolean'),
+                                new OA\Property(property: 'data', type: 'object', nullable: true),
+                            ]),
+                        ]
+                    )
+                ),
+            ]
+        )
+    ]
+    public function initialBalance(Request $request): JsonResponse
+    {
+        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $initial = InitialBalance::getActive($sede);
+        return ApiResponse::success([
+            'exists' => (bool) $initial,
+            'data' => $initial
+        ], 'OK');
+    }
+
+    /**
+     * POST /api/v1/accounting/initial-balance
+     * Configura o actualiza la base inicial.
+     */
+    #[
+        OA\Post(
+            path: '/api/v1/accounting/initial-balance',
+            summary: 'Configurar base inicial',
+            description: 'Crea o actualiza la base inicial de contabilidad. Solo debe existir una activa.',
+            tags: ['Accounting'],
+            security: [['bearerAuth' => []]],
+            requestBody: new OA\RequestBody(
+                required: true,
+                content: new OA\JsonContent(
+                    required: ['start_date', 'base_efectivo', 'base_banco'],
+                    properties: [
+                        new OA\Property(property: 'start_date', type: 'string', format: 'date'),
+                        new OA\Property(property: 'base_efectivo', type: 'number'),
+                        new OA\Property(property: 'base_banco', type: 'number'),
+                    ]
+                )
+            ),
+            responses: [
+                new OA\Response(response: 200, description: 'Base inicial configurada'),
+            ]
+        )
+    ]
+    public function storeInitialBalance(Request $request): JsonResponse
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'base_efectivo' => 'required|numeric|min:0',
+            'base_banco' => 'required|numeric|min:0',
+            'sede' => 'required|string'
+        ]);
+
+        $sede = $request->sede;
+        $initialBalance = InitialBalance::getActive($sede);
+
+        if ($initialBalance) {
+            $initialBalance->update([
+                'start_date' => $request->start_date,
+                'base_efectivo' => $request->base_efectivo,
+                'base_banco' => $request->base_banco,
+            ]);
+        } else {
+            InitialBalance::create([
+                'start_date' => $request->start_date,
+                'base_efectivo' => $request->base_efectivo,
+                'base_banco' => $request->base_banco,
+                'created_by' => auth()->id(),
+                'sede' => $sede,
+            ]);
+        }
+
+        return ApiResponse::success(null, 'Base inicial configurada correctamente');
+    }
+
+    /**
+     * GET /api/v1/accounting/cash-bases?start_date=&end_date=
+     * Obtiene las bases diarias existentes en un rango.
+     */
+    #[
+        OA\Get(
+            path: '/api/v1/accounting/cash-bases',
+            summary: 'Obtener bases diarias',
+            description: 'Obtiene las bases diarias registradas en un rango de fechas.',
+            tags: ['Accounting'],
+            security: [['bearerAuth' => []]],
+            parameters: [
+                new OA\Parameter(name: 'start_date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+                new OA\Parameter(name: 'end_date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+            ],
+            responses: [
+                new OA\Response(response: 200, description: 'Lista de bases diarias')
+            ]
+        )
+    ]
+    public function cashBases(Request $request): JsonResponse
+    {
+        $startDate = $request->get('start_date', date('Y-m-01'));
+        $endDate = $request->get('end_date', date('Y-m-t'));
+        $sede = $request->get('sede', 'BARRANCABERMEJA');
+
+        $bases = CashBase::whereBetween('fecha', [$startDate, $endDate])
+            ->where('sede', $sede)
+            ->orderBy('fecha')
+            ->get();
+
+        return ApiResponse::success(['bases' => $bases], 'OK');
+    }
+
+    /**
+     * POST /api/v1/accounting/cash-bases
+     * Guarda o actualiza múltiples bases diarias.
+     */
+    #[
+        OA\Post(
+            path: '/api/v1/accounting/cash-bases',
+            summary: 'Guardar bases diarias',
+            description: 'Guarda o actualiza bases diarias en lote.',
+            tags: ['Accounting'],
+            security: [['bearerAuth' => []]],
+            requestBody: new OA\RequestBody(
+                required: true,
+                content: new OA\JsonContent(
+                    required: ['bases'],
+                    properties: [
+                        new OA\Property(
+                            property: 'bases',
+                            type: 'array',
+                            items: new OA\Items(properties: [
+                                new OA\Property(property: 'fecha', type: 'string', format: 'date'),
+                                new OA\Property(property: 'base_efectivo', type: 'number'),
+                                new OA\Property(property: 'base_banco', type: 'number'),
+                            ])
+                        ),
+                    ]
+                )
+            ),
+            responses: [
+                new OA\Response(response: 200, description: 'Bases guardadas'),
+            ]
+        )
+    ]
+    public function storeCashBases(Request $request): JsonResponse
+    {
+        $request->validate([
+            'bases' => 'required|array|min:1',
+            'bases.*.fecha' => 'required|date',
+            'bases.*.base_efectivo' => 'required|numeric|min:0',
+            'bases.*.base_banco' => 'required|numeric|min:0',
+            'sede' => 'required|string'
+        ]);
+
+        $sede = $request->sede;
+        $saved = 0;
+        
+        DB::beginTransaction();
+        try {
+            foreach ($request->bases as $base) {
+                CashBase::updateOrCreate(
+                    [
+                        'fecha' => $base['fecha'],
+                        'sede' => $sede
+                    ],
+                    [
+                        'base_efectivo' => $base['base_efectivo'],
+                        'base_banco' => $base['base_banco']
+                    ]
+                );
+                $saved++;
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponse::error('SERVER_ERROR', 'Error al guardar las bases: ' . $e->getMessage(), null, 500);
+        }
+
+        return ApiResponse::success(null, "Se guardaron {$saved} base(s) diaria(s) correctamente.");
     }
 
     /**

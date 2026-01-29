@@ -30,7 +30,7 @@ class AccountingExcelService
     /**
      * Genera informe de Abonos
      */
-    public function generateAbonosReport($startDate, $endDate)
+    public function generateAbonosReport($startDate, $endDate, $sede = 'BARRANCABERMEJA')
     {
         $templateFile = $this->templatePath . '/informe de abonos.xlsx';
         $spreadsheet = $this->loadTemplate($templateFile);
@@ -39,10 +39,12 @@ class AccountingExcelService
         // Limpiar datos existentes de la plantilla (desde fila 3 hasta 1000)
         $this->clearTemplateData($sheet, 3, 1000);
 
-        // Obtener datos de entries filtrados por fecha_recibo
+        // Obtener datos de entries filtrados por fecha_recibo y sede
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
+            ->where('matriculas.sede', $sede)
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->select(
                 'entries.*',
@@ -136,7 +138,7 @@ class AccountingExcelService
     /**
      * Genera informe de Otros Ingresos
      */
-    public function generateOtrosIngresosReport($startDate, $endDate)
+    public function generateOtrosIngresosReport($startDate, $endDate, $sede = 'BARRANCABERMEJA')
     {
         $templateFile = $this->templatePath . '/informe de otros ingresos.xlsx';
         $spreadsheet = $this->loadTemplate($templateFile);
@@ -147,7 +149,9 @@ class AccountingExcelService
 
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
+            ->where('matriculas.sede', $sede)
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
             ->select(
                 'other_entries.*',
@@ -246,7 +250,7 @@ class AccountingExcelService
     /**
      * Genera informe Total Ingresos
      */
-    public function generateTotalIngresosReport($startDate, $endDate)
+    public function generateTotalIngresosReport($startDate, $endDate, $sede = 'BARRANCABERMEJA')
     {
         $templateFile = $this->templatePath . '/informe total ingresos.xlsx';
         $spreadsheet = $this->loadTemplate($templateFile);
@@ -258,7 +262,9 @@ class AccountingExcelService
         // Entries con concepto
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
+            ->where('matriculas.sede', $sede)
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre')
             ->get();
@@ -266,13 +272,16 @@ class AccountingExcelService
         // Other entries con concepto
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
+            ->where('matriculas.sede', $sede)
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
             ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre')
             ->get();
 
         // Third receipts type='entry'
         $thirdEntries = ThirdReceipts::where('type', 'entry')
+            ->where('sede', $sede)
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->with('thirdObject')
             ->get();
@@ -374,7 +383,7 @@ class AccountingExcelService
     /**
      * Genera informe Total Egresos
      */
-    public function generateTotalEgresosReport($startDate, $endDate)
+    public function generateTotalEgresosReport($startDate, $endDate, $sede = 'BARRANCABERMEJA')
     {
         $templateFile = $this->templatePath . '/informe total egresos.xlsx';
         $spreadsheet = $this->loadTemplate($templateFile);
@@ -384,6 +393,7 @@ class AccountingExcelService
         $this->clearTemplateData($sheet, 2, 1000);
 
         $egresos = EgresoReceipt::with('provider')
+            ->where('sede', $sede)
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->orderBy('fecha_recibo')
             ->orderBy('no_recibo')
@@ -435,64 +445,64 @@ class AccountingExcelService
     /**
      * Genera Arqueo Diario
      */
-    public function generateArqueoDiario($date)
+    public function generateArqueoDiario($date, $sede = 'BARRANCABERMEJA')
     {
-        return $this->generateArqueo($date, $date, 'ARQUEO DIARIO');
+        return $this->generateArqueo($date, $date, 'ARQUEO DIARIO', $sede);
     }
 
     /**
      * Genera Arqueo Semanal (legacy - usa bases diarias)
      */
-    public function generateArqueoSemanal($anyDate)
+    public function generateArqueoSemanal($anyDate, $sede = 'BARRANCABERMEJA')
     {
         $carbon = Carbon::parse($anyDate);
         $start = $carbon->startOfWeek()->format('Y-m-d'); // Lunes
         $end = $carbon->endOfWeek()->format('Y-m-d'); // Domingo
         
-        return $this->generateArqueo($start, $end, 'ARQUEO SEMANAL');
+        return $this->generateArqueo($start, $end, 'ARQUEO SEMANAL', $sede);
     }
 
     /**
      * Genera Arqueo Mensual (legacy - usa bases diarias)
      */
-    public function generateArqueoMensual($month, $year)
+    public function generateArqueoMensual($month, $year, $sede = 'BARRANCABERMEJA')
     {
         $start = Carbon::create($year, $month, 1)->startOfMonth()->format('Y-m-d');
         $end = Carbon::create($year, $month, 1)->endOfMonth()->format('Y-m-d');
         
-        return $this->generateArqueo($start, $end, 'ARQUEO MENSUAL');
+        return $this->generateArqueo($start, $end, 'ARQUEO MENSUAL', $sede);
     }
 
     /**
      * Genera Informe Semanal (nueva lógica con base inicial)
      */
-    public function generateInformeSemanal($anyDate)
+    public function generateInformeSemanal($anyDate, $sede = 'BARRANCABERMEJA')
     {
         $carbon = Carbon::parse($anyDate);
         $start = $carbon->startOfWeek()->format('Y-m-d'); // Lunes
         $end = $carbon->endOfWeek()->format('Y-m-d'); // Domingo
         
-        return $this->generateInformeMovimientos($start, $end, 'INFORME SEMANAL');
+        return $this->generateInformeMovimientos($start, $end, 'INFORME SEMANAL', $sede);
     }
 
     /**
      * Genera Informe Mensual (nueva lógica con base inicial)
      */
-    public function generateInformeMensual($month, $year)
+    public function generateInformeMensual($month, $year, $sede = 'BARRANCABERMEJA')
     {
         $start = Carbon::create($year, $month, 1)->startOfMonth()->format('Y-m-d');
         $end = Carbon::create($year, $month, 1)->endOfMonth()->format('Y-m-d');
         
-        return $this->generateInformeMovimientos($start, $end, 'INFORME MENSUAL');
+        return $this->generateInformeMovimientos($start, $end, 'INFORME MENSUAL', $sede);
     }
 
     /**
      * Genera informe de movimientos (sin bases diarias)
      */
-    protected function generateInformeMovimientos($startDate, $endDate, $title)
+    protected function generateInformeMovimientos($startDate, $endDate, $title, $sede = 'BARRANCABERMEJA')
     {
         // Verificar base inicial
-        $initialBalance = InitialBalance::getActive();
+        $initialBalance = InitialBalance::getActive($sede);
         if (!$initialBalance) {
             throw new \Exception('Debe configurar la base inicial para generar el informe. Por favor, configure la base inicial desde el menú de contabilidad.');
         }
@@ -524,7 +534,7 @@ class AccountingExcelService
             $previousStartDate = $initialBalance->start_date->format('Y-m-d');
             $previousEndDate = $startDateCarbon->copy()->subDay()->format('Y-m-d');
             
-            $previousMovements = $this->getMovementsForArqueo($previousStartDate, $previousEndDate);
+            $previousMovements = $this->getMovementsForArqueo($previousStartDate, $previousEndDate, $sede);
 
             foreach ($previousMovements as $mov) {
                 $forma = StudentResolverService::normalizePaymentForm($mov['forma'] ?? 'Efectivo');
@@ -580,7 +590,7 @@ class AccountingExcelService
         $firstMovRow = $row;
 
         // Obtener movimientos
-        $movements = $this->getMovementsForArqueo($startDate, $endDate);
+        $movements = $this->getMovementsForArqueo($startDate, $endDate, $sede);
 
         // Calcular totales mientras procesamos
         $totalIngEfectivo = 0;
@@ -698,10 +708,10 @@ class AccountingExcelService
     /**
      * Genera arqueo (diario/semanal/mensual)
      */
-    protected function generateArqueo($startDate, $endDate, $title)
+    protected function generateArqueo($startDate, $endDate, $title, $sede = 'BARRANCABERMEJA')
     {
         // Validar que existan bases para todos los días del rango
-        $missingDates = $this->getMissingCashBases($startDate, $endDate);
+        $missingDates = $this->getMissingCashBases($startDate, $endDate, $sede);
         if (!empty($missingDates)) {
             throw new \Exception('Faltan bases diarias para las siguientes fechas: ' . implode(', ', $missingDates));
         }
@@ -727,14 +737,14 @@ class AccountingExcelService
         }
 
         // Obtener todos los movimientos
-        $movements = $this->getMovementsForArqueo($startDate, $endDate);
+        $movements = $this->getMovementsForArqueo($startDate, $endDate, $sede);
 
         // Empezar desde fila 4
         $row = 4;
 
         foreach ($dates as $date) {
             // Obtener base del día (cada día inicia con su base)
-            $cashBase = CashBase::where('fecha', $date)->first();
+            $cashBase = CashBase::where('fecha', $date)->where('sede', $sede)->first();
             $baseEfectivo = $cashBase ? $cashBase->base_efectivo : 0;
             $baseBanco = $cashBase ? $cashBase->base_banco : 0;
 
@@ -802,13 +812,15 @@ class AccountingExcelService
     /**
      * Obtiene movimientos para arqueo (ingresos y egresos)
      */
-    protected function getMovementsForArqueo($startDate, $endDate)
+    protected function getMovementsForArqueo($startDate, $endDate, $sede = 'BARRANCABERMEJA')
     {
         $movements = [];
 
         // Ingresos: entries
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->where('matriculas.sede', $sede)
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->select('entries.*', 'costs.cod_alumno')
             ->get();
@@ -831,6 +843,8 @@ class AccountingExcelService
         // Ingresos: other_entries
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->where('matriculas.sede', $sede)
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
             ->select('other_entries.*', 'costs.cod_alumno')
             ->get();
@@ -853,6 +867,7 @@ class AccountingExcelService
 
         // Ingresos: third_receipts type='entry'
         $thirdEntries = ThirdReceipts::where('type', 'entry')
+            ->where('sede', $sede)
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->with('thirdObject')
             ->get();
@@ -874,6 +889,7 @@ class AccountingExcelService
 
         // Egresos: egreso_receipts
         $egresos = EgresoReceipt::with('provider')
+            ->where('sede', $sede)
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->get();
 
@@ -907,7 +923,7 @@ class AccountingExcelService
     /**
      * Obtiene fechas faltantes de bases diarias
      */
-    public function getMissingCashBases($startDate, $endDate)
+    public function getMissingCashBases($startDate, $endDate, $sede = 'BARRANCABERMEJA')
     {
         $dates = [];
         $current = Carbon::parse($startDate);
@@ -919,7 +935,7 @@ class AccountingExcelService
         }
 
         // Obtener fechas existentes y normalizar al formato Y-m-d para comparación
-        $existingBases = CashBase::whereIn('fecha', $dates)->get();
+        $existingBases = CashBase::where('sede', $sede)->whereIn('fecha', $dates)->get();
         $existingDates = $existingBases->map(function($base) {
             return $base->fecha->format('Y-m-d');
         })->toArray();

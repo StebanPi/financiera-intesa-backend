@@ -15,6 +15,7 @@ class InitialBalance extends Model
         'base_efectivo',
         'base_banco',
         'created_by',
+        'sede',
     ];
 
     protected function casts(): array
@@ -35,18 +36,18 @@ class InitialBalance extends Model
     }
 
     /**
-     * Obtiene el único registro activo (singleton)
+     * Obtiene el único registro activo (singleton por sede)
      */
-    public static function getActive(): ?self
+    public static function getActive($sede = 'BARRANCABERMEJA'): ?self
     {
-        return self::first();
+        return self::where('sede', $sede)->first();
     }
 
     /**
-     * Verifica si existe una base inicial
+     * Verifica si existe una base inicial para la sede
      */
-    public static function hasInitialBalance(): bool
+    public static function hasInitialBalance($sede = 'BARRANCABERMEJA'): bool
     {
-        return self::count() > 0;
+        return self::where('sede', $sede)->count() > 0;
     }
 }

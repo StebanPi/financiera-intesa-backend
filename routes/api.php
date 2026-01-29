@@ -65,6 +65,10 @@ Route::prefix('v1')->group(function () {
         Route::post('attendance-sheet/generate', [AttendanceSheetController::class, 'generate']);
         Route::get('maintenance', [MaintenanceApiController::class, 'index']);
         // Contabilidad (JSON): index + reportes. Excel download en B2.
+        Route::get('accounting/initial-balance', [AccountingApiController::class, 'initialBalance']);
+        Route::post('accounting/initial-balance', [AccountingApiController::class, 'storeInitialBalance']);
+        Route::get('accounting/cash-bases', [AccountingApiController::class, 'cashBases']);
+        Route::post('accounting/cash-bases', [AccountingApiController::class, 'storeCashBases']);
         Route::get('accounting', [AccountingApiController::class, 'index']);
         Route::get('accounting/abonos', [AccountingApiController::class, 'abonos']);
         Route::get('accounting/otros-ingresos', [AccountingApiController::class, 'otrosIngresos']);

@@ -12,7 +12,8 @@ class CashBase extends Model
     protected $fillable = [
         'fecha',
         'base_efectivo',
-        'base_banco'
+        'base_banco',
+        'sede'
     ];
 
     protected function casts(): array
