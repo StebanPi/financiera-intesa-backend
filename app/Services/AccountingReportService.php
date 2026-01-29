@@ -246,7 +246,7 @@ class AccountingReportService
             $thirdEntriesQuery->whereBetween('fecha_recibo', [$startDate, $endDate]);
         }
 
-        $thirdEntries = $thirdEntriesQuery->with('thirdObject')->get();
+        $thirdEntries = $thirdEntriesQuery->with(['thirdObject', 'conceptoObject'])->get();
 
         $allEntries = [];
         
@@ -291,7 +291,7 @@ class AccountingReportService
                 'programa' => 'TERCERO',
                 'tipo_ingreso' => 'TERCERO',
                 'tipo' => $forma,
-                'concepto' => $entry->concepto ?? 'TERCERO',
+                'concepto' => $entry->conceptoObject->name ?? 'TERCERO',
                 'descripcion' => $entry->detalles ?? '',
                 'no_recibo' => $entry->no_recibo,
                 'valor' => $entry->valor
@@ -333,7 +333,7 @@ class AccountingReportService
      */
     public function buildTotalEgresosDataset($startDate = null, $endDate = null, $sede = 'BARRANCABERMEJA')
     {
-        $query = EgresoReceipt::with('provider')->whereRaw('UPPER(sede) = ?', [strtoupper($sede)]);
+        $query = EgresoReceipt::with(['provider', 'conceptoObject'])->whereRaw('UPPER(sede) = ?', [strtoupper($sede)]);
 
         if ($startDate && $endDate) {
             $query->whereBetween('fecha_recibo', [$startDate, $endDate]);
@@ -352,7 +352,7 @@ class AccountingReportService
                 'fecha' => $egreso->fecha_recibo,
                 'proveedor' => $provider ? $provider->nombre : 'N/A',
                 'tipo' => $forma,
-                'concepto' => $egreso->concepto,
+                'concepto' => $egreso->conceptoObject->nombre ?? $egreso->concepto,
                 'descripcion' => $egreso->descripcion ?? '',
                 'no_recibo' => $egreso->no_recibo,
                 'valor' => $egreso->valor,
@@ -761,7 +761,7 @@ class AccountingReportService
         // Ingresos: third_receipts type='entry'
         $thirdEntries = ThirdReceipts::where('type', 'entry')->where('sede', $sede)
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
-            ->with('thirdObject')
+            ->with(['thirdObject', 'conceptoObject'])
             ->get();
 
         foreach ($thirdEntries as $entry) {
@@ -770,7 +770,7 @@ class AccountingReportService
                 'fecha' => $entry->fecha_recibo,
                 'nombre' => $third ? $third->nombre : 'N/A',
                 'ocupacion' => 'TERCERO',
-                'concepto' => $entry->concepto ?? 'TERCERO',
+                'concepto' => $entry->conceptoObject->name ?? 'TERCERO',
                 'descripcion' => $entry->detalles ?? '',
                 'no_recibo' => $entry->no_recibo,
                 'valor' => $entry->valor,
@@ -780,7 +780,7 @@ class AccountingReportService
         }
 
         // Egresos: egreso_receipts
-        $egresos = EgresoReceipt::with('provider')
+        $egresos = EgresoReceipt::with(['provider', 'conceptoObject'])
             ->where('sede', $sede)
             ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->get();
@@ -791,7 +791,7 @@ class AccountingReportService
                 'fecha' => $egreso->fecha_recibo,
                 'nombre' => $provider ? $provider->nombre : 'N/A',
                 'ocupacion' => 'PROVEEDOR',
-                'concepto' => $egreso->concepto,
+                'concepto' => $egreso->conceptoObject->nombre ?? $egreso->concepto,
                 'descripcion' => $egreso->descripcion ?? '',
                 'no_recibo' => $egreso->no_recibo,
                 'valor' => $egreso->valor,
