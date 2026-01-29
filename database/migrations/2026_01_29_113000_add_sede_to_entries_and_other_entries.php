@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('egreso_receipts', function (Blueprint $table) {
-            if (!Schema::hasColumn('egreso_receipts', 'sede')) {
+        Schema::table('entries', function (Blueprint $table) {
+            if (!Schema::hasColumn('entries', 'sede')) {
                 $table->string('sede')->default('BARRANCABERMEJA')->after('valor');
             }
         });
 
-        Schema::table('third_receipts', function (Blueprint $table) {
-            if (!Schema::hasColumn('third_receipts', 'sede')) {
+        Schema::table('other_entries', function (Blueprint $table) {
+            if (!Schema::hasColumn('other_entries', 'sede')) {
                 $table->string('sede')->default('BARRANCABERMEJA')->after('valor');
             }
         });
@@ -29,14 +29,14 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('egreso_receipts', function (Blueprint $table) {
-            if (Schema::hasColumn('egreso_receipts', 'sede')) {
+        Schema::table('entries', function (Blueprint $table) {
+            if (Schema::hasColumn('entries', 'sede')) {
                 $table->dropColumn('sede');
             }
         });
 
-        Schema::table('third_receipts', function (Blueprint $table) {
-            if (Schema::hasColumn('third_receipts', 'sede')) {
+        Schema::table('other_entries', function (Blueprint $table) {
+            if (Schema::hasColumn('other_entries', 'sede')) {
                 $table->dropColumn('sede');
             }
         });
