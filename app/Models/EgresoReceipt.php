@@ -24,7 +24,8 @@ class EgresoReceipt extends Model
         'valor',
         'elaborado_por',
         'debe',
-        'haber'
+        'haber',
+        'sede'
     ];
 
     protected function casts(): array

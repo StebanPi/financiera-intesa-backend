@@ -25,7 +25,8 @@ class ThirdReceipts extends Model
         'haber',
         'elaborado_por',
         'fecha_recibo',
-        'forma'
+        'forma',
+        'sede'
     ];
 
     public function thirdObject(){
