@@ -44,13 +44,19 @@ class AccountingExcelService
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
+            ->join('elaborados', 'elaborados.id', '=', 'entries.elaborado_por')
+            ->join('debes', 'debes.id', '=', 'entries.debe')
+            ->join('habers', 'habers.id', '=', 'entries.haber')
             ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->distinct()
             ->select(
                 'entries.*',
                 'costs.cod_alumno',
-                'conceptos.nombre as concepto_nombre'
+                'conceptos.nombre as concepto_nombre',
+                'elaborados.nombre as elaborado_nombre',
+                'debes.nombre as debe_nombre',
+                'habers.nombre as haber_nombre'
             )
             ->orderBy('entries.fecha_recibo')
             ->get();
@@ -94,7 +100,7 @@ class AccountingExcelService
                 $sheet->setCellValue("C{$row}", $student?->cedula ?? '');
                 $sheet->setCellValue("D{$row}", $student?->nombre ?? 'N/A');
                 $sheet->setCellValue("E{$row}", $forma); // Tipo = forma de pago
-                $sheet->setCellValue("F{$row}", $entry->concepto_nombre); // Descripción = concepto
+                $sheet->setCellValue("F{$row}", $entry->concepto_nombre); // Descripción = concepto (nombre)
                 $sheet->setCellValue("G{$row}", $entry->valor); // Valor numérico para fórmulas
                 
                 $subtotal += $entry->valor;
@@ -403,7 +409,7 @@ class AccountingExcelService
             $sheet->setCellValue("A{$row}", date('d/m/Y', strtotime($egreso->fecha_recibo)));
             $sheet->setCellValue("B{$row}", $provider ? $provider->nombre : 'N/A');
             $sheet->setCellValue("C{$row}", $forma); // TIPO (Efectivo/Bancos)
-            $sheet->setCellValue("D{$row}", $egreso->concepto);
+            $sheet->setCellValue("D{$row}", $egreso->concepto); // Aquí podría necesitarse nombre si es ID, pero provider ya trae nombre. Concepto parece ser string en egresos.
             $sheet->setCellValue("E{$row}", $egreso->descripcion ?? '');
             $sheet->setCellValue("F{$row}", $egreso->no_recibo);
             
@@ -707,9 +713,8 @@ class AccountingExcelService
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
-            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
+            ->where('matriculas.sede', $sede)
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
-            ->distinct()
             ->select('entries.*', 'costs.cod_alumno')
             ->get();
 
@@ -732,9 +737,8 @@ class AccountingExcelService
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
-            ->where(DB::raw('UPPER(matriculas.sede)'), strtoupper($sede))
+            ->where('matriculas.sede', $sede)
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
-            ->distinct()
             ->select('other_entries.*', 'costs.cod_alumno')
             ->get();
 
@@ -812,7 +816,7 @@ class AccountingExcelService
     /**
      * Obtiene fechas faltantes de bases diarias
      */
-    public function getMissingCashBases($startDate, $endDate, $sede = 'BARRANCABERMEJA')
+    protected function getMissingCashBases($startDate, $endDate, $sede = 'BARRANCABERMEJA')
     {
         $dates = [];
         $current = Carbon::parse($startDate);
@@ -824,103 +828,14 @@ class AccountingExcelService
         }
 
         // Obtener fechas existentes y normalizar al formato Y-m-d para comparación
-        $existingBases = CashBase::where('sede', $sede)->whereIn('fecha', $dates)->get();
+        $existingBases = CashBase::where('sede', $sede)
+            ->whereIn('fecha', $dates)
+            ->get();
+
         $existingDates = $existingBases->map(function($base) {
             return $base->fecha->format('Y-m-d');
         })->toArray();
         
         return array_diff($dates, $existingDates);
-    }
-
-    /**
-     * Carga plantilla Excel
-     */
-    protected function loadTemplate($templateFile)
-    {
-        if (!file_exists($templateFile)) {
-            // Si no existe plantilla, crear una básica
-            return new Spreadsheet();
-        }
-        
-        return IOFactory::load($templateFile);
-    }
-
-    /**
-     * Limpia los datos de ejemplo de la plantilla Excel
-     * Elimina el contenido desde startRow hasta endRow, pero mantiene los encabezados
-     */
-    protected function clearTemplateData($sheet, $startRow, $endRow)
-    {
-        try {
-            // Obtener el rango completo que queremos limpiar
-            $highestRow = $sheet->getHighestRow();
-            $highestCol = $sheet->getHighestColumn();
-            
-            // Asegurarnos de limpiar desde startRow hasta el máximo entre endRow y highestRow
-            $maxRow = max($endRow, $highestRow);
-            
-            // Método 1: Limpiar rango completo usando setCellValue directo
-            for ($row = $startRow; $row <= $maxRow; $row++) {
-                // Limpiar todas las columnas desde A hasta Z
-                for ($colNum = ord('A'); $colNum <= ord('Z'); $colNum++) {
-                    $col = chr($colNum);
-                    $cell = $col . $row;
-                    
-                    try {
-                        // Obtener la celda y limpiarla completamente
-                        $cellObj = $sheet->getCell($cell);
-                        
-                        // Eliminar cualquier valor o fórmula
-                        $cellObj->setValue(null);
-                        
-                        // Forzar el tipo de dato a NULL
-                        try {
-                            $cellObj->setDataType(DataType::TYPE_NULL);
-                        } catch (\Exception $e) {
-                            // Ignorar si falla
-                        }
-                        
-                        // También limpiar el valor directamente usando el método del sheet
-                        $sheet->setCellValue($cell, null);
-                        
-                    } catch (\Exception $e) {
-                        // Continuar si hay error en una celda específica
-                        continue;
-                    }
-                }
-            }
-            
-            // Método 2: Intentar limpiar usando range de estilo (limpiar formato de relleno)
-            try {
-                $range = 'A' . $startRow . ':' . $highestCol . $maxRow;
-                $sheet->getStyle($range)->getFill()->setFillType(Fill::FILL_NONE);
-            } catch (\Exception $e) {
-                // Ignorar si falla
-            }
-            
-            // Método 3: Forzar recálculo de dimensiones para que Excel recalcule el área usada
-            try {
-                $sheet->calculateWorksheetDimension();
-            } catch (\Exception $e) {
-                // Ignorar si falla
-            }
-            
-        } catch (\Exception $e) {
-            // Si hay error general, registrar pero continuar
-            \Log::warning('Error al limpiar plantilla: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Descarga el archivo Excel
-     */
-    protected function download($spreadsheet, $filename)
-    {
-        $writer = new Xlsx($spreadsheet);
-        
-        $tempFile = tempnam(sys_get_temp_dir(), 'excel_');
-        $writer->save($tempFile);
-        
-        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
     }
 }
