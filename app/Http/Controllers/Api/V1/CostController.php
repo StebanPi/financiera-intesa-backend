@@ -202,6 +202,10 @@ class CostController extends Controller
     ]
     public function destroy(int $id): JsonResponse
     {
+        if (!auth()->user()->hasPermission('records.delete')) {
+            return ApiResponse::error('No tienes permiso para eliminar registros financieros.', 403);
+        }
+
         $this->costService->delete($id);
 
         return ApiResponse::success(null, 'Eliminado.', null, 200);
@@ -229,8 +233,9 @@ class CostController extends Controller
     ]
     public function destroyByStudent(string $cod_alumno): JsonResponse
     {
-        // Opcional: Verificar permisos de super-admin aquí si no se maneja solo por middleware
-        // if (!auth()->user()->hasRole('super-admin')) ...
+        if (!auth()->user()->hasPermission('records.delete')) {
+            return ApiResponse::error('No tienes permiso para eliminar registros financieros.', 403);
+        }
 
         $stats = $this->costService->deleteAllForStudent($cod_alumno);
 

@@ -172,6 +172,10 @@ class ThirdEntryController extends Controller
     ]
     public function destroy(int $id): JsonResponse
     {
+        if (!auth()->user()->hasPermission('records.delete')) {
+            return ApiResponse::error('No tienes permiso para eliminar registros financieros.', 403);
+        }
+
         $e = thirdEntry::findOrFail($id);
         if (ThirdReceipts::where('third', $id)->exists()) {
             throw ValidationException::withMessages(['id' => ['No se puede eliminar el tercero porque tiene recibos asociados.']]);

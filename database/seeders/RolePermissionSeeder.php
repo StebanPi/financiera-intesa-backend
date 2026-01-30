@@ -41,6 +41,11 @@ class RolePermissionSeeder extends Seeder
                 'slug' => 'settings.manage',
                 'description' => 'Gestionar catálogos de ajustes (programas, horarios, grupos, conceptos, etc.)',
             ],
+            [
+                'name' => 'Eliminar Registros Financieros',
+                'slug' => 'records.delete',
+                'description' => 'Permiso para eliminar abonos, otros ingresos, egresos y costos',
+            ],
         ];
 
         foreach ($permissions as $permission) {

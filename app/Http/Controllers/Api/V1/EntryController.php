@@ -174,6 +174,10 @@ class EntryController extends Controller
     ]
     public function destroy(int $id): JsonResponse
     {
+        if (!auth()->user()->hasPermission('records.delete')) {
+            return ApiResponse::error('No tienes permiso para eliminar registros financieros.', 403);
+        }
+
         $this->entryService->delete($id);
 
         return ApiResponse::success(null, 'Eliminado.', null, 200);
