@@ -329,7 +329,7 @@ class MatriculaService
 
         $dompdf = new Dompdf();
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->setPaper('letter', 'portrait');
         $dompdf->render();
 
         $filename = \Illuminate\Support\Str::slug("Ficha Matricula {$matricula->nombre_completo} {$cod_alumno}") . '.pdf';

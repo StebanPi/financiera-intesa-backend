@@ -110,7 +110,7 @@ class GradesSheetController extends Controller
             $dompdf = new Dompdf();
             $html = view('academic-management.planillas.notas.pdf', $data)->render();
             $dompdf->loadHtml($html);
-            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->setPaper('letter', 'portrait');
             $dompdf->render();
 
             $canvas = $dompdf->getCanvas();

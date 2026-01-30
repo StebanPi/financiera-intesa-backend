@@ -228,7 +228,7 @@ class OtherEntryController extends Controller
             ])->render();
             
             $dompdf->loadHtml($html);
-            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->setPaper('letter', 'portrait');
             $dompdf->render();
             
             $nombreEstudiante = 'Estudiante';
