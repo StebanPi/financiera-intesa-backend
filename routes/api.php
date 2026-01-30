@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\ThirdEntryController;
 use App\Http\Controllers\Api\V1\ThirdReceiptController;
 use App\Http\Controllers\Api\V1\PermissionController;
 use App\Http\Controllers\Api\V1\RoleController;
+use App\Http\Controllers\Api\V1\ReportDebtorsController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\UserRoleController;
 use Illuminate\Support\Facades\Route;
@@ -168,6 +169,9 @@ Route::prefix('v1')->group(function () {
         Route::post('matriculas', [MatriculaController::class, 'store']);
         Route::match(['put', 'patch'], 'matriculas/{cod_alumno}', [MatriculaController::class, 'update'])->where('cod_alumno', '[A-Za-z0-9\-]+');
         Route::delete('matriculas/{cod_alumno}', [MatriculaController::class, 'destroy'])->where('cod_alumno', '[A-Za-z0-9\-]+');
+
+        // Reportes
+        Route::get('reports/debtors', [ReportDebtorsController::class, 'getDebtors']);
     });
 
     // ---- 3) Admin: users (auth:sanctum + permission:users.manage) ----
