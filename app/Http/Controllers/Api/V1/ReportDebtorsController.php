@@ -116,7 +116,7 @@ class ReportDebtorsController extends Controller
         $students = DB::table('matriculas')
             ->where('estado_estudiante', 'Activo')
             ->whereRaw('UPPER(sede) = ?', [strtoupper($sede)])
-            ->select('cod_alumno', 'nombre_completo', 'telefono_personal')
+            ->select('cod_alumno', 'nombre_completo', 'telefono_personal', 'programa')
             ->orderBy('nombre_completo')
             ->get();
 
@@ -132,6 +132,7 @@ class ReportDebtorsController extends Controller
                 'cod_alumno' => $student->cod_alumno,
                 'nombre' => $student->nombre_completo,
                 'telefono' => $student->telefono_personal,
+                'programa' => $student->programa,
                 'saldo_en_mora' => $saldoEnMora,
             ];
         }
