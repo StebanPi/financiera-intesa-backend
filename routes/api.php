@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\DischargeConceptController;
 use App\Http\Controllers\Api\V1\DischargeController;
 use App\Http\Controllers\Api\V1\EntryController;
 use App\Http\Controllers\Api\V1\FinancialReceiptController;
+use App\Http\Controllers\Api\V1\GradesSheetController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\HomeController;
 use App\Http\Controllers\Api\V1\MaintenanceApiController;
@@ -64,6 +65,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'permission:access.core'])->group(function () {
         Route::get('home', [HomeController::class, 'index']);
         Route::post('attendance-sheet/generate', [AttendanceSheetController::class, 'generate']);
+        Route::post('grades-sheet/generate', [GradesSheetController::class, 'generate']);
         Route::get('maintenance', [MaintenanceApiController::class, 'index']);
         // Contabilidad (JSON): index + reportes. Excel download en B2.
         Route::get('accounting/initial-balance', [AccountingApiController::class, 'initialBalance']);
