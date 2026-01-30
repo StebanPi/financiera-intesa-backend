@@ -98,7 +98,44 @@ class ReportDebtorsController extends Controller
                 ];
             }
         }
-
+        
         return ApiResponse::success($debtors, 'Reporte de deudores obtenido correctamente');
+    }
+    
+    /**
+     * GET /api/v1/reports/active-debtors
+     *
+     * Params:
+     * - sede: (string) Sede (default: BARRANCABERMEJA)
+     */
+    public function getActiveDebtors(Request $request): JsonResponse
+    {
+        $sede = $request->get('sede', 'BARRANCABERMEJA');
+
+        // Obtener todos los estudiantes activos de la sede
+        $students = DB::table('matriculas')
+            ->where('estado_estudiante', 'Activo')
+            ->whereRaw('UPPER(sede) = ?', [strtoupper($sede)])
+            ->select('cod_alumno', 'nombre_completo', 'telefono_personal')
+            ->orderBy('nombre_completo')
+            ->get();
+
+        $debtors = [];
+
+        foreach ($students as $student) {
+            // Calcular la cartera del estudiante
+            $carteraData = CarteraService::calcularCartera(null, $student->cod_alumno);
+            
+            $saldoEnMora = (float) ($carteraData['totales']['saldo_en_mora'] ?? 0);
+
+            $debtors[] = [
+                'cod_alumno' => $student->cod_alumno,
+                'nombre' => $student->nombre_completo,
+                'telefono' => $student->telefono_personal,
+                'saldo_en_mora' => $saldoEnMora,
+            ];
+        }
+
+        return ApiResponse::success($debtors, 'Reporte de deudores activos obtenido correctamente');
     }
 }

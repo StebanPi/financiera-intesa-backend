@@ -172,6 +172,7 @@ Route::prefix('v1')->group(function () {
 
         // Reportes
         Route::get('reports/debtors', [ReportDebtorsController::class, 'getDebtors']);
+        Route::get('reports/active-debtors', [ReportDebtorsController::class, 'getActiveDebtors']);
     });
 
     // ---- 3) Admin: users (auth:sanctum + permission:users.manage) ----
