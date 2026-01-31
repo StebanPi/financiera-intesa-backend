@@ -29,7 +29,7 @@ class CheckPermission
             return redirect()->route('login');
         }
 
-        if (!auth()->user()->hasPermission($permission)) {
+        if (!auth()->user()->hasPermission($permission) && !auth()->user()->hasPermission('access.all')) {
             // SIEMPRE devolver JSON para /api/*, sin depender de expectsJson()
             if ($request->is('api/*')) {
                 return ApiResponse::error('FORBIDDEN', 'No tienes permiso para acceder a esta sección.', null, 403);
