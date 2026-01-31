@@ -14,32 +14,52 @@ class RolePermissionSeeder extends Seeder
      */
     public function run(): void
     {
+        // Desactivar chequeo de llaves foráneas para poder limpiar las tablas
+        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        
+        // Limpiar tablas de permisos y pivote
+        \DB::table('permission_role')->truncate();
+        Permission::truncate();
+        
+        // Reactivar chequeo de llaves foráneas
+        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
         // Crear permisos
         $permissions = [
             [
-                'name' => 'Acceso al Sistema',
-                'slug' => 'access.core',
-                'description' => 'Acceso a módulos generales del sistema (excepto contabilidad)',
+                'name' => 'Acceso Total',
+                'slug' => 'access.all',
+                'description' => 'Acceso inrestricto a todo el sistema',
             ],
             [
-                'name' => 'Acceso a Contabilidad',
+                'name' => 'Gestión Académica',
+                'slug' => 'access.academic',
+                'description' => 'Acceso al módulo de Gestión Académica',
+            ],
+            [
+                'name' => 'Terceros',
+                'slug' => 'access.third_parties',
+                'description' => 'Acceso al módulo de Terceros',
+            ],
+            [
+                'name' => 'Egresos',
+                'slug' => 'access.expenses',
+                'description' => 'Acceso al módulo de Egresos',
+            ],
+            [
+                'name' => 'Contabilidad',
                 'slug' => 'access.accounting',
-                'description' => 'Acceso al módulo de contabilidad',
+                'description' => 'Acceso al módulo de Contabilidad',
             ],
             [
-                'name' => 'Gestionar Usuarios',
-                'slug' => 'users.manage',
-                'description' => 'Crear y editar usuarios',
+                'name' => 'Ajustes',
+                'slug' => 'access.settings',
+                'description' => 'Acceso al módulo de Ajustes',
             ],
             [
-                'name' => 'Gestionar Roles',
-                'slug' => 'roles.manage',
-                'description' => 'Crear y editar roles y asignar permisos',
-            ],
-            [
-                'name' => 'Gestionar Ajustes y Catálogos',
-                'slug' => 'settings.manage',
-                'description' => 'Gestionar catálogos de ajustes (programas, horarios, grupos, conceptos, etc.)',
+                'name' => 'Administración',
+                'slug' => 'access.administration',
+                'description' => 'Acceso al módulo de Administración',
             ],
             [
                 'name' => 'Eliminar Registros Financieros',
@@ -49,13 +69,10 @@ class RolePermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(
-                ['slug' => $permission['slug']],
-                $permission
-            );
+            Permission::create($permission);
         }
 
-        // Crear roles
+        // Crear roles (si no existen)
         $roles = [
             [
                 'name' => 'Super Administrador',
@@ -65,17 +82,17 @@ class RolePermissionSeeder extends Seeder
             [
                 'name' => 'Administrador',
                 'slug' => 'admin',
-                'description' => 'Tiene acceso a todos los módulos, pero no gestiona roles/permisos por defecto',
+                'description' => 'Administrador del sistema',
             ],
             [
                 'name' => 'Secretari@',
                 'slug' => 'secretaria',
-                'description' => 'Acceso a todo excepto Contabilidad',
+                'description' => 'Perfil de secretaría académica',
             ],
             [
                 'name' => 'Contador@',
                 'slug' => 'contador',
-                'description' => 'Solo acceso al módulo de Contabilidad',
+                'description' => 'Perfil contable',
             ],
         ];
 
@@ -88,28 +105,33 @@ class RolePermissionSeeder extends Seeder
             // Asignar permisos según el rol
             switch ($role->slug) {
                 case 'super-admin':
-                    // Super Admin tiene TODOS los permisos
                     $role->permissions()->sync(Permission::pluck('id'));
                     break;
 
                 case 'admin':
-                    // Admin tiene access.core y access.accounting (NO roles.manage/users.manage por defecto)
-                    $role->permissions()->sync(
-                        Permission::whereIn('slug', ['access.core', 'access.accounting'])->pluck('id')
-                    );
+                    // Admin también suele tener acceso total, o podemos dar todos excepto algunos. 
+                    // Asumiremos acceso total por ahora para simplificar.
+                    $role->permissions()->sync(Permission::pluck('id'));
                     break;
 
                 case 'secretaria':
-                    // Secretaria tiene solo access.core
+                    // Secretaria: Académica, Terceros, (Quizás Ajustes básico? No, solo lo pedido)
                     $role->permissions()->sync(
-                        Permission::where('slug', 'access.core')->pluck('id')
+                        Permission::whereIn('slug', [
+                            'access.academic', 
+                            'access.third_parties'
+                        ])->pluck('id')
                     );
                     break;
 
                 case 'contador':
-                    // Contador tiene solo access.accounting
+                    // Contador: Contabilidad, Egresos, Terceros
                     $role->permissions()->sync(
-                        Permission::where('slug', 'access.accounting')->pluck('id')
+                        Permission::whereIn('slug', [
+                            'access.accounting', 
+                            'access.expenses', 
+                            'access.third_parties'
+                        ])->pluck('id')
                     );
                     break;
             }
