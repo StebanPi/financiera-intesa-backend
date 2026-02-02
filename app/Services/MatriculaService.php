@@ -59,8 +59,8 @@ class MatriculaService
             $query->where('modalidad', $request->modalidad);
         }
 
-        $sort = $request->get('sort', 'nombre_completo');
-        $order = strtolower($request->get('order', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $sort = $request->get('sort', 'id');
+        $order = strtolower($request->get('order', 'desc')) === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sort, $order);
 
         $perPage = min((int) $request->get('per_page', 15), 100);
