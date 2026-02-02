@@ -116,7 +116,7 @@ class ReportDebtorsController extends Controller
         $students = DB::table('matriculas')
             ->where('estado_estudiante', 'Activo')
             ->whereRaw('UPPER(sede) = ?', [strtoupper($sede)])
-            ->select('cod_alumno', 'nombre_completo', 'telefono_personal', 'programa')
+            ->select('id', 'cod_alumno', 'nombre_completo', 'telefono_personal', 'programa')
             ->orderBy('id', 'desc')
             ->get();
 
@@ -129,6 +129,7 @@ class ReportDebtorsController extends Controller
             $saldoEnMora = (float) ($carteraData['totales']['saldo_en_mora'] ?? 0);
 
             $debtors[] = [
+                'id' => $student->id,
                 'cod_alumno' => $student->cod_alumno,
                 'nombre' => $student->nombre_completo,
                 'telefono' => $student->telefono_personal,
