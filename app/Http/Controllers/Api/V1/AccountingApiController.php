@@ -106,8 +106,15 @@ class AccountingApiController extends Controller
     ]
     public function abonos(DateRangeRequest $request): JsonResponse
     {
-        $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
-        $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        if ($request->filled('mes')) {
+            $year = $request->get('anio', date('Y'));
+            $month = $request->get('mes');
+            $fechaInicio = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+            $fechaFin = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+        } else {
+            $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
+            $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        }
         $sede = $request->get('sede', 'BARRANCABERMEJA');
 
         $ds = $this->reportService->buildAbonosDataset($fechaInicio, $fechaFin, $sede);
@@ -156,8 +163,15 @@ class AccountingApiController extends Controller
     ]
     public function otrosIngresos(DateRangeRequest $request): JsonResponse
     {
-        $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
-        $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        if ($request->filled('mes')) {
+            $year = $request->get('anio', date('Y'));
+            $month = $request->get('mes');
+            $fechaInicio = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+            $fechaFin = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+        } else {
+            $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
+            $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        }
         $sede = $request->get('sede', 'BARRANCABERMEJA');
 
         $ds = $this->reportService->buildOtrosIngresosDataset($fechaInicio, $fechaFin, $sede);
@@ -208,8 +222,15 @@ class AccountingApiController extends Controller
     ]
     public function totalIngresos(DateRangeRequest $request): JsonResponse
     {
-        $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
-        $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        if ($request->filled('mes')) {
+            $year = $request->get('anio', date('Y'));
+            $month = $request->get('mes');
+            $fechaInicio = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+            $fechaFin = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+        } else {
+            $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
+            $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        }
         $sede = $request->get('sede', 'BARRANCABERMEJA');
 
         $ds = $this->reportService->buildTotalIngresosDataset($fechaInicio, $fechaFin, $sede);
@@ -252,8 +273,15 @@ class AccountingApiController extends Controller
     ]
     public function egresos(DateRangeRequest $request): JsonResponse
     {
-        $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
-        $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        if ($request->filled('mes')) {
+            $year = $request->get('anio', date('Y'));
+            $month = $request->get('mes');
+            $fechaInicio = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+            $fechaFin = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+        } else {
+            $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
+            $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        }
         $sede = $request->get('sede', 'BARRANCABERMEJA');
 
         $ds = $this->reportService->buildTotalEgresosDataset($fechaInicio, $fechaFin, $sede);

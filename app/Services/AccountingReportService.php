@@ -35,6 +35,10 @@ class AccountingReportService
 
         if ($startDate && $endDate) {
             $query->whereBetween('entries.fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $query->where('entries.fecha_recibo', '>=', $startDate);
+        } elseif ($endDate) {
+            $query->where('entries.fecha_recibo', '<=', $endDate);
         }
 
         $entries = $query->orderBy('entries.fecha_recibo', 'desc')
@@ -129,6 +133,10 @@ class AccountingReportService
 
         if ($startDate && $endDate) {
             $query->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $query->where('other_entries.fecha_recibo', '>=', $startDate);
+        } elseif ($endDate) {
+            $query->where('other_entries.fecha_recibo', '<=', $endDate);
         }
 
         $otherEntries = $query->orderBy('other_entries.fecha_recibo', 'desc')
@@ -219,6 +227,10 @@ class AccountingReportService
 
         if ($startDate && $endDate) {
             $entriesQuery->whereBetween('entries.fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $entriesQuery->where('entries.fecha_recibo', '>=', $startDate);
+        } elseif ($endDate) {
+            $entriesQuery->where('entries.fecha_recibo', '<=', $endDate);
         }
 
         $entries = $entriesQuery->get();
@@ -234,6 +246,10 @@ class AccountingReportService
 
         if ($startDate && $endDate) {
             $otherEntriesQuery->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $otherEntriesQuery->where('other_entries.fecha_recibo', '>=', $startDate);
+        } elseif ($endDate) {
+            $otherEntriesQuery->where('other_entries.fecha_recibo', '<=', $endDate);
         }
 
         $otherEntries = $otherEntriesQuery->get();
@@ -244,6 +260,10 @@ class AccountingReportService
 
         if ($startDate && $endDate) {
             $thirdEntriesQuery->whereBetween('fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $thirdEntriesQuery->where('fecha_recibo', '>=', $startDate);
+        } elseif ($endDate) {
+            $thirdEntriesQuery->where('fecha_recibo', '<=', $endDate);
         }
 
         $thirdEntries = $thirdEntriesQuery->with(['thirdObject', 'conceptoObject'])->get();
@@ -337,6 +357,10 @@ class AccountingReportService
 
         if ($startDate && $endDate) {
             $query->whereBetween('fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $query->where('fecha_recibo', '>=', $startDate);
+        } elseif ($endDate) {
+            $query->where('fecha_recibo', '<=', $endDate);
         }
 
         $egresos = $query->orderBy('fecha_recibo', 'desc')
