@@ -42,7 +42,8 @@ class Matricula extends Model
         'semestre_actual',
         'anio',
         'numero_grupo',
-        'modalidad'
+        'modalidad',
+        'observaciones'
     ];
 
     /**

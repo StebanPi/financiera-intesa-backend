@@ -44,6 +44,7 @@ class MatriculaStoreRequest extends FormRequest
             'contraseña_plataforma' => ['nullable', 'string', 'max:255'],
             'tipo_discapacidad' => ['required_if:tiene_discapacidad,Sí', 'nullable', 'string', 'max:255'],
             'modalidad' => ['required', 'in:presencial,virtual'],
+            'observaciones' => ['nullable', 'string'],
         ];
     }
 

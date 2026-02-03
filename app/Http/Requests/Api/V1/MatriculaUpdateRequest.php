@@ -57,6 +57,7 @@ class MatriculaUpdateRequest extends FormRequest
             'numero_grupo' => ['sometimes', 'string', 'max:255', Rule::in($validGroups)],
             'contraseña_plataforma' => ['nullable', 'string', 'max:255'],
             'modalidad' => ['sometimes', 'in:presencial,virtual'],
+            'observaciones' => ['nullable', 'string'],
         ];
     }
 }

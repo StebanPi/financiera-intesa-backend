@@ -56,6 +56,7 @@ class MatriculaResource extends JsonResource
             'anio' => $this->anio,
             'numero_grupo' => $this->numero_grupo,
             'modalidad' => $this->modalidad,
+            'observaciones' => $this->observaciones,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
