@@ -533,7 +533,9 @@ class MatriculaController extends Controller
         $institucion = InstitutionSetting::getSettings();
         
         // Obtener datos financieros (costs)
-        $cost = DB::table('costs')->where('cod_alumno', $cod_alumno)->first();
+        // Obtener datos financieros (costs)
+        $costs = DB::table('costs')->where('cod_alumno', $cod_alumno)->orderBy('numero_semestre', 'asc')->get();
+        $cost = $costs->first();
         if($cost) {
             $cost = MoneyController::datas($cost,['valor_semestre','valor_total_semestre','descuento','valor_neto','saldo_financiar','valor_cuotas']);
             
@@ -585,6 +587,7 @@ class MatriculaController extends Controller
             'matricula' => $matricula,
             'institucion' => $institucion,
             'cost' => $cost,
+            'costs' => $costs,
             'carteraData' => $carteraData ?? null,
             'photoBase64' => $photoBase64,
             'qrCodeBase64' => $qrCodeBase64,
@@ -619,7 +622,9 @@ class MatriculaController extends Controller
         $institucion = InstitutionSetting::getSettings();
         
         // Obtener datos financieros (costs)
-        $cost = DB::table('costs')->where('cod_alumno', $cod_alumno)->first();
+        // Obtener datos financieros (costs)
+        $costs = DB::table('costs')->where('cod_alumno', $cod_alumno)->orderBy('numero_semestre', 'asc')->get();
+        $cost = $costs->first();
         if($cost) {
             $cost = MoneyController::datas($cost,['valor_semestre','valor_total_semestre','descuento','valor_neto','saldo_financiar','valor_cuotas']);
             
@@ -671,6 +676,7 @@ class MatriculaController extends Controller
             'matricula' => $matricula,
             'institucion' => $institucion,
             'cost' => $cost,
+            'costs' => $costs,
             'carteraData' => $carteraData ?? null,
             'photoBase64' => $photoBase64,
             'qrCodeBase64' => $qrCodeBase64,

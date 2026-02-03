@@ -19,10 +19,7 @@
     <div class="financing-value">{{ formatMoney($descuento) }}</div>
 </div>
 
-<div class="financing-row">
-    <div class="financing-label">Crédito por semestre:</div>
-    <div class="financing-value">{{ formatMoney($valorSemestre) }}</div>
-</div>
+
 
 <div class="financing-row">
     <div class="financing-label">Valor a financiar:</div>
