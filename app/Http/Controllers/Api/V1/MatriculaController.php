@@ -589,7 +589,7 @@ class MatriculaController extends Controller
             'nivel_formacion' => ['Primaria', 'Bachiller', 'Técnico', 'Tecnólogo', 'Profesional', 'Especialización', 'Maestría', 'Doctorado'],
             'estrato' => ['1', '2', '3', '4', '5', '6'],
             'grupo_sanguineo' => ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-            'anio' => [date('Y'), (string)(date('Y') + 1)],
+            'anio' => array_map('strval', range(2014, date('Y') + 1)),
         ];
 
         return ApiResponse::success($data);
