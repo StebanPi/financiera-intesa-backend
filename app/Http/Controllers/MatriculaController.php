@@ -106,12 +106,27 @@ class MatriculaController extends Controller
         $rules = [
             'nombre_completo' => 'required|string|max:255',
             'numero_documento' => 'required|string|max:255|unique:matriculas,numero_documento',
+            'lugar_expedicion_documento' => 'nullable|string|max:255',
             'tipo_documento' => 'required|in:CC,TI,PPT',
+            'fecha_nacimiento' => 'nullable|date',
+            'direccion_barrio' => 'nullable|string|max:255',
+            'ciudad_residencia' => 'nullable|string|max:255',
             'departamento' => 'nullable|string|max:255',
+            'correo_gmail' => 'nullable|email|max:255',
+            'telefono_personal' => 'nullable|string|max:255',
+            'telefono_emergencia' => 'nullable|string|max:255',
             'estado_civil' => 'nullable|string|max:255',
+            'estrato' => 'nullable|string|max:255',
+            'nivel_sisben' => 'nullable|string|max:255',
+            'eps' => 'nullable|string|max:255',
+            'grupo_sanguineo' => 'nullable|string|max:255',
             'ocupacion' => 'nullable|string|max:255',
             'nivel_formacion' => 'nullable|string|max:255',
             'tiene_discapacidad' => 'nullable|in:No,Sí,Prefiero no decir',
+            'tipo_discapacidad' => 'required_if:tiene_discapacidad,Sí|nullable|string|max:255',
+            'discapacidad_descripcion' => 'nullable|string|max:1000',
+            'modalidad' => 'required|in:presencial,virtual',
+            'observaciones' => 'nullable|string',
             'programa' => ['required', 'string', 'max:255', function ($attribute, $value, $fail) use ($validPrograms) {
                 if (!in_array($value, $validPrograms)) {
                     $fail('El programa seleccionado no es válido o no está activo.');
@@ -133,7 +148,7 @@ class MatriculaController extends Controller
                 }
             }],
             'contraseña_plataforma' => 'nullable|string|max:255',
-            'tipo_discapacidad' => 'required_if:tiene_discapacidad,Sí|nullable|string|max:255',
+
         ];
 
         $messages = [
@@ -285,12 +300,27 @@ class MatriculaController extends Controller
         $rules = [
             'nombre_completo' => 'required|string|max:255',
             'numero_documento' => 'required|string|max:255|unique:matriculas,numero_documento,'.$cod_alumno.',cod_alumno',
+            'lugar_expedicion_documento' => 'nullable|string|max:255',
             'tipo_documento' => 'required|in:CC,TI,PPT',
+            'fecha_nacimiento' => 'nullable|date',
+            'direccion_barrio' => 'nullable|string|max:255',
+            'ciudad_residencia' => 'nullable|string|max:255',
             'departamento' => 'nullable|string|max:255',
+            'correo_gmail' => 'nullable|email|max:255',
+            'telefono_personal' => 'nullable|string|max:255',
+            'telefono_emergencia' => 'nullable|string|max:255',
             'estado_civil' => 'nullable|string|max:255',
+            'estrato' => 'nullable|string|max:255',
+            'nivel_sisben' => 'nullable|string|max:255',
+            'eps' => 'nullable|string|max:255',
+            'grupo_sanguineo' => 'nullable|string|max:255',
             'ocupacion' => 'nullable|string|max:255',
             'nivel_formacion' => 'nullable|string|max:255',
             'tiene_discapacidad' => 'nullable|in:No,Sí,Prefiero no decir',
+            'tipo_discapacidad' => 'required_if:tiene_discapacidad,Sí|nullable|string|max:255',
+            'discapacidad_descripcion' => 'nullable|string|max:1000',
+            'modalidad' => 'required|in:presencial,virtual',
+            'observaciones' => 'nullable|string',
             'programa' => ['required', 'string', 'max:255', function ($attribute, $value, $fail) use ($validPrograms) {
                 if (!in_array($value, $validPrograms)) {
                     $fail('El programa seleccionado no es válido o no está activo.');
@@ -312,7 +342,7 @@ class MatriculaController extends Controller
                 }
             }],
             'contraseña_plataforma' => 'nullable|string|max:255',
-            'tipo_discapacidad' => 'required_if:tiene_discapacidad,Sí|nullable|string|max:255',
+
         ];
 
         $messages = [
