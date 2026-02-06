@@ -159,25 +159,27 @@ class CostService
             }
         }
 
-        // Eliminar semestres que ya no están en la lista y todas sus relaciones
+        // Eliminar semestres que ya no están en la lista y todas sus relaciones (Solo si no tienen historia financiera)
         $costsAEliminar = Cost::where('cod_alumno', $cod_alumno)
             ->whereNotIn('numero_semestre', $semestresRecibidos)
             ->get();
         
         foreach ($costsAEliminar as $costEliminar) {
-            // Eliminar history_purses asociados
-            $purseIds = Purse::where('id_cost', $costEliminar->id)->pluck('id');
-            if ($purseIds->isNotEmpty()) {
-                historyPurse::whereIn('id_purse', $purseIds)->delete();
+            $hasFinancialHistory = Entry::where('id_cost', $costEliminar->id)->exists() || 
+                                   OtherEntry::where('id_cost', $costEliminar->id)->exists();
+
+            if (!$hasFinancialHistory) {
+                // Eliminar history_purses asociados
+                $purseIds = Purse::where('id_cost', $costEliminar->id)->pluck('id');
+                if ($purseIds->isNotEmpty()) {
+                    historyPurse::whereIn('id_purse', $purseIds)->delete();
+                }
+                // Eliminar purses asociados
+                Purse::where('id_cost', $costEliminar->id)->delete();
+
+                // Eliminar el cost
+                $costEliminar->delete();
             }
-            // Eliminar purses asociados
-            Purse::where('id_cost', $costEliminar->id)->delete();
-            // Eliminar entries asociados
-            Entry::where('id_cost', $costEliminar->id)->delete();
-            // Eliminar other_entries asociados
-            OtherEntry::where('id_cost', $costEliminar->id)->delete();
-            // Eliminar el cost
-            $costEliminar->delete();
         }
     }
 
@@ -242,6 +244,9 @@ class CostService
         }
 
         foreach ($costs as $cost) {
+             $hasFinancialHistory = Entry::where('id_cost', $cost->id)->exists() || 
+                                    OtherEntry::where('id_cost', $cost->id)->exists();
+
              // 1. Eliminar history_purses asociados a los purses del cost
              $purseIds = Purse::where('id_cost', $cost->id)->pluck('id')->toArray();
              if (!empty($purseIds)) {
@@ -253,19 +258,11 @@ class CostService
              $eliminados['purses'] += Purse::where('id_cost', $cost->id)->count();
              Purse::where('id_cost', $cost->id)->delete();
 
-             // 3. Eliminar entries asociados al cost
-             $replicasEntries = Entry::where('id_cost', $cost->id)->get(); // Puede haber multiples
-             $eliminados['entries'] += $replicasEntries->count();
-             Entry::where('id_cost', $cost->id)->delete();
-
-             // 4. Eliminar other_entries asociados al cost
-             $replicasOther = OtherEntry::where('id_cost', $cost->id)->get();
-             $eliminados['other_entries'] += $replicasOther->count();
-             OtherEntry::where('id_cost', $cost->id)->delete();
-             
-             // 5. Eliminar el cost
-             $cost->delete();
-             $eliminados['costs']++;
+             // 3. Eliminar el cost SOLO si no tiene historia financiera
+             if (!$hasFinancialHistory) {
+                 $cost->delete();
+                 $eliminados['costs']++;
+             }
         }
 
         return $eliminados;
