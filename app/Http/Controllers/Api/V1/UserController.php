@@ -26,6 +26,7 @@ class UserController extends Controller
             tags: ['Admin'],
             security: [['bearerAuth' => []]],
             parameters: [
+                new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Búsqueda por nombre o email', schema: new OA\Schema(type: 'string')),
                 new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Elementos por página', schema: new OA\Schema(type: 'integer', example: 15)),
             ],
             responses: [
@@ -38,7 +39,17 @@ class UserController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = min((int) $request->get('per_page', 15), 100);
-        $users = User::with('roles')->orderBy('name')->paginate($perPage);
+        $query = User::with('roles')->orderBy('name');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->paginate($perPage);
 
         return ApiResponse::success(
             UserResource::collection($users->items())->resolve(),

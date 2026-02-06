@@ -27,6 +27,7 @@ class ThirdReceiptController extends Controller
                 new OA\Parameter(name: 'third', in: 'query', required: false, description: 'ID del tercero', schema: new OA\Schema(type: 'integer')),
                 new OA\Parameter(name: 'from', in: 'query', required: false, description: 'Fecha desde (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
                 new OA\Parameter(name: 'to', in: 'query', required: false, description: 'Fecha hasta (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
+                new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Búsqueda por no_recibo, tercero (nombre/cédula) o concepto', schema: new OA\Schema(type: 'string')),
                 new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Elementos por página', schema: new OA\Schema(type: 'integer', example: 15)),
             ],
             responses: [
@@ -47,6 +48,21 @@ class ThirdReceiptController extends Controller
         if ($request->filled('to')) {
             $q->whereDate('fecha_recibo', '<=', $request->to);
         }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $q->where(function ($query) use ($search) {
+                $query->where('no_recibo', 'like', "%{$search}%")
+                    ->orWhereHas('thirdObject', function ($qt) use ($search) {
+                        $qt->where('nombre', 'like', "%{$search}%")
+                            ->orWhere('cedula', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('conceptoObject', function ($qc) use ($search) {
+                        $qc->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
         $perPage = min((int) $request->get('per_page', 15), 100);
         $paginator = $q->orderByRaw('COALESCE(fecha_recibo, created_at) DESC')->orderBy('no_recibo', 'desc')->paginate($perPage);
         return ApiResponse::success(

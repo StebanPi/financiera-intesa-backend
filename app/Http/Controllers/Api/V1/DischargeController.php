@@ -27,6 +27,7 @@ class DischargeController extends Controller
                 new OA\Parameter(name: 'proveedor_id', in: 'query', required: false, description: 'ID del proveedor', schema: new OA\Schema(type: 'integer')),
                 new OA\Parameter(name: 'from', in: 'query', required: false, description: 'Fecha desde (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
                 new OA\Parameter(name: 'to', in: 'query', required: false, description: 'Fecha hasta (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date')),
+                new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Búsqueda por no_recibo, proveedor o concepto', schema: new OA\Schema(type: 'string')),
                 new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Elementos por página', schema: new OA\Schema(type: 'integer', example: 15)),
             ],
             responses: [
@@ -47,7 +48,21 @@ class DischargeController extends Controller
         if ($request->filled('to')) {
             $q->whereDate('fecha_recibo', '<=', $request->to);
         }
-        $perPage = min((int) $request->get('per_page', 15), 100);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $q->where(function ($query) use ($search) {
+                $query->where('no_recibo', 'like', "%{$search}%")
+                    ->orWhereHas('provider', function ($qp) use ($search) {
+                        $qp->where('nombre', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('conceptoObject', function ($qc) use ($search) {
+                        $qc->where('nombre', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $perPage = (int) $request->get('per_page', 100000);
         $paginator = $q->orderBy('fecha_recibo', 'desc')->paginate($perPage);
         return ApiResponse::success(
             DischargeResource::collection($paginator->items())->resolve(),

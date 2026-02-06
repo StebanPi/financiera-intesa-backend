@@ -32,7 +32,7 @@ class DischargeConceptController extends Controller
     ]
     public function index(Request $request): JsonResponse
     {
-        $perPage = min((int) $request->get('per_page', 15), 100);
+        $perPage = (int) $request->get('per_page', 100000);
         $paginator = EgresoConcept::query()->with(['debeObject', 'haberObject'])->orderBy('nombre')->paginate($perPage);
         return ApiResponse::success(
             DischargeConceptResource::collection($paginator->items())->resolve(),

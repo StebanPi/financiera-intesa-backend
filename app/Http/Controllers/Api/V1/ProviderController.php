@@ -32,7 +32,7 @@ class ProviderController extends Controller
     ]
     public function index(Request $request): JsonResponse
     {
-        $perPage = min((int) $request->get('per_page', 15), 100);
+        $perPage = (int) $request->get('per_page', 100000);
         $q = EgresoProvider::query()->orderBy('nombre');
         $paginator = $q->paginate($perPage);
         return ApiResponse::success(
