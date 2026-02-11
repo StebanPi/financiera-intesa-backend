@@ -58,6 +58,8 @@ class MatriculaUpdateRequest extends FormRequest
             'contraseña_plataforma' => ['nullable', 'string', 'max:255'],
             'modalidad' => ['sometimes', 'in:presencial,virtual'],
             'observaciones' => ['nullable', 'string'],
+            'fecha_matricula' => ['nullable', 'date'],
+            'fecha_inicio' => ['nullable', 'date'],
         ];
     }
 }

@@ -43,7 +43,9 @@ class Matricula extends Model
         'anio',
         'numero_grupo',
         'modalidad',
-        'observaciones'
+        'observaciones',
+        'fecha_matricula',
+        'fecha_inicio'
     ];
 
     /**
@@ -55,6 +57,8 @@ class Matricula extends Model
     {
         return [
             'fecha_nacimiento' => 'date',
+            'fecha_matricula' => 'date',
+            'fecha_inicio' => 'date',
         ];
     }
 }
