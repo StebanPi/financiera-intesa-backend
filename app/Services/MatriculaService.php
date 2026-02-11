@@ -47,8 +47,8 @@ class MatriculaService
             $query->where('horario', $request->horario);
         }
 
-        if ($request->filled('tipo_documento')) {
-            $query->where('tipo_documento', $request->tipo_documento);
+        if ($request->filled('estado_estudiante')) {
+            $query->where('estado_estudiante', $request->estado_estudiante);
         }
 
         if ($request->filled('sede')) {

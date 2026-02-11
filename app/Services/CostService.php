@@ -110,6 +110,16 @@ class CostService
     }
 
     /**
+     * Obtiene todos los costos de un estudiante, ordenados por semestre
+     */
+    public function getByStudent(string $cod_alumno): \Illuminate\Support\Collection
+    {
+        return Cost::where('cod_alumno', $cod_alumno)
+            ->orderBy('numero_semestre')
+            ->get();
+    }
+
+    /**
      * @param  array<string, mixed>  $data
      */
     public function create(array $data): Cost

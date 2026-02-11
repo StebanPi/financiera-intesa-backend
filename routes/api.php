@@ -175,6 +175,15 @@ Route::prefix('v1')->group(function () {
         // Impresión de Recibos Financieros (General)
         Route::get('financial-receipts/{type}/{id}/pdf', [FinancialReceiptController::class, 'streamPdf'])->where('type', 'entry|other-entry|egreso|third')->whereNumber('id');
         Route::get('financial-receipts/{type}/{id}', [FinancialReceiptController::class, 'show'])->where('type', 'entry|other-entry|egreso|third')->whereNumber('id');
+        
+        // Costs (Costos de estudiantes)
+        Route::get('costs', [CostController::class, 'index']);
+        Route::post('costs', [CostController::class, 'store']);
+        Route::get('costs/student/{cod_alumno}', [CostController::class, 'showByStudent'])->where('cod_alumno', '[A-Za-z0-9\\-]+');
+        Route::get('costs/{id}', [CostController::class, 'show'])->whereNumber('id');
+        Route::match(['put', 'patch'], 'costs/{id}', [CostController::class, 'update'])->whereNumber('id');
+        Route::delete('costs/student/{cod_alumno}', [CostController::class, 'destroyByStudent'])->where('cod_alumno', '[A-Za-z0-9\\-]+');
+        Route::delete('costs/{id}', [CostController::class, 'destroy'])->whereNumber('id');
     });
 
     // ---- 6) Egresos (Gastos, Costos) ----
@@ -199,14 +208,6 @@ Route::prefix('v1')->group(function () {
         Route::get('discharges/{id}', [DischargeController::class, 'show'])->whereNumber('id');
         Route::match(['put', 'patch'], 'discharges/{id}', [DischargeController::class, 'update'])->whereNumber('id');
         Route::delete('discharges/{id}', [DischargeController::class, 'destroy'])->whereNumber('id');
-        
-        // Costs (Costos fijos/variables)
-        Route::get('costs', [CostController::class, 'index']);
-        Route::post('costs', [CostController::class, 'store']);
-        Route::get('costs/{id}', [CostController::class, 'show'])->whereNumber('id');
-        Route::match(['put', 'patch'], 'costs/{id}', [CostController::class, 'update'])->whereNumber('id');
-        Route::delete('costs/student/{cod_alumno}', [CostController::class, 'destroyByStudent'])->where('cod_alumno', '[A-Za-z0-9\-]+');
-        Route::delete('costs/{id}', [CostController::class, 'destroy'])->whereNumber('id');
     });
 
     // ---- 7) Terceros (Third Parties) ----

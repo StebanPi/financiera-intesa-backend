@@ -140,6 +140,32 @@ class CostController extends Controller
     }
 
     /**
+     * GET /costs/student/{cod_alumno}
+     */
+    #[
+        OA\Get(
+            path: '/api/v1/costs/student/{cod_alumno}',
+            summary: 'Obtener costos de un estudiante',
+            description: 'Obtiene todos los costos configurados para un estudiante específico, ordenados por semestre.',
+            tags: ['Costs'],
+            security: [['bearerAuth' => []]],
+            parameters: [
+                new OA\Parameter(name: 'cod_alumno', in: 'path', required: true, description: 'Código del alumno', schema: new OA\Schema(type: 'string')),
+            ],
+            responses: [
+                new OA\Response(response: 200, description: 'Lista de costos del estudiante', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
+                new OA\Response(response: 401, description: 'No autenticado', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            ]
+        )
+    ]
+    public function showByStudent(string $cod_alumno): JsonResponse
+    {
+        $costs = $this->costService->getByStudent($cod_alumno);
+
+        return ApiResponse::success(CostResource::collection($costs)->resolve());
+    }
+
+    /**
      * PUT/PATCH /costs/{id}
      */
     #[
