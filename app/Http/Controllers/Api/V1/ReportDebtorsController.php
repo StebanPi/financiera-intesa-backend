@@ -32,6 +32,7 @@ class ReportDebtorsController extends Controller
         $query = DB::table('purses')
             ->join('costs', 'purses.id_cost', '=', 'costs.id')
             ->join('matriculas', 'costs.cod_alumno', '=', 'matriculas.cod_alumno')
+            ->where('matriculas.estado_estudiante', 'Activo')
             ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
             ->select(
                 'purses.id as purse_id',
