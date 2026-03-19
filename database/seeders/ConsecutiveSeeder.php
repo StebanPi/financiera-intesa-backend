@@ -3,37 +3,33 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use App\Models\consecutive;
 
 class ConsecutiveSeeder extends Seeder
 {
     /**
      * Run the database seeds.
-     *
-     * @return void
      */
-    public function run()
+    public function run(): void
     {
-        consecutive::create([
-            'type' => 'entry',
-            'num_start' => 200,
-            'num_current' => 204,
-        ]);
-        consecutive::create([
-            'type' => 'discharge',
-            'num_start' => 5000,
-            'num_current' => 5002,
-        ]);
-        consecutive::create([
-            'type' => 'entry',
-            'num_start' => 10000,
-            'num_current' => 10000,
-        ]);
-        consecutive::create([
-            'type' => 'discharge',
-            'num_start' => 5000,
-            'num_current' => 5000,
-        ]);
+        $sedes = [
+            'BARRANCABERMEJA' => [
+                ['type' => 'entry',     'num_start' => 200,  'num_current' => 200],
+                ['type' => 'discharge', 'num_start' => 5000, 'num_current' => 5000],
+            ],
+            'AGUACHICA' => [
+                ['type' => 'entry',     'num_start' => 200,  'num_current' => 200],
+                ['type' => 'discharge', 'num_start' => 5000, 'num_current' => 5000],
+            ],
+        ];
+
+        foreach ($sedes as $sede => $records) {
+            foreach ($records as $data) {
+                consecutive::updateOrCreate(
+                    ['type' => $data['type'], 'sede' => $sede],
+                    ['num_start' => $data['num_start'], 'num_current' => $data['num_current']],
+                );
+            }
+        }
     }
 }

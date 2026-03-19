@@ -33,7 +33,9 @@ class ProviderController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = (int) $request->get('per_page', 100000);
-        $q = EgresoProvider::query()->orderBy('nombre');
+        $q = EgresoProvider::query()
+            ->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'))
+            ->orderBy('nombre');
         $paginator = $q->paginate($perPage);
         return ApiResponse::success(
             ProviderResource::collection($paginator->items())->resolve(),
@@ -68,7 +70,9 @@ class ProviderController extends Controller
     ]
     public function store(ProviderStoreRequest $request): JsonResponse
     {
-        $p = EgresoProvider::create($request->validated());
+        $p = EgresoProvider::create(array_merge($request->validated(), [
+            'sede' => $request->get('sede_activa', 'BARRANCABERMEJA'),
+        ]));
         return ApiResponse::success(new ProviderResource($p), 'Proveedor creado.', null, 201);
     }
 

@@ -33,7 +33,11 @@ class ConceptDischargeReceiptController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = min((int) $request->get('per_page', 15), 100);
-        $paginator = ConceptDischargeReceipt::query()->with(['debeObject', 'haberObject'])->orderBy('created_at', 'desc')->paginate($perPage);
+        $paginator = ConceptDischargeReceipt::query()
+            ->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'))
+            ->with(['debeObject', 'haberObject'])
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
         return ApiResponse::success(
             ConceptDischargeReceiptResource::collection($paginator->items())->resolve(),
             null,
@@ -72,6 +76,7 @@ class ConceptDischargeReceiptController extends Controller
     {
         $data = $request->validated();
         $data['state'] = $request->boolean('state', false);
+        $data['sede'] = $request->get('sede_activa', 'BARRANCABERMEJA');
         $c = ConceptDischargeReceipt::create($data);
         return ApiResponse::success(new ConceptDischargeReceiptResource($c), 'Concepto de egreso (terceros) creado.', null, 201);
     }

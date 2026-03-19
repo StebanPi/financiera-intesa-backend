@@ -26,7 +26,7 @@ class MatriculaStoreRequest extends FormRequest
 
         return [
             'nombre_completo' => ['required', 'string', 'max:255'],
-            'numero_documento' => ['required', 'string', 'max:255', 'unique:matriculas,numero_documento'],
+            'numero_documento' => ['required', 'string', 'max:255', Rule::unique('matriculas', 'numero_documento')->where('sede', $this->sede)],
             'lugar_expedicion_documento' => ['nullable', 'string', 'max:255'],
             'tipo_documento' => ['required', 'in:CC,TI,PPT'],
             'fecha_nacimiento' => ['nullable', 'date'],
@@ -71,7 +71,7 @@ class MatriculaStoreRequest extends FormRequest
         return [
             'nombre_completo.required' => 'El nombre completo es obligatorio.',
             'numero_documento.required' => 'El número de documento es obligatorio.',
-            'numero_documento.unique' => 'Este número de documento ya está registrado.',
+            'numero_documento.unique' => 'Este número de documento ya está registrado en esta sede.',
             'tipo_documento.required' => 'El tipo de documento es obligatorio.',
             'tipo_documento.in' => 'El tipo de documento debe ser CC, TI o PPT.',
             'tiene_discapacidad.in' => 'La opción de discapacidad no es válida.',

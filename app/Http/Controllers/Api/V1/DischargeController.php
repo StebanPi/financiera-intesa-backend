@@ -38,7 +38,8 @@ class DischargeController extends Controller
     ]
     public function index(Request $request): JsonResponse
     {
-        $q = EgresoReceipt::query()->with(['provider', 'conceptoObject', 'elaboradoObject']);
+        $q = EgresoReceipt::query()->with(['provider', 'conceptoObject', 'elaboradoObject'])
+            ->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'));
         if ($request->filled('proveedor_id')) {
             $q->where('proveedor_id', $request->proveedor_id);
         }
@@ -103,7 +104,10 @@ class DischargeController extends Controller
     ]
     public function store(DischargeStoreRequest $request): JsonResponse
     {
-        $r = $this->dischargeService->create($request->validated());
+        $data = array_merge($request->validated(), [
+            'sede_activa' => $request->get('sede_activa', 'BARRANCABERMEJA'),
+        ]);
+        $r = $this->dischargeService->create($data);
         return ApiResponse::success(new DischargeResource($r), 'Egreso creado.', null, 201);
     }
 

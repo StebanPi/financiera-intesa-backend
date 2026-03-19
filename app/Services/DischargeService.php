@@ -23,12 +23,17 @@ class DischargeService
             ]);
         }
 
+        $sede = $data['sede_activa'] ?? 'BARRANCABERMEJA';
+
         $receipt = null;
-        DB::transaction(function () use ($data, $concept, &$receipt) {
-            $con = consecutive::where('type', 'discharge')->lockForUpdate()->first();
+        DB::transaction(function () use ($data, $concept, $sede, &$receipt) {
+            $con = consecutive::where('type', 'discharge')
+                ->where('sede', $sede)
+                ->lockForUpdate()
+                ->first();
             if (!$con) {
                 throw ValidationException::withMessages([
-                    'consecutive' => ['Falta configurar el consecutivo de tipo "discharge". Configure el consecutivo en Ajustes.'],
+                    'consecutive' => ['Falta configurar el consecutivo de tipo "discharge" para esta sede. Configure el consecutivo en Ajustes.'],
                 ]);
             }
             $start = (int) $con->num_start;
@@ -53,10 +58,11 @@ class DischargeService
                 'elaborado_por' => $data['elaborado_por'],
                 'debe' => $concept->debe,
                 'haber' => $concept->haber,
+                'sede' => $sede,
             ]);
         });
 
-        return $receipt->fresh();
+        return $receipt->fresh(['provider', 'conceptoObject', 'elaboradoObject']);
     }
 
     public function update(int $id, array $data): EgresoReceipt
@@ -79,7 +85,7 @@ class DischargeService
         }
 
         $r->update($data);
-        return $r->fresh();
+        return $r->fresh(['provider', 'conceptoObject', 'elaboradoObject']);
     }
 
     public function delete(int $id): void

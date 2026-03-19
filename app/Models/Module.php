@@ -10,6 +10,7 @@ class Module extends Model
         'name',
         'code',
         'active',
+        'sede',
     ];
 
     protected function casts(): array

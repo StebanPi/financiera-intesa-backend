@@ -48,12 +48,12 @@ class EntryController extends Controller
     ]
     public function index(Request $request): JsonResponse
     {
-        $query = Entry::query();
+        $query = Entry::query()->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'));
 
         if ($request->filled('cod_alumno')) {
-            $cost = Cost::where('cod_alumno', $request->cod_alumno)->first();
-            if ($cost) {
-                $query->where('id_cost', $cost->id);
+            $costIds = Cost::where('cod_alumno', $request->cod_alumno)->pluck('id');
+            if ($costIds->isNotEmpty()) {
+                $query->whereIn('id_cost', $costIds);
             } else {
                 $query->whereRaw('1 = 0');
             }

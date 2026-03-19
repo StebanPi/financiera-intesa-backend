@@ -14,7 +14,8 @@ class EgresoConcept extends Model
         'descripcion',
         'state',
         'debe',
-        'haber'
+        'haber',
+        'sede',
     ];
 
     /**

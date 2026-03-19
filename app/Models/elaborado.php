@@ -13,7 +13,8 @@ class elaborado extends Model
 
     protected $fillable = [
         'nombre',
-        'estado'
+        'estado',
+        'sede',
     ];
 
     protected $connection;

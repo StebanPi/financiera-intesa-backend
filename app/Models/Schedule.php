@@ -9,6 +9,7 @@ class Schedule extends Model
     protected $fillable = [
         'name',
         'active',
+        'sede',
     ];
 
     protected function casts(): array

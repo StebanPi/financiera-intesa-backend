@@ -35,7 +35,10 @@ class ThirdActivityController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = min((int) $request->get('per_page', 15), 100);
-        $paginator = thirdActivity::query()->orderBy('created_at', 'desc')->paginate($perPage);
+        $paginator = thirdActivity::query()
+            ->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'))
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
         return ApiResponse::success(
             ThirdActivityResource::collection($paginator->items())->resolve(),
             null,
@@ -69,7 +72,9 @@ class ThirdActivityController extends Controller
     ]
     public function store(ThirdActivityStoreRequest $request): JsonResponse
     {
-        $a = thirdActivity::create($request->validated());
+        $a = thirdActivity::create(array_merge($request->validated(), [
+            'sede' => $request->get('sede_activa', 'BARRANCABERMEJA'),
+        ]));
         return ApiResponse::success(new ThirdActivityResource($a), 'Actividad creada.', null, 201);
     }
 

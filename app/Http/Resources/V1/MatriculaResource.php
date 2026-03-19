@@ -22,6 +22,7 @@ class MatriculaResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'numero_matricula' => $this->numero_matricula,
             'cod_alumno' => $this->cod_alumno,
             'photo_path' => $this->photo_path,
             'photo_url' => $photoUrl,
@@ -57,6 +58,8 @@ class MatriculaResource extends JsonResource
             'numero_grupo' => $this->numero_grupo,
             'modalidad' => $this->modalidad,
             'observaciones' => $this->observaciones,
+            'fecha_matricula' => $this->fecha_matricula?->format('Y-m-d'),
+            'fecha_inicio' => $this->fecha_inicio?->format('Y-m-d'),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

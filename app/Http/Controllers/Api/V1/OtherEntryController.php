@@ -48,7 +48,7 @@ class OtherEntryController extends Controller
     ]
     public function index(Request $request): JsonResponse
     {
-        $query = OtherEntry::query();
+        $query = OtherEntry::query()->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'));
 
         if ($request->filled('cod_alumno')) {
             $cost = Cost::where('cod_alumno', $request->cod_alumno)->first();

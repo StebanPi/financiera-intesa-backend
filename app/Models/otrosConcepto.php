@@ -13,7 +13,8 @@ class otrosConcepto extends Model
         'nombre',
         'estado',
         'debe',
-        'haber'
+        'haber',
+        'sede',
     ];
 
     protected $connection;

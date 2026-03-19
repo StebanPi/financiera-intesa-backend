@@ -23,13 +23,13 @@ class AccountingReportService
         // Se cambió el JOIN para usar matriculas.sede, que es más confiable que entries.sede
         $query = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->leftJoin('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
-            ->distinct()
+            ->whereRaw('UPPER(entries.sede) = ?', [strtoupper($sede)])
             ->select(
                 'entries.*',
                 'costs.cod_alumno',
+                'matriculas.programa as programa_local',
                 'conceptos.nombre as concepto_nombre'
             );
 
@@ -46,16 +46,25 @@ class AccountingReportService
             ->get();
 
         $grouped = [];
+        $seenIds = [];
         foreach ($entries as $entry) {
+            // Evitar duplicados por entries.id (pueden surgir del JOIN multi-semestre con costs)
+            if (in_array($entry->id, $seenIds)) continue;
+            $seenIds[] = $entry->id;
+
             $student = StudentResolverService::getStudentData($entry->cod_alumno);
-            $programa = ($student && !empty($student->nombre_programa)) ? $student->nombre_programa : 'SIN PROGRAMA';
-            
+            // Usar el programa de la matrícula local (ya filtrado por sede) para evitar
+            // que la BD externa devuelva un programa de otra sede
+            $programa = !empty($entry->programa_local)
+                ? $entry->programa_local
+                : (($student && !empty($student->nombre_programa)) ? $student->nombre_programa : 'SIN PROGRAMA');
+
             if (!isset($grouped[$programa])) {
                 $grouped[$programa] = [];
             }
-            
+
             $forma = StudentResolverService::normalizePaymentForm($entry->forma ?? 'Efectivo');
-            
+
             $grouped[$programa][] = [
                 'no_recibo' => $entry->no_recibo,
                 'fecha_recibo' => $entry->fecha_recibo,
@@ -118,13 +127,10 @@ class AccountingReportService
      */
     public function buildOtrosIngresosDataset($startDate = null, $endDate = null, $sede = 'BARRANCABERMEJA')
     {
-        // Se cambió el JOIN para usar matriculas.sede
         $query = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
-            ->distinct()
+            ->whereRaw('UPPER(other_entries.sede) = ?', [strtoupper($sede)])
             ->select(
                 'other_entries.*',
                 'costs.cod_alumno',
@@ -219,10 +225,8 @@ class AccountingReportService
         // Entries
         $entriesQuery = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
-            ->distinct()
+            ->whereRaw('UPPER(entries.sede) = ?', [strtoupper($sede)])
             ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre');
 
         if ($startDate && $endDate) {
@@ -238,10 +242,8 @@ class AccountingReportService
         // Other entries
         $otherEntriesQuery = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
-            ->distinct()
+            ->whereRaw('UPPER(other_entries.sede) = ?', [strtoupper($sede)])
             ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre');
 
         if ($startDate && $endDate) {
@@ -734,10 +736,8 @@ class AccountingReportService
         // Ingresos: entries
         $entries = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
-            ->where('matriculas.sede', $sede)
+            ->whereRaw('UPPER(entries.sede) = ?', [strtoupper($sede)])
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
-            ->distinct()
             ->select('entries.*', 'costs.cod_alumno')
             ->get();
 
@@ -759,10 +759,8 @@ class AccountingReportService
         // Ingresos: other_entries
         $otherEntries = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
-            ->where('matriculas.sede', $sede)
+            ->whereRaw('UPPER(other_entries.sede) = ?', [strtoupper($sede)])
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
-            ->distinct()
             ->select('other_entries.*', 'costs.cod_alumno')
             ->get();
 

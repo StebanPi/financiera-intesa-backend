@@ -13,11 +13,12 @@ class thirdEntry extends Model
 
     protected $fillable = [
         'cedula',
-        'nombre', 
+        'nombre',
         'direccion',
         'telefono',
         'actividad',
-        'mas'
+        'mas',
+        'sede',
     ];
 
     public function thirdActivity()

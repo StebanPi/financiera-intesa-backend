@@ -11,7 +11,8 @@ class thirdActivity extends Model
     use HasFactory;
 
     protected $fillable = [
-        'nombre'
+        'nombre',
+        'sede',
     ];
 
     public function thirdEntries()

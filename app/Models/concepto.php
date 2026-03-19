@@ -16,7 +16,8 @@ class concepto extends Model
         'orderTable',
         'consecutivo',
         'debe',
-        'haber'
+        'haber',
+        'sede',
     ];
 
     protected $connection;

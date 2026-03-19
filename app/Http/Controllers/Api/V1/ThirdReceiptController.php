@@ -38,7 +38,9 @@ class ThirdReceiptController extends Controller
     ]
     public function index(Request $request): JsonResponse
     {
-        $q = ThirdReceipts::where('type', 'entry')->with(['thirdObject', 'conceptoObject', 'elaboradoObject']);
+        $q = ThirdReceipts::where('type', 'entry')
+            ->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'))
+            ->with(['thirdObject', 'conceptoObject', 'elaboradoObject']);
         if ($request->filled('third')) {
             $q->where('third', $request->third);
         }
@@ -106,7 +108,10 @@ class ThirdReceiptController extends Controller
     ]
     public function store(ThirdReceiptStoreRequest $request): JsonResponse
     {
-        $r = $this->thirdReceiptService->create($request->validated());
+        $data = array_merge($request->validated(), [
+            'sede' => $request->get('sede_activa', 'BARRANCABERMEJA'),
+        ]);
+        $r = $this->thirdReceiptService->create($data);
         return ApiResponse::success(new ThirdReceiptResource($r), 'Recibo de tercero creado.', null, 201);
     }
 

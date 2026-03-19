@@ -18,7 +18,11 @@ class ConsecutiveStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['required', 'in:entry,discharge', Rule::unique('consecutives', 'type')],
+            'type' => [
+                'required',
+                'in:entry,discharge',
+                Rule::unique('consecutives', 'type')->where('sede', $this->get('sede_activa', 'BARRANCABERMEJA')),
+            ],
             'num_start' => ['required', 'integer', 'min:0'],
         ];
     }

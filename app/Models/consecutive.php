@@ -9,7 +9,7 @@ class consecutive extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['type','num_start','num_current'];
+    protected $fillable = ['type','num_start','num_current','sede'];
 
     protected $connection;
 

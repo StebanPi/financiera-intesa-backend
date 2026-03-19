@@ -57,7 +57,7 @@ class AccountingApiController extends Controller
     ]
     public function index(Request $request): JsonResponse
     {
-        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
         $todayBase = CashBase::where('fecha', date('Y-m-d'))
             ->where('sede', $sede)
             ->first();
@@ -115,7 +115,7 @@ class AccountingApiController extends Controller
             $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
             $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
         }
-        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
 
         $ds = $this->reportService->buildAbonosDataset($fechaInicio, $fechaFin, $sede);
         $rows = [];
@@ -172,7 +172,7 @@ class AccountingApiController extends Controller
             $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
             $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
         }
-        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
 
         $ds = $this->reportService->buildOtrosIngresosDataset($fechaInicio, $fechaFin, $sede);
         $rows = [];
@@ -231,7 +231,7 @@ class AccountingApiController extends Controller
             $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
             $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
         }
-        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
 
         $ds = $this->reportService->buildTotalIngresosDataset($fechaInicio, $fechaFin, $sede);
         $totals = ['total' => $ds['total'], 'total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']];
@@ -282,7 +282,7 @@ class AccountingApiController extends Controller
             $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
             $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
         }
-        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
 
         $ds = $this->reportService->buildTotalEgresosDataset($fechaInicio, $fechaFin, $sede);
         $totals = ['total' => $ds['total'], 'total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']];
@@ -325,7 +325,7 @@ class AccountingApiController extends Controller
     public function arqueoDiario(SingleDateRequest $request): JsonResponse
     {
         $fecha = $request->fecha;
-        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
         $ds = $this->reportService->buildArqueoDiarioDataset($fecha, $sede);
 
         if (!empty($ds['missing_dates'])) {
@@ -377,7 +377,7 @@ class AccountingApiController extends Controller
     public function informeSemanal(SingleDateRequest $request): JsonResponse
     {
         $fecha = $request->fecha;
-        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
         $ds = $this->reportService->buildInformeSemanalDataset($fecha, $sede);
 
         if (!empty($ds['missing_initial_base'])) {
@@ -431,7 +431,7 @@ class AccountingApiController extends Controller
     public function informeMensual(MonthYearRequest $request): JsonResponse
     {
         [$mes, $anio] = $request->getMesAnio();
-        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
         $ds = $this->reportService->buildInformeMensualDataset($mes, $anio, $sede);
 
         if (!empty($ds['missing_initial_base'])) {
@@ -511,7 +511,7 @@ class AccountingApiController extends Controller
     public function abonosDownload(DateRangeRequiredRequest $request)
     {
         try {
-            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
             $r = $this->excelService->generateAbonosReport($request->fecha_inicio, $request->fecha_fin, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
@@ -555,7 +555,7 @@ class AccountingApiController extends Controller
     public function otrosIngresosDownload(DateRangeRequiredRequest $request)
     {
         try {
-            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
             $r = $this->excelService->generateOtrosIngresosReport($request->fecha_inicio, $request->fecha_fin, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
@@ -599,7 +599,7 @@ class AccountingApiController extends Controller
     public function totalIngresosDownload(DateRangeRequiredRequest $request)
     {
         try {
-            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
             $r = $this->excelService->generateTotalIngresosReport($request->fecha_inicio, $request->fecha_fin, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
@@ -643,7 +643,7 @@ class AccountingApiController extends Controller
     public function egresosDownload(DateRangeRequiredRequest $request)
     {
         try {
-            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
             $r = $this->excelService->generateTotalEgresosReport($request->fecha_inicio, $request->fecha_fin, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
@@ -686,7 +686,7 @@ class AccountingApiController extends Controller
     public function arqueoDiarioDownload(SingleDateRequest $request)
     {
         try {
-            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
             $r = $this->excelService->generateArqueoDiario($request->fecha, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
@@ -729,7 +729,7 @@ class AccountingApiController extends Controller
     public function informeSemanalDownload(SingleDateRequest $request)
     {
         try {
-            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
             $r = $this->excelService->generateInformeSemanal($request->fecha, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
@@ -775,7 +775,7 @@ class AccountingApiController extends Controller
     {
         try {
             [$mes, $anio] = $request->getMesAnio();
-            $sede = $request->get('sede', 'BARRANCABERMEJA');
+            $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
             $r = $this->excelService->generateInformeMensual($mes, $anio, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
@@ -813,7 +813,7 @@ class AccountingApiController extends Controller
     ]
     public function initialBalance(Request $request): JsonResponse
     {
-        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
         $initial = InitialBalance::getActive($sede);
         return ApiResponse::success([
             'exists' => (bool) $initial,
@@ -903,7 +903,7 @@ class AccountingApiController extends Controller
     {
         $startDate = $request->get('start_date', date('Y-m-01'));
         $endDate = $request->get('end_date', date('Y-m-t'));
-        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
 
         $bases = CashBase::whereBetween('fecha', [$startDate, $endDate])
             ->where('sede', $sede)

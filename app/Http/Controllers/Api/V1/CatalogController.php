@@ -84,9 +84,11 @@ class CatalogController extends Controller
             return ApiResponse::error('NOT_FOUND', 'Recurso no encontrado.', null, 404);
         }
 
-        $perPage = min((int) $request->get('per_page', 15), 100);
+        $perPage = max(1, (int) $request->get('per_page', 10000));
         $model = $cfg['model'];
         $query = $model::query()->orderBy('id');
+        $query->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'));
+
         $paginator = $query->paginate($perPage);
         $res = $cfg['resource'];
 
@@ -148,7 +150,9 @@ class CatalogController extends Controller
         try {
             $model = $cfg['model'];
             error_log("CatalogController::store - creating item for model: $model");
-            $item = $model::create($v->validated());
+            $data = $v->validated();
+            $data['sede'] = $request->get('sede_activa', 'BARRANCABERMEJA');
+            $item = $model::create($data);
             $res = $cfg['resource'];
             return ApiResponse::success(new $res($item), 'Creado.', null, 201);
         } catch (\Throwable $e) {
@@ -312,10 +316,11 @@ class CatalogController extends Controller
             ]
         )
     ]
-    public function showInstitution(): JsonResponse
+    public function showInstitution(Request $request): JsonResponse
     {
         error_log("CatalogController::showInstitution");
-        $item = InstitutionSetting::getSettings();
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
+        $item = InstitutionSetting::where('sede', $sede)->first() ?? InstitutionSetting::getSettings();
         return ApiResponse::success(new InstitutionCatalogResource($item));
     }
 
@@ -335,14 +340,15 @@ class CatalogController extends Controller
             ]
         )
     ]
-    public function financialOptions(): JsonResponse
+    public function financialOptions(Request $request): JsonResponse
     {
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
         $data = [
-            'conceptos' => ConceptoCatalogResource::collection(concepto::where('estado', '1')->get())->resolve(),
-            'elaborados' => ElaboradoCatalogResource::collection(elaborado::where('estado', '1')->get())->resolve(),
-            'debes' => DebeCatalogResource::collection(debe::all())->resolve(),
-            'habers' => HaberCatalogResource::collection(haber::all())->resolve(),
-            'otros_conceptos' => OtrosConceptoCatalogResource::collection(otrosConcepto::where('estado', '1')->get())->resolve(),
+            'conceptos' => ConceptoCatalogResource::collection(concepto::where('estado', '1')->where('sede', $sede)->get())->resolve(),
+            'elaborados' => ElaboradoCatalogResource::collection(elaborado::where('sede', $sede)->get())->resolve(),
+            'debes' => DebeCatalogResource::collection(debe::where('sede', $sede)->get())->resolve(),
+            'habers' => HaberCatalogResource::collection(haber::where('sede', $sede)->get())->resolve(),
+            'otros_conceptos' => OtrosConceptoCatalogResource::collection(otrosConcepto::where('estado', '1')->where('sede', $sede)->get())->resolve(),
         ];
 
         return ApiResponse::success($data);
@@ -375,8 +381,9 @@ class CatalogController extends Controller
     ]
     public function updateInstitution(InstitutionUpdateRequest $request): JsonResponse
     {
-        $item = InstitutionSetting::getSettings();
-        $item->update($request->validated());
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
+        $item = InstitutionSetting::where('sede', $sede)->first() ?? InstitutionSetting::getSettings();
+        $item->update(array_merge($request->validated(), ['sede' => $sede]));
         \Illuminate\Support\Facades\Cache::forget('institution_settings');
         return ApiResponse::success(new InstitutionCatalogResource($item->fresh()), 'Configuración actualizada.', null, 200);
     }

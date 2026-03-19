@@ -19,8 +19,10 @@ class ThirdReceiptService
         }
 
         $receipt = null;
-        DB::transaction(function () use ($data, $forma, &$receipt) {
-            $con = consecutive::where('type', 'entry')->lockForUpdate()->first();
+        $sede = strtoupper($data['sede'] ?? 'BARRANCABERMEJA');
+
+        DB::transaction(function () use ($data, $forma, $sede, &$receipt) {
+            $con = consecutive::where('type', 'entry')->where('sede', $sede)->lockForUpdate()->first();
             if (!$con) {
                 throw ValidationException::withMessages([
                     'consecutive' => ['Falta configurar el consecutivo de tipo "entry". Configure el consecutivo en Ajustes.'],
@@ -40,6 +42,7 @@ class ThirdReceiptService
             $receipt = ThirdReceipts::create([
                 'no_recibo' => $noRecibo,
                 'type' => 'entry',
+                'sede' => $sede,
                 'third' => $data['third'],
                 'concepto' => $data['concepto'],
                 'detalles' => $data['detalles'] ?? null,

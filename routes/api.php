@@ -62,20 +62,20 @@ Route::prefix('v1')->group(function () {
     });
 
     // Recursos Generales (Solo Auth, como Home o utilidades compartidas)
-    Route::middleware(['auth:sanctum'])->group(function () {
+    Route::middleware(['auth:sanctum', 'sede'])->group(function () {
         Route::get('home', [HomeController::class, 'index']);
         Route::get('maintenance', [MaintenanceApiController::class, 'index']); // Info de mantenimiento
         
         // Consecutivos (Usados por varios módulos para crear recibos)
         Route::get('consecutives', [ConsecutiveController::class, 'index']);
         Route::get('consecutives/type/{type}', [ConsecutiveController::class, 'showByType'])->where('type', 'entry|discharge');
-        // Crear/Editar consecutivos podría restringirse más, pero dejaremos lectura abierta a auth.
-        // Escritura a Ajustes o quien los gestione? Por ahora dejemoslo aquí o en Ajustes.
-        // Asumiremos que crear consecutivos es tarea de Admin/Ajustes.
+        Route::post('consecutives', [ConsecutiveController::class, 'store']);
+        Route::get('consecutives/{id}', [ConsecutiveController::class, 'show'])->whereNumber('id');
+        Route::match(['put', 'patch'], 'consecutives/{id}', [ConsecutiveController::class, 'update'])->whereNumber('id');
     });
     
     // ---- 2) Administración (Usuarios, Roles, Permisos) ----
-    Route::middleware(['auth:sanctum', 'permission:access.administration'])->prefix('admin')->group(function () {
+    Route::middleware(['auth:sanctum', 'sede', 'permission:access.administration'])->prefix('admin')->group(function () {
         Route::get('users', [UserController::class, 'index']);
         Route::post('users', [UserController::class, 'store']);
         Route::get('users/{user}', [UserController::class, 'show']);
@@ -87,14 +87,11 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('roles', RoleController::class);
         Route::post('users/{user}/roles', [UserRoleController::class, 'syncRoles'])->name('admin.users.roles.sync');
         
-        // Gestión de Consecutivos (Escritura) - Opcional, si se considera admin
-        Route::post('../consecutives', [ConsecutiveController::class, 'store']);
-        Route::get('../consecutives/{id}', [ConsecutiveController::class, 'show'])->whereNumber('id');
-        Route::match(['put', 'patch'], '../consecutives/{id}', [ConsecutiveController::class, 'update'])->whereNumber('id');
+        // Gestión de Consecutivos movida al grupo general de auth+sede
     });
 
     // ---- 3) Ajustes (Settings) ----
-    Route::middleware(['auth:sanctum', 'permission:access.settings'])->prefix('settings')->group(function () {
+    Route::middleware(['auth:sanctum', 'sede', 'permission:access.settings'])->prefix('settings')->group(function () {
         Route::get('institution', [CatalogController::class, 'showInstitution']);
         Route::put('institution', [CatalogController::class, 'updateInstitution']);
         Route::get('financial-options', [CatalogController::class, 'financialOptions']);
@@ -106,7 +103,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // ---- 4) Contabilidad ----
-    Route::middleware(['auth:sanctum', 'permission:access.accounting'])->prefix('accounting')->group(function () {
+    Route::middleware(['auth:sanctum', 'sede', 'permission:access.accounting'])->prefix('accounting')->group(function () {
         Route::get('initial-balance', [AccountingApiController::class, 'initialBalance']);
         Route::post('initial-balance', [AccountingApiController::class, 'storeInitialBalance']);
         Route::get('cash-bases', [AccountingApiController::class, 'cashBases']);
@@ -131,7 +128,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // ---- 5) Gestión Académica (Matrículas, Estudiantes, Cartera, Pagos de estudiantes) ----
-    Route::middleware(['auth:sanctum', 'permission:access.academic'])->group(function () {
+    Route::middleware(['auth:sanctum', 'sede', 'permission:access.academic'])->group(function () {
         Route::get('matriculas/form-data', [MatriculaController::class, 'formData']);
         Route::get('matriculas', [MatriculaController::class, 'index']);
         Route::get('enrollments/{cod_alumno}', [MatriculaController::class, 'showFull'])->where('cod_alumno', '[A-Za-z0-9\-]+');
@@ -187,7 +184,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // ---- 6) Egresos (Gastos, Costos) ----
-    Route::middleware(['auth:sanctum', 'permission:access.expenses'])->group(function () {
+    Route::middleware(['auth:sanctum', 'sede', 'permission:access.expenses'])->group(function () {
         // Providers
         Route::get('providers', [ProviderController::class, 'index']);
         Route::post('providers', [ProviderController::class, 'store']);
@@ -211,7 +208,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // ---- 7) Terceros (Third Parties) ----
-    Route::middleware(['auth:sanctum', 'permission:access.third_parties'])->group(function () {
+    Route::middleware(['auth:sanctum', 'sede', 'permission:access.third_parties'])->group(function () {
         Route::get('third-entries', [ThirdEntryController::class, 'index']);
         Route::post('third-entries', [ThirdEntryController::class, 'store']);
         Route::get('third-entries/{id}', [ThirdEntryController::class, 'show'])->whereNumber('id');

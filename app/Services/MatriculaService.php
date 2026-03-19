@@ -51,9 +51,7 @@ class MatriculaService
             $query->where('estado_estudiante', $request->estado_estudiante);
         }
 
-        if ($request->filled('sede')) {
-            $query->where('sede', $request->sede);
-        }
+        $query->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'));
 
         if ($request->filled('modalidad')) {
             $query->where('modalidad', $request->modalidad);
@@ -141,18 +139,25 @@ class MatriculaService
     {
         $cod_alumno = $data['numero_documento'];
 
-        if (Matricula::where('cod_alumno', $cod_alumno)->exists()) {
+        $sede = $data['sede'] ?? null;
+
+        if (Matricula::where('cod_alumno', $cod_alumno)->where('sede', $sede)->exists()) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'numero_documento' => ['Este número de documento ya está registrado.'],
+                'numero_documento' => ['Este número de documento ya está registrado en esta sede.'],
             ]);
         }
 
         $availableId = $this->findAvailableId();
 
+        $numeroMatricula = (int) (DB::table('matriculas')
+            ->where('sede', $sede)
+            ->max('numero_matricula') ?? 0) + 1;
+
         $fillable = (new Matricula)->getFillable();
         $row = array_intersect_key($data, array_flip($fillable));
         $row['cod_alumno'] = $cod_alumno;
         $row['id'] = $availableId;
+        $row['numero_matricula'] = $numeroMatricula;
         $row['created_at'] = now();
         $row['updated_at'] = now();
 

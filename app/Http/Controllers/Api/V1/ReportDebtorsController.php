@@ -27,7 +27,7 @@ class ReportDebtorsController extends Controller
         $dia = $request->query('dia');
         $mes = $request->query('mes');
         $anio = $request->query('anio');
-        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $sede = $request->get('sede_activa', $request->get('sede', 'BARRANCABERMEJA'));
 
         $query = DB::table('purses')
             ->join('costs', 'purses.id_cost', '=', 'costs.id')
@@ -111,14 +111,14 @@ class ReportDebtorsController extends Controller
      */
     public function getActiveDebtors(Request $request): JsonResponse
     {
-        $sede = $request->get('sede', 'BARRANCABERMEJA');
+        $sede = $request->get('sede_activa', $request->get('sede', 'BARRANCABERMEJA'));
 
         // Obtener todos los estudiantes activos de la sede
         $students = DB::table('matriculas')
             ->where('estado_estudiante', 'Activo')
             ->whereRaw('UPPER(sede) = ?', [strtoupper($sede)])
-            ->select('id', 'cod_alumno', 'nombre_completo', 'telefono_personal', 'programa')
-            ->orderBy('id', 'desc')
+            ->select('id', 'numero_matricula', 'cod_alumno', 'nombre_completo', 'telefono_personal', 'programa')
+            ->orderBy('numero_matricula', 'desc')
             ->get();
 
         $debtors = [];
@@ -130,7 +130,7 @@ class ReportDebtorsController extends Controller
             $saldoEnMora = (float) ($carteraData['totales']['saldo_en_mora'] ?? 0);
 
             $debtors[] = [
-                'id' => $student->id,
+                'id' => $student->numero_matricula ?? $student->id,
                 'cod_alumno' => $student->cod_alumno,
                 'nombre' => $student->nombre_completo,
                 'telefono' => $student->telefono_personal,

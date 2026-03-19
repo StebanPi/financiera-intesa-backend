@@ -9,7 +9,7 @@ class ConceptDischargeReceipt extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'state', 'debe', 'haber'];
+    protected $fillable = ['name', 'state', 'debe', 'haber', 'sede'];
 
     /**
      * Relación con debe

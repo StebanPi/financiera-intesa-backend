@@ -12,6 +12,7 @@ class Teacher extends Model
         'phone',
         'email',
         'active',
+        'sede',
     ];
 
     protected function casts(): array

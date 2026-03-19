@@ -33,7 +33,11 @@ class DischargeConceptController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = (int) $request->get('per_page', 100000);
-        $paginator = EgresoConcept::query()->with(['debeObject', 'haberObject'])->orderBy('nombre')->paginate($perPage);
+        $paginator = EgresoConcept::query()
+            ->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'))
+            ->with(['debeObject', 'haberObject'])
+            ->orderBy('nombre')
+            ->paginate($perPage);
         return ApiResponse::success(
             DischargeConceptResource::collection($paginator->items())->resolve(),
             null,
@@ -72,6 +76,7 @@ class DischargeConceptController extends Controller
     {
         $data = $request->validated();
         $data['state'] = $request->boolean('state', false);
+        $data['sede'] = $request->get('sede_activa', 'BARRANCABERMEJA');
         $c = EgresoConcept::create($data);
         return ApiResponse::success(new DischargeConceptResource($c), 'Concepto de egreso creado.', null, 201);
     }

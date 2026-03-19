@@ -29,9 +29,11 @@ class ConsecutiveController extends Controller
             ]
         )
     ]
-    public function index(): JsonResponse
+    public function index(\Illuminate\Http\Request $request): JsonResponse
     {
-        $items = consecutive::orderBy('type')->get();
+        $items = consecutive::where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'))
+            ->orderBy('type')
+            ->get();
 
         return ApiResponse::success(ConsecutiveResource::collection($items)->resolve());
     }
@@ -69,6 +71,7 @@ class ConsecutiveController extends Controller
             'type' => $request->type,
             'num_start' => $request->num_start,
             'num_current' => $request->num_start,
+            'sede' => $request->get('sede_activa', 'BARRANCABERMEJA'),
         ]);
 
         return ApiResponse::success(new ConsecutiveResource($con), 'Consecutivo creado.', null, 201);
@@ -164,9 +167,11 @@ class ConsecutiveController extends Controller
             ]
         )
     ]
-    public function showByType(string $type): JsonResponse
+    public function showByType(\Illuminate\Http\Request $request, string $type): JsonResponse
     {
-        $con = consecutive::where('type', $type)->firstOrFail();
+        $con = consecutive::where('type', $type)
+            ->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'))
+            ->firstOrFail();
 
         return ApiResponse::success(new ConsecutiveResource($con));
     }

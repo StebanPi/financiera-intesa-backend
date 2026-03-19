@@ -37,7 +37,9 @@ class ThirdEntryController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = min((int) $request->get('per_page', 15), 100);
-        $query = thirdEntry::with('thirdActivity')->orderBy('created_at', 'desc');
+        $query = thirdEntry::where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'))
+            ->with('thirdActivity')
+            ->orderBy('created_at', 'desc');
 
         if ($request->filled('cedula')) {
             $query->where('cedula', 'like', '%' . $request->cedula . '%');
@@ -87,7 +89,9 @@ class ThirdEntryController extends Controller
     ]
     public function store(ThirdEntryStoreRequest $request): JsonResponse
     {
-        $e = thirdEntry::create($request->validated());
+        $e = thirdEntry::create(array_merge($request->validated(), [
+            'sede' => $request->get('sede_activa', 'BARRANCABERMEJA'),
+        ]));
         return ApiResponse::success(new ThirdEntryResource($e), 'Tercero creado.', null, 201);
     }
 

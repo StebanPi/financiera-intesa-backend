@@ -13,7 +13,8 @@ class haber extends Model
 
     protected $fillable = [
         'cuenta',
-        'nombre'
+        'nombre',
+        'sede',
     ];
 
     protected $connection;

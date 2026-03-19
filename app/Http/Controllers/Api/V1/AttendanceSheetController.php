@@ -93,12 +93,14 @@ class AttendanceSheetController extends Controller
         $docente = Teacher::findOrFail($request->teacher_id);
         $modulo = Module::findOrFail($request->module_id);
 
-        $institucion = InstitutionSetting::getSettings();
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
+        $institucion = InstitutionSetting::where('sede', $sede)->first() ?? InstitutionSetting::getSettings();
 
         $estudiantes = Matricula::where('programa', $programa->name)
             ->where('horario', $horario->name)
             ->where('numero_grupo', $grupo->name)
             ->where('estado_estudiante', 'Activo')
+            ->where('sede', $sede)
             ->orderBy('nombre_completo', 'asc')
             ->get();
 

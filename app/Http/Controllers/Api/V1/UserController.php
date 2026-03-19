@@ -39,7 +39,9 @@ class UserController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = min((int) $request->get('per_page', 15), 100);
-        $query = User::with('roles')->orderBy('name');
+        $query = User::with('roles')
+            ->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'))
+            ->orderBy('name');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -109,6 +111,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'sede' => $request->get('sede_activa', 'BARRANCABERMEJA'),
         ]);
 
         if ($request->has('roles')) {

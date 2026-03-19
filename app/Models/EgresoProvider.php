@@ -13,7 +13,8 @@ class EgresoProvider extends Model
         'cedula',
         'nombre',
         'direccion',
-        'telefono'
+        'telefono',
+        'sede',
     ];
 
     public function receipts()
