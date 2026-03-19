@@ -116,17 +116,40 @@ class AccountingApiController extends Controller
             $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
         }
         $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
+        $search = $request->get('search', '');
+        $perPage = max(1, (int) $request->get('per_page', 25));
+        $page = max(1, (int) $request->get('page', 1));
 
         $ds = $this->reportService->buildAbonosDataset($fechaInicio, $fechaFin, $sede);
-        $rows = [];
+        $allRows = [];
         foreach ($ds['grouped'] as $programa => $items) {
             foreach ($items as $i) {
-                $rows[] = array_merge($i, ['programa' => $programa]);
+                $allRows[] = array_merge($i, ['programa' => $programa]);
             }
         }
+
+        if ($search) {
+            $allRows = array_values(array_filter($allRows, function ($row) use ($search) {
+                foreach ($row as $val) {
+                    if (stripos((string) $val, $search) !== false) return true;
+                }
+                return false;
+            }));
+        }
+
+        $total = count($allRows);
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $lastPage);
+        $from = $total > 0 ? ($page - 1) * $perPage + 1 : 0;
+        $to = min($page * $perPage, $total);
+        $rows = array_slice($allRows, ($page - 1) * $perPage, $perPage);
+
         $totals = ['total' => $ds['total'], 'total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']];
         $params = ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin];
-        return ApiResponse::success(compact('rows', 'totals', 'params'), 'OK', ['total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']]);
+        return ApiResponse::success(compact('rows', 'totals', 'params'), 'OK', [
+            'total' => $total, 'per_page' => $perPage, 'current_page' => $page,
+            'last_page' => $lastPage, 'from' => $from, 'to' => $to,
+        ]);
     }
 
     /**
@@ -173,19 +196,42 @@ class AccountingApiController extends Controller
             $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
         }
         $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
+        $search = $request->get('search', '');
+        $perPage = max(1, (int) $request->get('per_page', 25));
+        $page = max(1, (int) $request->get('page', 1));
 
         $ds = $this->reportService->buildOtrosIngresosDataset($fechaInicio, $fechaFin, $sede);
-        $rows = [];
+        $allRows = [];
         foreach ($ds['grouped'] as $concepto => $programas) {
             foreach ($programas as $programa => $items) {
                 foreach ($items as $i) {
-                    $rows[] = array_merge($i, ['programa' => $programa, 'concepto_grupo' => $concepto]);
+                    $allRows[] = array_merge($i, ['programa' => $programa, 'concepto_grupo' => $concepto]);
                 }
             }
         }
+
+        if ($search) {
+            $allRows = array_values(array_filter($allRows, function ($row) use ($search) {
+                foreach ($row as $val) {
+                    if (stripos((string) $val, $search) !== false) return true;
+                }
+                return false;
+            }));
+        }
+
+        $total = count($allRows);
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $lastPage);
+        $from = $total > 0 ? ($page - 1) * $perPage + 1 : 0;
+        $to = min($page * $perPage, $total);
+        $rows = array_slice($allRows, ($page - 1) * $perPage, $perPage);
+
         $totals = ['total' => $ds['total'], 'total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']];
         $params = ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin];
-        return ApiResponse::success(compact('rows', 'totals', 'params'), 'OK', ['total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']]);
+        return ApiResponse::success(compact('rows', 'totals', 'params'), 'OK', [
+            'total' => $total, 'per_page' => $perPage, 'current_page' => $page,
+            'last_page' => $lastPage, 'from' => $from, 'to' => $to,
+        ]);
     }
 
     /**
@@ -232,11 +278,35 @@ class AccountingApiController extends Controller
             $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
         }
         $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
+        $search = $request->get('search', '');
+        $perPage = max(1, (int) $request->get('per_page', 25));
+        $page = max(1, (int) $request->get('page', 1));
 
         $ds = $this->reportService->buildTotalIngresosDataset($fechaInicio, $fechaFin, $sede);
+        $allRows = $ds['entries'];
+
+        if ($search) {
+            $allRows = array_values(array_filter($allRows, function ($row) use ($search) {
+                foreach ($row as $val) {
+                    if (stripos((string) $val, $search) !== false) return true;
+                }
+                return false;
+            }));
+        }
+
+        $total = count($allRows);
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $lastPage);
+        $from = $total > 0 ? ($page - 1) * $perPage + 1 : 0;
+        $to = min($page * $perPage, $total);
+        $rows = array_slice($allRows, ($page - 1) * $perPage, $perPage);
+
         $totals = ['total' => $ds['total'], 'total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']];
         $params = ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin];
-        return ApiResponse::success(['rows' => $ds['entries'], 'totals' => $totals, 'params' => $params], 'OK', ['total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']]);
+        return ApiResponse::success(compact('rows', 'totals', 'params'), 'OK', [
+            'total' => $total, 'per_page' => $perPage, 'current_page' => $page,
+            'last_page' => $lastPage, 'from' => $from, 'to' => $to,
+        ]);
     }
 
     /**
@@ -283,11 +353,35 @@ class AccountingApiController extends Controller
             $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
         }
         $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
+        $search = $request->get('search', '');
+        $perPage = max(1, (int) $request->get('per_page', 25));
+        $page = max(1, (int) $request->get('page', 1));
 
         $ds = $this->reportService->buildTotalEgresosDataset($fechaInicio, $fechaFin, $sede);
+        $allRows = $ds['items'];
+
+        if ($search) {
+            $allRows = array_values(array_filter($allRows, function ($row) use ($search) {
+                foreach ($row as $val) {
+                    if (stripos((string) $val, $search) !== false) return true;
+                }
+                return false;
+            }));
+        }
+
+        $total = count($allRows);
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $lastPage);
+        $from = $total > 0 ? ($page - 1) * $perPage + 1 : 0;
+        $to = min($page * $perPage, $total);
+        $rows = array_slice($allRows, ($page - 1) * $perPage, $perPage);
+
         $totals = ['total' => $ds['total'], 'total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']];
         $params = ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin];
-        return ApiResponse::success(['rows' => $ds['items'], 'totals' => $totals, 'params' => $params], 'OK', ['total_rows' => $ds['total_rows'], 'is_partial' => $ds['is_partial']]);
+        return ApiResponse::success(compact('rows', 'totals', 'params'), 'OK', [
+            'total' => $total, 'per_page' => $perPage, 'current_page' => $page,
+            'last_page' => $lastPage, 'from' => $from, 'to' => $to,
+        ]);
     }
 
     /**
