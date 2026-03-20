@@ -57,6 +57,7 @@ class AttendanceSheetController extends Controller
             $estudiantes = Matricula::where('programa', $programa->name)
                 ->where('horario', $horario->name)
                 ->where('numero_grupo', $grupo->name)
+                ->where('estado_estudiante', 'Activo')
                 ->orderBy('nombre_completo', 'asc')
                 ->get();
 
