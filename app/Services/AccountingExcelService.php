@@ -895,7 +895,7 @@ class AccountingExcelService
         foreach ($egresos as $egreso) {
             $provider = $egreso->provider;
             $movements[] = [
-                'fecha' => $egreso->fecha_recibo,
+                'fecha' => $egreso->fecha_recibo->format('Y-m-d'),
                 'nombre' => $provider ? $provider->nombre : 'N/A',
                 'ocupacion' => 'PROVEEDOR',
                 'concepto' => $egreso->conceptoObject?->nombre ?? $egreso->concepto,

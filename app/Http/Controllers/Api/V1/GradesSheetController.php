@@ -90,10 +90,7 @@ class GradesSheetController extends Controller
         $estudiantes = Matricula::where('programa', $programa->name)
             ->where('horario', $horario->name)
             ->where('numero_grupo', $grupo->name)
-            ->where(function ($q) {
-                $q->where('estado_estudiante', 'Activo')
-                  ->orWhereNull('estado_estudiante');
-            })
+            ->where('estado_estudiante', 'Activo')
             ->where('sede', $sede)
             ->orderBy('nombre_completo', 'asc')
             ->get();

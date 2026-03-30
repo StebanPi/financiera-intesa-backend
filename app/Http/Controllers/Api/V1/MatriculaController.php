@@ -166,9 +166,9 @@ class MatriculaController extends Controller
             ]
         )
     ]
-    public function show(string $cod_alumno): JsonResponse
+    public function show(Request $request, string $cod_alumno): JsonResponse
     {
-        $matricula = $this->matriculaService->getByCodAlumno($cod_alumno);
+        $matricula = $this->matriculaService->getByCodAlumno($cod_alumno, $request->get('sede_activa'));
 
         return ApiResponse::success(new MatriculaResource($matricula));
     }
@@ -193,9 +193,9 @@ class MatriculaController extends Controller
             ]
         )
     ]
-    public function showFull(string $cod_alumno): JsonResponse
+    public function showFull(Request $request, string $cod_alumno): JsonResponse
     {
-        $data = $this->matriculaService->getFullEnrollmentData($cod_alumno);
+        $data = $this->matriculaService->getFullEnrollmentData($cod_alumno, $request->get('sede_activa'));
 
         $response = [
             'matricula' => new MatriculaResource($data['matricula']),
@@ -258,7 +258,7 @@ class MatriculaController extends Controller
     ]
     public function update(MatriculaUpdateRequest $request, string $cod_alumno): JsonResponse
     {
-        $matricula = $this->matriculaService->update($cod_alumno, $request->validated());
+        $matricula = $this->matriculaService->update($cod_alumno, $request->validated(), $request->get('sede_activa'));
 
         return ApiResponse::success(new MatriculaResource($matricula), 'Matrícula actualizada.', null, 200);
     }
@@ -296,7 +296,7 @@ class MatriculaController extends Controller
     public function destroy(Request $request, string $cod_alumno): JsonResponse
     {
         $confirmar = filter_var($request->query('confirmar_cascada', false), FILTER_VALIDATE_BOOLEAN);
-        $this->matriculaService->delete($cod_alumno, $confirmar);
+        $this->matriculaService->delete($cod_alumno, $confirmar, $request->get('sede_activa'));
 
         return ApiResponse::success(null, 'Eliminado.', null, 200);
     }
@@ -359,7 +359,7 @@ class MatriculaController extends Controller
             'foto.max' => 'La imagen no debe superar 2 MB.',
         ]);
 
-        $result = $this->matriculaService->uploadPhoto($cod_alumno, $request->file('foto'));
+        $result = $this->matriculaService->uploadPhoto($cod_alumno, $request->file('foto'), $request->get('sede_activa'));
 
         return ApiResponse::success($result, 'Foto subida.');
     }
@@ -526,9 +526,9 @@ class MatriculaController extends Controller
             ]
         )
     ]
-    public function streamPdf(string $cod_alumno)
+    public function streamPdf(Request $request, string $cod_alumno)
     {
-        return $this->matriculaService->streamPdf($cod_alumno);
+        return $this->matriculaService->streamPdf($cod_alumno, $request->get('sede_activa'));
     }
 
     /**

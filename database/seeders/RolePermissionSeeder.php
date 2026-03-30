@@ -66,6 +66,11 @@ class RolePermissionSeeder extends Seeder
                 'slug' => 'records.delete',
                 'description' => 'Permiso para eliminar abonos, otros ingresos, egresos y costos',
             ],
+            [
+                'name' => 'Fecha Personalizada en Recibos',
+                'slug' => 'receipts.custom_date',
+                'description' => 'Permite crear recibos (abonos, otros ingresos, egresos y terceros) con una fecha personalizada distinta a la actual.',
+            ],
         ];
 
         foreach ($permissions as $permission) {

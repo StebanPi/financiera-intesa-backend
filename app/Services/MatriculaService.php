@@ -67,19 +67,24 @@ class MatriculaService
     }
 
     /**
-     * Obtener matrícula por cod_alumno.
+     * Obtener matrícula por cod_alumno, opcionalmente filtrando por sede.
+     * Cuando se pasa sede se evita devolver el registro de otra sede con el mismo cod_alumno.
      */
-    public function getByCodAlumno(string $cod_alumno): Matricula
+    public function getByCodAlumno(string $cod_alumno, ?string $sede = null): Matricula
     {
-        return Matricula::where('cod_alumno', $cod_alumno)->firstOrFail();
+        $query = Matricula::where('cod_alumno', $cod_alumno);
+        if ($sede) {
+            $query->where('sede', $sede);
+        }
+        return $query->firstOrFail();
     }
 
     /**
      * Obtener toda la información de la matrícula (Costos, Cartera, Abonos, Otros Ingresos).
      */
-    public function getFullEnrollmentData(string $cod_alumno): array
+    public function getFullEnrollmentData(string $cod_alumno, ?string $sede = null): array
     {
-        $matricula = $this->getByCodAlumno($cod_alumno);
+        $matricula = $this->getByCodAlumno($cod_alumno, $sede);
         $costs = Cost::where('cod_alumno', $cod_alumno)->orderBy('numero_semestre', 'asc')->get();
         
         $entryData = [];
@@ -192,9 +197,9 @@ class MatriculaService
      *
      * @param  array<string, mixed>  $data
      */
-    public function update(string $cod_alumno, array $data): Matricula
+    public function update(string $cod_alumno, array $data, ?string $sede = null): Matricula
     {
-        $matricula = $this->getByCodAlumno($cod_alumno);
+        $matricula = $this->getByCodAlumno($cod_alumno, $sede);
         $fillable = (new Matricula)->getFillable();
         $filtered = array_intersect_key($data, array_flip($fillable));
         $matricula->update($filtered);
@@ -206,9 +211,9 @@ class MatriculaService
      * Eliminar matrícula. Si hay Cost/Entry/OtherEntry/Purse y $confirmarCascada=false, lanza ValidationException.
      * Si $confirmarCascada=true, elimina en cascada: entries, other_entries, history_purses, purses, cost, matricula.
      */
-    public function delete(string $cod_alumno, bool $confirmarCascada = false): void
+    public function delete(string $cod_alumno, bool $confirmarCascada = false, ?string $sede = null): void
     {
-        $matricula = $this->getByCodAlumno($cod_alumno);
+        $matricula = $this->getByCodAlumno($cod_alumno, $sede);
         $cost = Cost::where('cod_alumno', $cod_alumno)->first();
 
         $entriesCount = $cost ? Entry::where('id_cost', $cost->id)->count() : 0;
@@ -247,9 +252,9 @@ class MatriculaService
      *
      * @return array{url: string, path: string, mime: string, size: int}
      */
-    public function uploadPhoto(string $cod_alumno, UploadedFile $file): array
+    public function uploadPhoto(string $cod_alumno, UploadedFile $file, ?string $sede = null): array
     {
-        $matricula = $this->getByCodAlumno($cod_alumno);
+        $matricula = $this->getByCodAlumno($cod_alumno, $sede);
 
         if ($matricula->photo_path && Storage::disk('public')->exists($matricula->photo_path)) {
             Storage::disk('public')->delete($matricula->photo_path);
@@ -272,9 +277,9 @@ class MatriculaService
     /**
      * Generar y devolver PDF de la ficha de matrícula como stream (inline).
      */
-    public function streamPdf(string $cod_alumno): Response
+    public function streamPdf(string $cod_alumno, ?string $sede = null): Response
     {
-        $matricula = $this->getByCodAlumno($cod_alumno);
+        $matricula = $this->getByCodAlumno($cod_alumno, $sede);
         $institucion = InstitutionSetting::getSettings();
 
         $costs = DB::table('costs')
