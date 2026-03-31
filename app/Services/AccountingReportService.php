@@ -859,4 +859,165 @@ class AccountingReportService
         
         return array_diff($dates, $existingDates);
     }
+
+    /**
+     * Construye dataset para preview de Balance General
+     * Tabla plana con ingresos y egresos mezclados cronológicamente + saldo acumulado
+     */
+    public function buildBalanceGeneralDataset($startDate = null, $endDate = null, $sede = 'BARRANCABERMEJA')
+    {
+        $items = [];
+
+        // Entries (abonos)
+        $entriesQuery = DB::table('entries')
+            ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
+            ->whereRaw('UPPER(entries.sede) = ?', [strtoupper($sede)])
+            ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre');
+
+        if ($startDate && $endDate) {
+            $entriesQuery->whereBetween('entries.fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $entriesQuery->where('entries.fecha_recibo', '>=', $startDate);
+        } elseif ($endDate) {
+            $entriesQuery->where('entries.fecha_recibo', '<=', $endDate);
+        }
+
+        foreach ($entriesQuery->get() as $entry) {
+            $student = StudentResolverService::getStudentData($entry->cod_alumno);
+            $items[] = [
+                'fecha'     => $entry->fecha_recibo,
+                'tipo'      => 'ABONO',
+                'nombre'    => $student ? $student->nombre : 'N/A',
+                'categoria' => $student ? $student->nombre_programa : 'SIN PROGRAMA',
+                'concepto'  => $entry->concepto_nombre ?? 'ABONO',
+                'descripcion' => $entry->descripcion ?? '',
+                'no_recibo' => $entry->no_recibo,
+                'ingreso'   => (float) $entry->valor,
+                'egreso'    => null,
+            ];
+        }
+
+        // Other entries
+        $otherQuery = DB::table('other_entries')
+            ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
+            ->whereRaw('UPPER(other_entries.sede) = ?', [strtoupper($sede)])
+            ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre');
+
+        if ($startDate && $endDate) {
+            $otherQuery->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $otherQuery->where('other_entries.fecha_recibo', '>=', $startDate);
+        } elseif ($endDate) {
+            $otherQuery->where('other_entries.fecha_recibo', '<=', $endDate);
+        }
+
+        foreach ($otherQuery->get() as $entry) {
+            $student = StudentResolverService::getStudentData($entry->cod_alumno);
+            $items[] = [
+                'fecha'     => $entry->fecha_recibo,
+                'tipo'      => 'OTRO INGRESO',
+                'nombre'    => $student ? $student->nombre : 'N/A',
+                'categoria' => $student ? $student->nombre_programa : 'SIN PROGRAMA',
+                'concepto'  => $entry->concepto_nombre ?? 'OTRO',
+                'descripcion' => $entry->descripcion ?? '',
+                'no_recibo' => $entry->no_recibo,
+                'ingreso'   => (float) $entry->valor,
+                'egreso'    => null,
+            ];
+        }
+
+        // Third receipts (type=entry)
+        $thirdQuery = ThirdReceipts::where('type', 'entry')
+            ->whereRaw('UPPER(sede) = ?', [strtoupper($sede)]);
+
+        if ($startDate && $endDate) {
+            $thirdQuery->whereBetween('fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $thirdQuery->where('fecha_recibo', '>=', $startDate);
+        } elseif ($endDate) {
+            $thirdQuery->where('fecha_recibo', '<=', $endDate);
+        }
+
+        foreach ($thirdQuery->with(['thirdObject', 'conceptoObject'])->get() as $entry) {
+            $third = $entry->thirdObject;
+            $items[] = [
+                'fecha'     => $entry->fecha_recibo,
+                'tipo'      => 'TERCERO',
+                'nombre'    => $third ? $third->nombre : 'N/A',
+                'categoria' => 'TERCERO',
+                'concepto'  => $entry->conceptoObject?->name ?? 'TERCERO',
+                'descripcion' => $entry->detalles ?? '',
+                'no_recibo' => $entry->no_recibo,
+                'ingreso'   => (float) $entry->valor,
+                'egreso'    => null,
+            ];
+        }
+
+        // Egresos
+        $egresosQuery = EgresoReceipt::with(['provider', 'conceptoObject'])
+            ->whereRaw('UPPER(sede) = ?', [strtoupper($sede)]);
+
+        if ($startDate && $endDate) {
+            $egresosQuery->whereBetween('fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $egresosQuery->where('fecha_recibo', '>=', $startDate);
+        } elseif ($endDate) {
+            $egresosQuery->where('fecha_recibo', '<=', $endDate);
+        }
+
+        foreach ($egresosQuery->get() as $egreso) {
+            $provider = $egreso->provider;
+            $items[] = [
+                'fecha'     => $egreso->fecha_recibo->format('Y-m-d'),
+                'tipo'      => 'EGRESO',
+                'nombre'    => $provider ? $provider->nombre : 'N/A',
+                'categoria' => 'PROVEEDOR',
+                'concepto'  => $egreso->conceptoObject?->nombre ?? $egreso->concepto,
+                'descripcion' => $egreso->descripcion ?? '',
+                'no_recibo' => $egreso->no_recibo,
+                'ingreso'   => null,
+                'egreso'    => (float) $egreso->valor,
+            ];
+        }
+
+        // Ordenar por fecha DESC
+        usort($items, function ($a, $b) {
+            return strcmp($b['fecha'], $a['fecha']);
+        });
+
+        // Calcular saldo acumulado (empezando del más reciente)
+        $totalIngresos = 0;
+        $totalEgresos  = 0;
+        foreach ($items as $item) {
+            $totalIngresos += $item['ingreso'] ?? 0;
+            $totalEgresos  += $item['egreso']  ?? 0;
+        }
+
+        // Saldo acumulado cronológico (de más antiguo a más reciente), luego invertir
+        $reversed = array_reverse($items);
+        $saldo = 0;
+        foreach ($reversed as &$item) {
+            $saldo += ($item['ingreso'] ?? 0) - ($item['egreso'] ?? 0);
+            $item['saldo_acumulado'] = $saldo;
+        }
+        $items = array_reverse($reversed);
+
+        $totalRows = count($items);
+        $isPartial = $totalRows > self::MAX_PREVIEW_ROWS;
+
+        if ($isPartial) {
+            $items = array_slice($items, 0, self::MAX_PREVIEW_ROWS);
+        }
+
+        return [
+            'items'          => $items,
+            'total'          => $totalIngresos - $totalEgresos,
+            'total_ingresos' => $totalIngresos,
+            'total_egresos'  => $totalEgresos,
+            'is_partial'     => $isPartial,
+            'total_rows'     => $totalRows,
+        ];
+    }
 }

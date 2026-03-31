@@ -602,11 +602,20 @@ class AccountingApiController extends Controller
             ]
         )
     ]
-    public function abonosDownload(DateRangeRequiredRequest $request)
+    public function abonosDownload(DateRangeRequest $request)
     {
         try {
             $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
-            $r = $this->excelService->generateAbonosReport($request->fecha_inicio, $request->fecha_fin, $sede);
+            if ($request->filled('mes')) {
+                $year = $request->get('anio', date('Y'));
+                $month = $request->get('mes');
+                $fechaInicio = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+                $fechaFin = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+            } else {
+                $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
+                $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+            }
+            $r = $this->excelService->generateAbonosReport($fechaInicio, $fechaFin, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
         } catch (\Throwable $e) {
@@ -646,11 +655,20 @@ class AccountingApiController extends Controller
             ]
         )
     ]
-    public function otrosIngresosDownload(DateRangeRequiredRequest $request)
+    public function otrosIngresosDownload(DateRangeRequest $request)
     {
         try {
             $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
-            $r = $this->excelService->generateOtrosIngresosReport($request->fecha_inicio, $request->fecha_fin, $sede);
+            if ($request->filled('mes')) {
+                $year = $request->get('anio', date('Y'));
+                $month = $request->get('mes');
+                $fechaInicio = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+                $fechaFin = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+            } else {
+                $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
+                $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+            }
+            $r = $this->excelService->generateOtrosIngresosReport($fechaInicio, $fechaFin, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
         } catch (\Throwable $e) {
@@ -690,11 +708,20 @@ class AccountingApiController extends Controller
             ]
         )
     ]
-    public function totalIngresosDownload(DateRangeRequiredRequest $request)
+    public function totalIngresosDownload(DateRangeRequest $request)
     {
         try {
             $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
-            $r = $this->excelService->generateTotalIngresosReport($request->fecha_inicio, $request->fecha_fin, $sede);
+            if ($request->filled('mes')) {
+                $year = $request->get('anio', date('Y'));
+                $month = $request->get('mes');
+                $fechaInicio = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+                $fechaFin = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+            } else {
+                $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
+                $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+            }
+            $r = $this->excelService->generateTotalIngresosReport($fechaInicio, $fechaFin, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
         } catch (\Throwable $e) {
@@ -734,11 +761,20 @@ class AccountingApiController extends Controller
             ]
         )
     ]
-    public function egresosDownload(DateRangeRequiredRequest $request)
+    public function egresosDownload(DateRangeRequest $request)
     {
         try {
             $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
-            $r = $this->excelService->generateTotalEgresosReport($request->fecha_inicio, $request->fecha_fin, $sede);
+            if ($request->filled('mes')) {
+                $year = $request->get('anio', date('Y'));
+                $month = $request->get('mes');
+                $fechaInicio = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+                $fechaFin = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+            } else {
+                $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
+                $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+            }
+            $r = $this->excelService->generateTotalEgresosReport($fechaInicio, $fechaFin, $sede);
             $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return $r;
         } catch (\Throwable $e) {
@@ -905,6 +941,76 @@ class AccountingApiController extends Controller
             ]
         )
     ]
+    public function balanceGeneral(DateRangeRequest $request): JsonResponse
+    {
+        if ($request->filled('mes')) {
+            $year = $request->get('anio', date('Y'));
+            $month = $request->get('mes');
+            $fechaInicio = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+            $fechaFin = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+        } else {
+            $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
+            $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+        }
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
+        $search = $request->get('search', '');
+        $perPage = max(1, (int) $request->get('per_page', 25));
+        $page = max(1, (int) $request->get('page', 1));
+
+        $ds = $this->reportService->buildBalanceGeneralDataset($fechaInicio, $fechaFin, $sede);
+        $allRows = $ds['items'];
+
+        if ($search) {
+            $allRows = array_values(array_filter($allRows, function ($row) use ($search) {
+                foreach ($row as $val) {
+                    if (stripos((string) $val, $search) !== false) return true;
+                }
+                return false;
+            }));
+        }
+
+        $total = count($allRows);
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $lastPage);
+        $from = $total > 0 ? ($page - 1) * $perPage + 1 : 0;
+        $to = min($page * $perPage, $total);
+        $rows = array_slice($allRows, ($page - 1) * $perPage, $perPage);
+
+        $totals = [
+            'total'          => $ds['total'],
+            'total_ingresos' => $ds['total_ingresos'],
+            'total_egresos'  => $ds['total_egresos'],
+            'total_rows'     => $ds['total_rows'],
+            'is_partial'     => $ds['is_partial'],
+        ];
+        $params = ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin];
+        return ApiResponse::success(compact('rows', 'totals', 'params'), 'OK', [
+            'total' => $total, 'per_page' => $perPage, 'current_page' => $page,
+            'last_page' => $lastPage, 'from' => $from, 'to' => $to,
+        ]);
+    }
+
+    public function balanceGeneralDownload(DateRangeRequest $request)
+    {
+        try {
+            $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
+            if ($request->filled('mes')) {
+                $year = $request->get('anio', date('Y'));
+                $month = $request->get('mes');
+                $fechaInicio = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+                $fechaFin = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+            } else {
+                $fechaInicio = $request->filled('fecha_inicio') ? $request->fecha_inicio : null;
+                $fechaFin = $request->filled('fecha_fin') ? $request->fecha_fin : null;
+            }
+            $r = $this->excelService->generateBalanceGeneralReport($fechaInicio, $fechaFin, $sede);
+            $r->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            return $r;
+        } catch (\Throwable $e) {
+            return $this->handleExcelError($e, $request);
+        }
+    }
+
     public function initialBalance(Request $request): JsonResponse
     {
         $sede = $request->get('sede_activa', 'BARRANCABERMEJA');

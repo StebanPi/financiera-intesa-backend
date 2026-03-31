@@ -40,7 +40,7 @@ class AccountingExcelService
         $this->clearTemplateData($sheet, 3, 1000);
 
         // Obtener datos de entries filtrados por fecha_recibo y sede
-        $entries = DB::table('entries')
+        $query = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
@@ -48,7 +48,6 @@ class AccountingExcelService
             ->join('debes', 'debes.id', '=', 'entries.debe')
             ->join('habers', 'habers.id', '=', 'entries.haber')
             ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
-            ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->distinct()
             ->select(
                 'entries.*',
@@ -58,8 +57,17 @@ class AccountingExcelService
                 'debes.nombre as debe_nombre',
                 'habers.nombre as haber_nombre'
             )
-            ->orderBy('entries.fecha_recibo')
-            ->get();
+            ->orderBy('entries.fecha_recibo');
+
+        if ($startDate !== null && $endDate !== null) {
+            $query->whereBetween('entries.fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate !== null) {
+            $query->where('entries.fecha_recibo', '>=', $startDate);
+        } elseif ($endDate !== null) {
+            $query->where('entries.fecha_recibo', '<=', $endDate);
+        }
+
+        $entries = $query->get();
 
         // Agrupar por programa
         // Excluir abonos que no tienen estudiante válido o no tienen programa
@@ -126,7 +134,8 @@ class AccountingExcelService
         $sheet->setCellValue("G{$row}", $total);
         $sheet->getStyle("F{$row}:G{$row}")->getFont()->setBold(true);
 
-        return $this->download($spreadsheet, "Informe de Abonos {$startDate} a {$endDate}.xlsx");
+        $fileLabel = ($startDate && $endDate) ? "{$startDate} a {$endDate}" : 'Todos los registros';
+        return $this->download($spreadsheet, "Informe de Abonos {$fileLabel}.xlsx");
     }
 
     /**
@@ -141,12 +150,11 @@ class AccountingExcelService
         // Limpiar datos existentes de la plantilla (desde fila 3 hasta 1000)
         $this->clearTemplateData($sheet, 3, 1000);
 
-        $otherEntries = DB::table('other_entries')
+        $query = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
             ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
-            ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
             ->distinct()
             ->select(
                 'other_entries.*',
@@ -154,8 +162,17 @@ class AccountingExcelService
                 'otros_conceptos.nombre as concepto_nombre'
             )
             ->orderBy('otros_conceptos.nombre')
-            ->orderBy('other_entries.fecha_recibo')
-            ->get();
+            ->orderBy('other_entries.fecha_recibo');
+
+        if ($startDate !== null && $endDate !== null) {
+            $query->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate !== null) {
+            $query->where('other_entries.fecha_recibo', '>=', $startDate);
+        } elseif ($endDate !== null) {
+            $query->where('other_entries.fecha_recibo', '<=', $endDate);
+        }
+
+        $otherEntries = $query->get();
 
         // Agrupar por CONCEPTO -> PROGRAMA
         $grouped = [];
@@ -239,7 +256,8 @@ class AccountingExcelService
         $sheet->setCellValue("H{$row}", $total);
         $sheet->getStyle("E{$row}:H{$row}")->getFont()->setBold(true);
 
-        return $this->download($spreadsheet, "Informe de Otros Ingresos {$startDate} a {$endDate}.xlsx");
+        $fileLabel = ($startDate && $endDate) ? "{$startDate} a {$endDate}" : 'Todos los registros';
+        return $this->download($spreadsheet, "Informe de Otros Ingresos {$fileLabel}.xlsx");
     }
 
     /**
@@ -255,33 +273,57 @@ class AccountingExcelService
         $this->clearTemplateData($sheet, 2, 1000);
 
         // Entries con concepto
-        $entries = DB::table('entries')
+        $entriesQuery = DB::table('entries')
             ->join('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
             ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
-            ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->distinct()
-            ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre')
-            ->get();
+            ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre');
+
+        if ($startDate !== null && $endDate !== null) {
+            $entriesQuery->whereBetween('entries.fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate !== null) {
+            $entriesQuery->where('entries.fecha_recibo', '>=', $startDate);
+        } elseif ($endDate !== null) {
+            $entriesQuery->where('entries.fecha_recibo', '<=', $endDate);
+        }
+
+        $entries = $entriesQuery->get();
 
         // Other entries con concepto
-        $otherEntries = DB::table('other_entries')
+        $otherEntriesQuery = DB::table('other_entries')
             ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
             ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
-            ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
             ->distinct()
-            ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre')
-            ->get();
+            ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre');
+
+        if ($startDate !== null && $endDate !== null) {
+            $otherEntriesQuery->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate !== null) {
+            $otherEntriesQuery->where('other_entries.fecha_recibo', '>=', $startDate);
+        } elseif ($endDate !== null) {
+            $otherEntriesQuery->where('other_entries.fecha_recibo', '<=', $endDate);
+        }
+
+        $otherEntries = $otherEntriesQuery->get();
 
         // Third receipts type='entry'
-        $thirdEntries = ThirdReceipts::where('type', 'entry')
+        $thirdQuery = ThirdReceipts::where('type', 'entry')
             ->whereRaw('UPPER(sede) = ?', [strtoupper($sede)])
-            ->whereBetween('fecha_recibo', [$startDate, $endDate])
-            ->with(['thirdObject', 'conceptoObject'])
-            ->get();
+            ->with(['thirdObject', 'conceptoObject']);
+
+        if ($startDate !== null && $endDate !== null) {
+            $thirdQuery->whereBetween('fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate !== null) {
+            $thirdQuery->where('fecha_recibo', '>=', $startDate);
+        } elseif ($endDate !== null) {
+            $thirdQuery->where('fecha_recibo', '<=', $endDate);
+        }
+
+        $thirdEntries = $thirdQuery->get();
 
         // Unificar y ordenar por fecha_recibo
         // Estructura según plantilla: FECHA, ESTUDIANTE/REGISTRO, PROGRAMA/TIPO, TIPO DE INGRESO, TIPO, CONCEPTO, DESCRIPCIÓN, N°RECIBO, VALOR, SUMA
@@ -374,7 +416,8 @@ class AccountingExcelService
             $sheet->getStyle("A{$row}:J{$row}")->getFont()->setBold(true);
         }
 
-        return $this->download($spreadsheet, "Informe Total Ingresos {$startDate} a {$endDate}.xlsx");
+        $fileLabel = ($startDate && $endDate) ? "{$startDate} a {$endDate}" : 'Todos los registros';
+        return $this->download($spreadsheet, "Informe Total Ingresos {$fileLabel}.xlsx");
     }
 
     /**
@@ -389,12 +432,20 @@ class AccountingExcelService
         // Limpiar datos existentes de la plantilla (desde fila 2 hasta 1000)
         $this->clearTemplateData($sheet, 2, 1000);
 
-        $egresos = EgresoReceipt::with(['provider', 'conceptoObject'])
+        $egresosQuery = EgresoReceipt::with(['provider', 'conceptoObject'])
             ->whereRaw('UPPER(sede) = ?', [strtoupper($sede)])
-            ->whereBetween('fecha_recibo', [$startDate, $endDate])
             ->orderBy('fecha_recibo')
-            ->orderBy('no_recibo')
-            ->get();
+            ->orderBy('no_recibo');
+
+        if ($startDate !== null && $endDate !== null) {
+            $egresosQuery->whereBetween('fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate !== null) {
+            $egresosQuery->where('fecha_recibo', '>=', $startDate);
+        } elseif ($endDate !== null) {
+            $egresosQuery->where('fecha_recibo', '<=', $endDate);
+        }
+
+        $egresos = $egresosQuery->get();
 
         // Empezar en la fila 2 (justo después de los encabezados en fila 1)
         // Esto evita dejar filas vacías arriba
@@ -436,7 +487,197 @@ class AccountingExcelService
             $sheet->getStyle("A{$row}:H{$row}")->getFont()->setBold(true);
         }
 
-        return $this->download($spreadsheet, "Informe Total Egresos {$startDate} a {$endDate}.xlsx");
+        $fileLabel = ($startDate && $endDate) ? "{$startDate} a {$endDate}" : 'Todos los registros';
+        return $this->download($spreadsheet, "Informe Total Egresos {$fileLabel}.xlsx");
+    }
+
+    /**
+     * Genera informe Balance General (Ingresos + Egresos unificados, cronológico)
+     */
+    public function generateBalanceGeneralReport($startDate, $endDate, $sede = 'BARRANCABERMEJA')
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Balance General');
+
+        // Encabezados fila 1
+        $headers = ['FECHA', 'TIPO', 'NOMBRE/PROVEEDOR', 'CATEGORÍA', 'CONCEPTO', 'DESCRIPCIÓN', 'N°RECIBO', 'INGRESO', 'EGRESO', 'SALDO'];
+        foreach ($headers as $colIndex => $header) {
+            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 1);
+            $sheet->setCellValue("{$col}1", $header);
+        }
+        $sheet->getStyle('A1:J1')->getFont()->setBold(true);
+
+        // Entries (abonos)
+        $entriesQuery = DB::table('entries')
+            ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
+            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
+            ->distinct()
+            ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre');
+        if ($startDate !== null && $endDate !== null) {
+            $entriesQuery->whereBetween('entries.fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate !== null) {
+            $entriesQuery->where('entries.fecha_recibo', '>=', $startDate);
+        } elseif ($endDate !== null) {
+            $entriesQuery->where('entries.fecha_recibo', '<=', $endDate);
+        }
+        $entries = $entriesQuery->get();
+
+        // Other entries (otros ingresos)
+        $otherEntriesQuery = DB::table('other_entries')
+            ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
+            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
+            ->distinct()
+            ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre');
+        if ($startDate !== null && $endDate !== null) {
+            $otherEntriesQuery->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate !== null) {
+            $otherEntriesQuery->where('other_entries.fecha_recibo', '>=', $startDate);
+        } elseif ($endDate !== null) {
+            $otherEntriesQuery->where('other_entries.fecha_recibo', '<=', $endDate);
+        }
+        $otherEntries = $otherEntriesQuery->get();
+
+        // Third receipts type='entry'
+        $thirdQuery = ThirdReceipts::where('type', 'entry')
+            ->whereRaw('UPPER(sede) = ?', [strtoupper($sede)])
+            ->with(['thirdObject', 'conceptoObject']);
+        if ($startDate !== null && $endDate !== null) {
+            $thirdQuery->whereBetween('fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate !== null) {
+            $thirdQuery->where('fecha_recibo', '>=', $startDate);
+        } elseif ($endDate !== null) {
+            $thirdQuery->where('fecha_recibo', '<=', $endDate);
+        }
+        $thirdEntries = $thirdQuery->get();
+
+        // Egresos
+        $egresosQuery = EgresoReceipt::with(['provider', 'conceptoObject'])
+            ->whereRaw('UPPER(sede) = ?', [strtoupper($sede)]);
+        if ($startDate !== null && $endDate !== null) {
+            $egresosQuery->whereBetween('fecha_recibo', [$startDate, $endDate]);
+        } elseif ($startDate !== null) {
+            $egresosQuery->where('fecha_recibo', '>=', $startDate);
+        } elseif ($endDate !== null) {
+            $egresosQuery->where('fecha_recibo', '<=', $endDate);
+        }
+        $egresos = $egresosQuery->get();
+
+        // Unificar movimientos
+        $movimientos = [];
+
+        foreach ($entries as $entry) {
+            $student = StudentResolverService::getStudentData($entry->cod_alumno);
+            $movimientos[] = [
+                'fecha'       => $entry->fecha_recibo,
+                'tipo'        => 'ABONO',
+                'nombre'      => $student ? $student->nombre : 'N/A',
+                'categoria'   => $student ? $student->nombre_programa : 'SIN PROGRAMA',
+                'concepto'    => $entry->concepto_nombre ?? 'ABONO',
+                'descripcion' => $entry->descripcion ?? '',
+                'no_recibo'   => $entry->no_recibo,
+                'ingreso'     => (float) $entry->valor,
+                'egreso'      => null,
+            ];
+        }
+
+        foreach ($otherEntries as $entry) {
+            $student = StudentResolverService::getStudentData($entry->cod_alumno);
+            $movimientos[] = [
+                'fecha'       => $entry->fecha_recibo,
+                'tipo'        => 'OTRO INGRESO',
+                'nombre'      => $student ? $student->nombre : 'N/A',
+                'categoria'   => $student ? $student->nombre_programa : 'SIN PROGRAMA',
+                'concepto'    => $entry->concepto_nombre ?? 'OTRO',
+                'descripcion' => $entry->descripcion ?? '',
+                'no_recibo'   => $entry->no_recibo,
+                'ingreso'     => (float) $entry->valor,
+                'egreso'      => null,
+            ];
+        }
+
+        foreach ($thirdEntries as $entry) {
+            $third = $entry->thirdObject;
+            $movimientos[] = [
+                'fecha'       => $entry->fecha_recibo,
+                'tipo'        => 'TERCERO',
+                'nombre'      => $third ? $third->nombre : 'N/A',
+                'categoria'   => 'TERCERO',
+                'concepto'    => $entry->conceptoObject?->name ?? 'TERCERO',
+                'descripcion' => $entry->detalles ?? '',
+                'no_recibo'   => $entry->no_recibo,
+                'ingreso'     => (float) $entry->valor,
+                'egreso'      => null,
+            ];
+        }
+
+        foreach ($egresos as $egreso) {
+            $provider = $egreso->provider;
+            $movimientos[] = [
+                'fecha'       => $egreso->fecha_recibo->format('Y-m-d'),
+                'tipo'        => 'EGRESO',
+                'nombre'      => $provider ? $provider->nombre : 'N/A',
+                'categoria'   => StudentResolverService::normalizePaymentForm($egreso->forma ?? 'Efectivo'),
+                'concepto'    => $egreso->conceptoObject?->nombre ?? $egreso->concepto,
+                'descripcion' => $egreso->descripcion ?? '',
+                'no_recibo'   => $egreso->no_recibo,
+                'ingreso'     => null,
+                'egreso'      => (float) $egreso->valor,
+            ];
+        }
+
+        // Ordenar cronológicamente
+        usort($movimientos, fn($a, $b) => strtotime($a['fecha']) - strtotime($b['fecha']));
+
+        // Escribir filas de datos
+        $row = 2;
+        $firstDataRow = $row;
+
+        foreach ($movimientos as $mov) {
+            $sheet->setCellValue("A{$row}", date('d/m/Y', strtotime($mov['fecha'])));
+            $sheet->setCellValue("B{$row}", $mov['tipo']);
+            $sheet->setCellValue("C{$row}", $mov['nombre']);
+            $sheet->setCellValue("D{$row}", $mov['categoria']);
+            $sheet->setCellValue("E{$row}", $mov['concepto']);
+            $sheet->setCellValue("F{$row}", $mov['descripcion']);
+            $sheet->setCellValue("G{$row}", $mov['no_recibo']);
+
+            if ($mov['ingreso'] !== null) {
+                $sheet->setCellValue("H{$row}", $mov['ingreso']);
+            }
+            if ($mov['egreso'] !== null) {
+                $sheet->setCellValue("I{$row}", $mov['egreso']);
+            }
+
+            if ($row === $firstDataRow) {
+                $sheet->setCellValue("J{$row}", "=IFERROR(H{$row},0)-IFERROR(I{$row},0)");
+            } else {
+                $prevRow = $row - 1;
+                $sheet->setCellValue("J{$row}", "=J{$prevRow}+IFERROR(H{$row},0)-IFERROR(I{$row},0)");
+            }
+
+            $row++;
+        }
+
+        // Fila de totales
+        if ($row > $firstDataRow) {
+            $lastDataRow = $row - 1;
+            $sheet->setCellValue("A{$row}", 'TOTALES');
+            $sheet->setCellValue("E{$row}", 'TOTAL INGRESOS');
+            $sheet->setCellValue("F{$row}", 'TOTAL EGRESOS');
+            $sheet->setCellValue("G{$row}", 'BALANCE NETO');
+            $sheet->setCellValue("H{$row}", "=SUM(H{$firstDataRow}:H{$lastDataRow})");
+            $sheet->setCellValue("I{$row}", "=SUM(I{$firstDataRow}:I{$lastDataRow})");
+            $sheet->setCellValue("J{$row}", "=H{$row}-I{$row}");
+            $sheet->getStyle("A{$row}:J{$row}")->getFont()->setBold(true);
+        }
+
+        $fileLabel = ($startDate && $endDate) ? "{$startDate} a {$endDate}" : 'Todos los registros';
+        return $this->download($spreadsheet, "Balance General {$fileLabel}.xlsx");
     }
 
     /**

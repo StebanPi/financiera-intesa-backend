@@ -125,6 +125,8 @@ Route::prefix('v1')->group(function () {
         Route::get('arqueo-diario/download', [AccountingApiController::class, 'arqueoDiarioDownload']);
         Route::get('informe-semanal/download', [AccountingApiController::class, 'informeSemanalDownload']);
         Route::get('informe-mensual/download', [AccountingApiController::class, 'informeMensualDownload']);
+        Route::get('balance-general', [AccountingApiController::class, 'balanceGeneral']);
+        Route::get('balance-general/download', [AccountingApiController::class, 'balanceGeneralDownload']);
     });
 
     // ---- 5) Gestión Académica (Matrículas, Estudiantes, Cartera, Pagos de estudiantes) ----
