@@ -91,7 +91,7 @@ class CarteraService
 
             // Verificar si está vencida
             $fechaPago = date('Y-m-d', strtotime($purse->fecha_pago));
-            $isVencida = (strtotime($hoy) > strtotime($fechaPago));
+            $isVencida = (strtotime($hoy) >= strtotime($fechaPago));
 
             // Determinar estado del pago (Completa, Incompleta, Pendiente)
             $estadoPago = self::calcularEstadoPago($abonado, $cuota);
