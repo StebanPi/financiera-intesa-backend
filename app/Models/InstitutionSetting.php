@@ -27,27 +27,32 @@ class InstitutionSetting extends Model
     /**
      * Obtener o crear el registro único de configuración
      */
-    public static function getSettings()
+    public static function getSettings(): static
     {
-        return static::firstOrCreate(
-            ['id' => 1],
-            [
-                'name' => 'Nombre de la Institución',
-                'logo_path' => null,
-                'institucion_subtitulo' => null,
-                'sede' => null,
-                'nit' => '',
-                'address' => '',
-                'phone' => '',
-                'telefono2' => null,
-                'telefono3' => null,
-                'email' => '',
-                'website' => '',
-                'footer_licencia_texto' => 'Licencia de Funcionamiento según Resolución No. 3021 del 15 de diciembre de 2015',
-                'footer_ciudad' => 'Barrancabermeja - Santander',
-                'footer_mostrar_ubicacion_fecha' => true,
-                'footer_firma' => null,
-            ]
-        );
+        $setting = static::find(1);
+
+        if (!$setting) {
+            $setting = new static();
+            $setting->id = 1;  // asignación directa, no en masa
+            $setting->fill([
+                'name'                          => 'Nombre de la Institución',
+                'logo_path'                     => null,
+                'institucion_subtitulo'         => null,
+                'sede'                          => null,
+                'nit'                           => '',
+                'address'                       => '',
+                'phone'                         => '',
+                'telefono2'                     => null,
+                'telefono3'                     => null,
+                'email'                         => '',
+                'website'                       => '',
+                'footer_licencia_texto'         => 'Licencia de Funcionamiento según Resolución No. 3021 del 15 de diciembre de 2015',
+                'footer_ciudad'                 => 'Barrancabermeja - Santander',
+                'footer_mostrar_ubicacion_fecha'=> true,
+                'footer_firma'                  => null,
+            ]);
+            $setting->save();
+        }
+        return $setting;
     }
 }

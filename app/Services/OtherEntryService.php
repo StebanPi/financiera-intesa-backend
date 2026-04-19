@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\consecutive;
+use App\Models\Cost;
 use App\Models\OtherEntry;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -23,7 +24,9 @@ class OtherEntryService
         $entry = null;
 
         DB::transaction(function () use ($data, $forma, &$entry) {
-            $con = consecutive::where('type', 'entry')->lockForUpdate()->first();
+            $con = consecutive::where('type', 'entry')
+                ->where('sede', $data['sede'] ?? 'BARRANCABERMEJA')
+                ->lockForUpdate()->first();
             if (! $con) {
                 throw ValidationException::withMessages([
                     'consecutive' => ['Falta configurar el consecutivo de tipo "entry". Configure el consecutivo en Ajustes.'],
@@ -38,8 +41,13 @@ class OtherEntryService
             $con->num_current = $current + 1;
             $con->save();
 
+            // Obtener cod_alumno del costo asociado
+            $cost = Cost::find($data['id_cost']);
+            $codAlumno = $cost ? $cost->cod_alumno : null;
+
             $entry = OtherEntry::create([
                 'id_cost' => $data['id_cost'],
+                'cod_alumno' => $codAlumno,
                 'concepto' => $data['concepto'],
                 'descripcion' => $data['descripcion'],
                 'no_recibo' => $noRecibo,

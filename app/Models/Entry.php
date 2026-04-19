@@ -11,6 +11,7 @@ class Entry extends Model
 
     protected $fillable = [
         'id_cost',
+        'cod_alumno',
         'concepto',
         'descripcion',
         'no_recibo',

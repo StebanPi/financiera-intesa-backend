@@ -317,10 +317,17 @@ class PurseController extends Controller
 
             // Necesito modificar los demas purses (Cascada)
             if ($request->ModifyInputLabel == "todos") {
-                $arrayPurses = Purse::where([
-                    ['id_cost', "=", $purse->id_cost],
-                    ['id', ">", $purse->id]
-                ])->orderBy('id', 'asc')->get();
+                // Obtener el cod_alumno desde el Cost relacionado
+                $codAlumno = $purse->cost->cod_alumno;
+                
+                // Buscar TODAS las cuotas del estudiante que vengan DESPUÉS de la actual
+                // (incluyendo cuotas de todos los semestres, no solo del mismo id_cost)
+                $arrayPurses = Purse::where('id', '>', $purse->id)
+                    ->whereHas('cost', function($query) use ($codAlumno) {
+                        $query->where('cod_alumno', $codAlumno);
+                    })
+                    ->orderBy('id', 'asc')
+                    ->get();
 
                 // Obtener el día original del purse principal
                 $diaOriginal = (int)(new \DateTime($purse->fecha_pago))->format('d');

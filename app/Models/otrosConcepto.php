@@ -22,6 +22,5 @@ class otrosConcepto extends Model
     public function construct($con)
     {
         $this->connection = $con;
-    }  
-    
+    }
 }

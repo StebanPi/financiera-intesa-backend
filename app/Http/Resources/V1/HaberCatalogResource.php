@@ -14,6 +14,7 @@ class HaberCatalogResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'display_number' => $this->display_number ?? $this->id,
             'cuenta' => $this->cuenta,
             'nombre' => $this->nombre,
         ];

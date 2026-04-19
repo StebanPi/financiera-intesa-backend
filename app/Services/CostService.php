@@ -175,7 +175,7 @@ class CostService
             ->get();
         
         foreach ($costsAEliminar as $costEliminar) {
-            $hasFinancialHistory = Entry::where('id_cost', $costEliminar->id)->exists() || 
+            $hasFinancialHistory = Entry::where('id_cost', $costEliminar->id)->exists() ||
                                    OtherEntry::where('id_cost', $costEliminar->id)->exists();
 
             if (!$hasFinancialHistory) {
@@ -191,6 +191,9 @@ class CostService
                 $costEliminar->delete();
             }
         }
+
+        // Reasignar entries huérfanos al costo más reciente
+        $this->reassignOrphanedEntriesToCost($cod_alumno);
     }
 
     public function getById(int $id): Cost
@@ -265,18 +268,98 @@ class CostService
              $eliminados['purses'] += Purse::where('id_cost', $cost->id)->count();
              Purse::where('id_cost', $cost->id)->delete();
 
-             // 3. Eliminar entries (abonos) y other_entries (otros ingresos)
-             $eliminados['entries'] += Entry::where('id_cost', $cost->id)->count();
-             Entry::where('id_cost', $cost->id)->delete();
+             // 3. Desvincular entries (abonos) y other_entries (otros ingresos) - NO eliminar
+              // IMPORTANTE: Establecer cod_alumno para mantener referencia al estudiante
+              $eliminados['entries'] += Entry::where('id_cost', $cost->id)->count();
+              Entry::where('id_cost', $cost->id)->update([
+                  'id_cost' => null,
+                  'cod_alumno' => $cost->cod_alumno
+              ]);
 
-             $eliminados['other_entries'] += OtherEntry::where('id_cost', $cost->id)->count();
-             OtherEntry::where('id_cost', $cost->id)->delete();
+              $eliminados['other_entries'] += OtherEntry::where('id_cost', $cost->id)->count();
+              OtherEntry::where('id_cost', $cost->id)->update([
+                  'id_cost' => null,
+                  'cod_alumno' => $cost->cod_alumno
+              ]);
 
-             // 4. Eliminar el cost (hard reset, sin restricciones)
-             $cost->delete();
-             $eliminados['costs']++;
+              // 4. Eliminar el cost (hard reset, sin restricciones)
+              $cost->delete();
+              $eliminados['costs']++;
         }
 
         return $eliminados;
+    }
+
+    /**
+     * Reasigna todos los entries huérfanos de un estudiante al costo más reciente.
+     * Se llama automáticamente después de syncStudentCosts.
+     */
+    public function reassignOrphanedEntriesToCost(string $codAlumno): void
+    {
+        // Obtener el costo más reciente del estudiante (último semestre)
+        $cost = Cost::where('cod_alumno', $codAlumno)
+            ->orderBy('numero_semestre', 'desc')
+            ->first();
+
+        if (!$cost) {
+            return; // No hay costo al que reasignar
+        }
+
+        // Reasignar entries huérfanos (id_cost = null) de este estudiante
+        Entry::where('cod_alumno', $codAlumno)
+            ->whereNull('id_cost')
+            ->update(['id_cost' => $cost->id]);
+
+        OtherEntry::where('cod_alumno', $codAlumno)
+            ->whereNull('id_cost')
+            ->update(['id_cost' => $cost->id]);
+    }
+
+    /**
+     * Puebla el cod_alumno en entries huérfanos que lo tienen como null.
+     * Los entries que tienen id_cost = null pero cod_alumno = null son actualizados
+     * basándose en la relación histórica con costs ya eliminados.
+     */
+    public function populateCodAlumnoForOrphanedEntries(): int
+    {
+        $count = 0;
+
+        // Obtener todos los cod_alumno únicos de costos eliminados (soft reference)
+        // Buscar entries con id_cost = null y cod_alumno = null
+        $orphanEntries = Entry::whereNull('id_cost')->whereNull('cod_alumno')->get();
+
+        foreach ($orphanEntries as $entry) {
+            // Buscar si hay algún costo histórico para este entry (usando el último costo conocido del sistema)
+            // Como los costos fueron eliminados, usamos una consulta diferente
+            // Buscar en la tabla de costos más reciente para encontrar el cod_alumno
+            $entryHistorical = DB::table('entries')
+                ->whereNotNull('cod_alumno')
+                ->where('id', '!=', $entry->id)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($entryHistorical) {
+                $entry->update(['cod_alumno' => $entryHistorical->cod_alumno]);
+                $count++;
+            }
+        }
+
+        // Hacer lo mismo para OtherEntry
+        $orphanOtherEntries = OtherEntry::whereNull('id_cost')->whereNull('cod_alumno')->get();
+
+        foreach ($orphanOtherEntries as $entry) {
+            $entryHistorical = DB::table('other_entries')
+                ->whereNotNull('cod_alumno')
+                ->where('id', '!=', $entry->id)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($entryHistorical) {
+                $entry->update(['cod_alumno' => $entryHistorical->cod_alumno]);
+                $count++;
+            }
+        }
+
+        return $count;
     }
 }

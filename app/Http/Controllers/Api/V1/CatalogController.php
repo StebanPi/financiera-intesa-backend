@@ -86,10 +86,22 @@ class CatalogController extends Controller
 
         $perPage = max(1, (int) $request->get('per_page', 10000));
         $model = $cfg['model'];
-        $query = $model::query()->orderBy('id');
-        $query->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'));
+        $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
+        
+        $tableName = (new $model)->getTable();
+        $query = $model::query()
+            ->select($tableName . '.*')
+            ->where('sede', $sede)
+            ->orderBy('id');
 
         $paginator = $query->paginate($perPage);
+        
+        $items = $paginator->items();
+        $startNumber = ($paginator->currentPage() - 1) * $perPage;
+        foreach ($items as $index => $item) {
+            $item->display_number = $startNumber + $index + 1;
+        }
+        
         $res = $cfg['resource'];
 
         return ApiResponse::success(
@@ -382,11 +394,16 @@ class CatalogController extends Controller
     public function updateInstitution(InstitutionUpdateRequest $request): JsonResponse
     {
         $sede = $request->get('sede_activa', 'BARRANCABERMEJA');
-        $item = InstitutionSetting::where('sede', $sede)->first() ?? InstitutionSetting::getSettings();
-        $item->update(array_merge($request->validated(), ['sede' => $sede]));
+        
+        // updateOrCreate garantiza que el registro exista y se actualice atómicamente
+        $item = InstitutionSetting::updateOrCreate(
+            ['sede' => $sede],
+            array_merge($request->validated(), ['sede' => $sede])
+        );
+
         \Illuminate\Support\Facades\Cache::forget('institution_settings');
         return ApiResponse::success(new InstitutionCatalogResource($item->fresh()), 'Configuración actualizada.', null, 200);
-    }
+    }   
 
     private function checkInUse(string $resource, object $item): ?string
     {

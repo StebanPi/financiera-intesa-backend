@@ -14,6 +14,7 @@ class GroupCatalogResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'display_number' => $this->display_number ?? $this->id,
             'name' => $this->name,
             'active' => $this->active,
         ];

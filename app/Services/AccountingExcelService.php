@@ -40,22 +40,27 @@ class AccountingExcelService
         $this->clearTemplateData($sheet, 3, 1000);
 
         // Obtener datos de entries filtrados por fecha_recibo y sede
+        // Se usa LEFT JOIN para incluir entries con id_cost = null (cuando se elimina config de costos)
         $query = DB::table('entries')
-            ->join('costs', 'costs.id', '=', 'entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->leftJoin('costs', 'costs.id', '=', 'entries.id_cost')
+            ->leftJoin('matriculas', function($join) {
+                $join->on('matriculas.cod_alumno', '=', 'costs.cod_alumno')
+                     ->orOn('matriculas.cod_alumno', '=', 'entries.cod_alumno');
+            })
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
             ->join('elaborados', 'elaborados.id', '=', 'entries.elaborado_por')
             ->join('debes', 'debes.id', '=', 'entries.debe')
             ->join('habers', 'habers.id', '=', 'entries.haber')
-            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
+            ->whereRaw('UPPER(COALESCE(matriculas.sede, entries.sede)) = ?', [strtoupper($sede)])
             ->distinct()
             ->select(
                 'entries.*',
-                'costs.cod_alumno',
+                DB::raw('COALESCE(costs.cod_alumno, entries.cod_alumno) as cod_alumno'),
                 'conceptos.nombre as concepto_nombre',
                 'elaborados.nombre as elaborado_nombre',
                 'debes.nombre as debe_nombre',
-                'habers.nombre as haber_nombre'
+                'habers.nombre as haber_nombre',
+                'matriculas.sede as matricula_sede'
             )
             ->orderBy('entries.fecha_recibo');
 
@@ -150,16 +155,21 @@ class AccountingExcelService
         // Limpiar datos existentes de la plantilla (desde fila 3 hasta 1000)
         $this->clearTemplateData($sheet, 3, 1000);
 
+        // Se usa LEFT JOIN para incluir entries con id_cost = null (cuando se elimina config de costos)
         $query = DB::table('other_entries')
-            ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->leftJoin('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->leftJoin('matriculas', function($join) {
+                $join->on('matriculas.cod_alumno', '=', 'costs.cod_alumno')
+                     ->orOn('matriculas.cod_alumno', '=', 'other_entries.cod_alumno');
+            })
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
+            ->whereRaw('UPPER(COALESCE(matriculas.sede, other_entries.sede)) = ?', [strtoupper($sede)])
             ->distinct()
             ->select(
                 'other_entries.*',
-                'costs.cod_alumno',
-                'otros_conceptos.nombre as concepto_nombre'
+                DB::raw('COALESCE(costs.cod_alumno, other_entries.cod_alumno) as cod_alumno'),
+                'otros_conceptos.nombre as concepto_nombre',
+                'matriculas.sede as matricula_sede'
             )
             ->orderBy('otros_conceptos.nombre')
             ->orderBy('other_entries.fecha_recibo');
@@ -272,14 +282,17 @@ class AccountingExcelService
         // Limpiar datos existentes de la plantilla (desde fila 2 hasta 1000)
         $this->clearTemplateData($sheet, 2, 1000);
 
-        // Entries con concepto
+        // Entries con concepto - Se usa LEFT JOIN para incluir entries con id_cost = null
         $entriesQuery = DB::table('entries')
-            ->join('costs', 'costs.id', '=', 'entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->leftJoin('costs', 'costs.id', '=', 'entries.id_cost')
+            ->leftJoin('matriculas', function($join) {
+                $join->on('matriculas.cod_alumno', '=', 'costs.cod_alumno')
+                     ->orOn('matriculas.cod_alumno', '=', 'entries.cod_alumno');
+            })
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
+            ->whereRaw('UPPER(COALESCE(matriculas.sede, entries.sede)) = ?', [strtoupper($sede)])
             ->distinct()
-            ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre');
+            ->select('entries.*', DB::raw('COALESCE(costs.cod_alumno, entries.cod_alumno) as cod_alumno'), 'conceptos.nombre as concepto_nombre');
 
         if ($startDate !== null && $endDate !== null) {
             $entriesQuery->whereBetween('entries.fecha_recibo', [$startDate, $endDate]);
@@ -291,12 +304,15 @@ class AccountingExcelService
 
         $entries = $entriesQuery->get();
 
-        // Other entries con concepto
+        // Other entries con concepto - Se usa LEFT JOIN para incluir entries con id_cost = null
         $otherEntriesQuery = DB::table('other_entries')
-            ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->leftJoin('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->leftJoin('matriculas', function($join) {
+                $join->on('matriculas.cod_alumno', '=', 'costs.cod_alumno')
+                     ->orOn('matriculas.cod_alumno', '=', 'other_entries.cod_alumno');
+            })
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
+            ->whereRaw('UPPER(COALESCE(matriculas.sede, other_entries.sede)) = ?', [strtoupper($sede)])
             ->distinct()
             ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre');
 
@@ -508,14 +524,17 @@ class AccountingExcelService
         }
         $sheet->getStyle('A1:J1')->getFont()->setBold(true);
 
-        // Entries (abonos)
+        // Entries (abonos) - Se usa LEFT JOIN para incluir entries con id_cost = null
         $entriesQuery = DB::table('entries')
-            ->join('costs', 'costs.id', '=', 'entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->leftJoin('costs', 'costs.id', '=', 'entries.id_cost')
+            ->leftJoin('matriculas', function($join) {
+                $join->on('matriculas.cod_alumno', '=', 'costs.cod_alumno')
+                     ->orOn('matriculas.cod_alumno', '=', 'entries.cod_alumno');
+            })
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
-            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
+            ->whereRaw('UPPER(COALESCE(matriculas.sede, entries.sede)) = ?', [strtoupper($sede)])
             ->distinct()
-            ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre');
+            ->select('entries.*', DB::raw('COALESCE(costs.cod_alumno, entries.cod_alumno) as cod_alumno'), 'conceptos.nombre as concepto_nombre');
         if ($startDate !== null && $endDate !== null) {
             $entriesQuery->whereBetween('entries.fecha_recibo', [$startDate, $endDate]);
         } elseif ($startDate !== null) {
@@ -525,12 +544,15 @@ class AccountingExcelService
         }
         $entries = $entriesQuery->get();
 
-        // Other entries (otros ingresos)
+        // Other entries (otros ingresos) - Se usa LEFT JOIN para incluir entries con id_cost = null
         $otherEntriesQuery = DB::table('other_entries')
-            ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->leftJoin('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->leftJoin('matriculas', function($join) {
+                $join->on('matriculas.cod_alumno', '=', 'costs.cod_alumno')
+                     ->orOn('matriculas.cod_alumno', '=', 'other_entries.cod_alumno');
+            })
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
-            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
+            ->whereRaw('UPPER(COALESCE(matriculas.sede, other_entries.sede)) = ?', [strtoupper($sede)])
             ->distinct()
             ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre');
         if ($startDate !== null && $endDate !== null) {
@@ -1054,14 +1076,17 @@ class AccountingExcelService
     {
         $movements = [];
 
-        // Ingresos: entries
+        // Ingresos: entries - Se usa LEFT JOIN para incluir entries con id_cost = null
         $entries = DB::table('entries')
-            ->join('costs', 'costs.id', '=', 'entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
-            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
+            ->leftJoin('costs', 'costs.id', '=', 'entries.id_cost')
+            ->leftJoin('matriculas', function($join) {
+                $join->on('matriculas.cod_alumno', '=', 'costs.cod_alumno')
+                     ->orOn('matriculas.cod_alumno', '=', 'entries.cod_alumno');
+            })
+            ->whereRaw('UPPER(COALESCE(matriculas.sede, entries.sede)) = ?', [strtoupper($sede)])
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
             ->distinct()
-            ->select('entries.*', 'costs.cod_alumno')
+            ->select('entries.*', DB::raw('COALESCE(costs.cod_alumno, entries.cod_alumno) as cod_alumno'))
             ->get();
 
         foreach ($entries as $entry) {
@@ -1079,14 +1104,17 @@ class AccountingExcelService
             ];
         }
 
-        // Ingresos: other_entries
+        // Ingresos: other_entries - Se usa LEFT JOIN para incluir entries con id_cost = null
         $otherEntries = DB::table('other_entries')
-            ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
-            ->join('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
-            ->whereRaw('UPPER(matriculas.sede) = ?', [strtoupper($sede)])
+            ->leftJoin('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->leftJoin('matriculas', function($join) {
+                $join->on('matriculas.cod_alumno', '=', 'costs.cod_alumno')
+                     ->orOn('matriculas.cod_alumno', '=', 'other_entries.cod_alumno');
+            })
+            ->whereRaw('UPPER(COALESCE(matriculas.sede, other_entries.sede)) = ?', [strtoupper($sede)])
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
             ->distinct()
-            ->select('other_entries.*', 'costs.cod_alumno')
+            ->select('other_entries.*', DB::raw('COALESCE(costs.cod_alumno, other_entries.cod_alumno) as cod_alumno'))
             ->get();
 
         foreach ($otherEntries as $entry) {

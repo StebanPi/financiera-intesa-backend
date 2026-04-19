@@ -21,14 +21,18 @@ class AccountingReportService
     public function buildAbonosDataset($startDate = null, $endDate = null, $sede = 'BARRANCABERMEJA')
     {
         // Se cambió el JOIN para usar matriculas.sede, que es más confiable que entries.sede
+        // Se usa LEFT JOIN para incluir entries con id_cost = null (cuando se elimina config de costos)
         $query = DB::table('entries')
-            ->join('costs', 'costs.id', '=', 'entries.id_cost')
-            ->leftJoin('matriculas', 'matriculas.cod_alumno', '=', 'costs.cod_alumno')
+            ->leftJoin('costs', 'costs.id', '=', 'entries.id_cost')
+            ->leftJoin('matriculas', function($join) {
+                $join->on('matriculas.cod_alumno', '=', 'costs.cod_alumno')
+                     ->orOn('matriculas.cod_alumno', '=', 'entries.cod_alumno');
+            })
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
             ->whereRaw('UPPER(entries.sede) = ?', [strtoupper($sede)])
             ->select(
                 'entries.*',
-                'costs.cod_alumno',
+                DB::raw('COALESCE(costs.cod_alumno, entries.cod_alumno) as cod_alumno'),
                 'matriculas.programa as programa_local',
                 'conceptos.nombre as concepto_nombre'
             );
@@ -127,13 +131,14 @@ class AccountingReportService
      */
     public function buildOtrosIngresosDataset($startDate = null, $endDate = null, $sede = 'BARRANCABERMEJA')
     {
+        // Se usa LEFT JOIN para incluir entries con id_cost = null (cuando se elimina config de costos)
         $query = DB::table('other_entries')
-            ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->leftJoin('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
             ->whereRaw('UPPER(other_entries.sede) = ?', [strtoupper($sede)])
             ->select(
                 'other_entries.*',
-                'costs.cod_alumno',
+                DB::raw('COALESCE(costs.cod_alumno, other_entries.cod_alumno) as cod_alumno'),
                 'otros_conceptos.nombre as concepto_nombre'
             );
 
@@ -222,12 +227,12 @@ class AccountingReportService
      */
     public function buildTotalIngresosDataset($startDate = null, $endDate = null, $sede = 'BARRANCABERMEJA')
     {
-        // Entries
+        // Entries - Se usa LEFT JOIN para incluir entries con id_cost = null
         $entriesQuery = DB::table('entries')
-            ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->leftJoin('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
             ->whereRaw('UPPER(entries.sede) = ?', [strtoupper($sede)])
-            ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre');
+            ->select('entries.*', DB::raw('COALESCE(costs.cod_alumno, entries.cod_alumno) as cod_alumno'), 'conceptos.nombre as concepto_nombre');
 
         if ($startDate && $endDate) {
             $entriesQuery->whereBetween('entries.fecha_recibo', [$startDate, $endDate]);
@@ -239,12 +244,12 @@ class AccountingReportService
 
         $entries = $entriesQuery->get();
 
-        // Other entries
+        // Other entries - Se usa LEFT JOIN para incluir entries con id_cost = null
         $otherEntriesQuery = DB::table('other_entries')
-            ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->leftJoin('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
             ->whereRaw('UPPER(other_entries.sede) = ?', [strtoupper($sede)])
-            ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre');
+            ->select('other_entries.*', DB::raw('COALESCE(costs.cod_alumno, other_entries.cod_alumno) as cod_alumno'), 'otros_conceptos.nombre as concepto_nombre');
 
         if ($startDate && $endDate) {
             $otherEntriesQuery->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate]);
@@ -733,12 +738,12 @@ class AccountingReportService
     {
         $movements = [];
 
-        // Ingresos: entries
+        // Ingresos: entries - Se usa LEFT JOIN para incluir entries con id_cost = null
         $entries = DB::table('entries')
-            ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->leftJoin('costs', 'costs.id', '=', 'entries.id_cost')
             ->whereRaw('UPPER(entries.sede) = ?', [strtoupper($sede)])
             ->whereBetween('entries.fecha_recibo', [$startDate, $endDate])
-            ->select('entries.*', 'costs.cod_alumno')
+            ->select('entries.*', DB::raw('COALESCE(costs.cod_alumno, entries.cod_alumno) as cod_alumno'))
             ->get();
 
         foreach ($entries as $entry) {
@@ -756,12 +761,12 @@ class AccountingReportService
             ];
         }
 
-        // Ingresos: other_entries
+        // Ingresos: other_entries - Se usa LEFT JOIN para incluir entries con id_cost = null
         $otherEntries = DB::table('other_entries')
-            ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->leftJoin('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->whereRaw('UPPER(other_entries.sede) = ?', [strtoupper($sede)])
             ->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate])
-            ->select('other_entries.*', 'costs.cod_alumno')
+            ->select('other_entries.*', DB::raw('COALESCE(costs.cod_alumno, other_entries.cod_alumno) as cod_alumno'))
             ->get();
 
         foreach ($otherEntries as $entry) {
@@ -868,12 +873,12 @@ class AccountingReportService
     {
         $items = [];
 
-        // Entries (abonos)
+        // Entries (abonos) - Se usa LEFT JOIN para incluir entries con id_cost = null
         $entriesQuery = DB::table('entries')
-            ->join('costs', 'costs.id', '=', 'entries.id_cost')
+            ->leftJoin('costs', 'costs.id', '=', 'entries.id_cost')
             ->join('conceptos', 'conceptos.id', '=', 'entries.concepto')
             ->whereRaw('UPPER(entries.sede) = ?', [strtoupper($sede)])
-            ->select('entries.*', 'costs.cod_alumno', 'conceptos.nombre as concepto_nombre');
+            ->select('entries.*', DB::raw('COALESCE(costs.cod_alumno, entries.cod_alumno) as cod_alumno'), 'conceptos.nombre as concepto_nombre');
 
         if ($startDate && $endDate) {
             $entriesQuery->whereBetween('entries.fecha_recibo', [$startDate, $endDate]);
@@ -898,12 +903,12 @@ class AccountingReportService
             ];
         }
 
-        // Other entries
+        // Other entries - Se usa LEFT JOIN para incluir entries con id_cost = null
         $otherQuery = DB::table('other_entries')
-            ->join('costs', 'costs.id', '=', 'other_entries.id_cost')
+            ->leftJoin('costs', 'costs.id', '=', 'other_entries.id_cost')
             ->join('otros_conceptos', 'otros_conceptos.id', '=', 'other_entries.concepto')
             ->whereRaw('UPPER(other_entries.sede) = ?', [strtoupper($sede)])
-            ->select('other_entries.*', 'costs.cod_alumno', 'otros_conceptos.nombre as concepto_nombre');
+            ->select('other_entries.*', DB::raw('COALESCE(costs.cod_alumno, other_entries.cod_alumno) as cod_alumno'), 'otros_conceptos.nombre as concepto_nombre');
 
         if ($startDate && $endDate) {
             $otherQuery->whereBetween('other_entries.fecha_recibo', [$startDate, $endDate]);

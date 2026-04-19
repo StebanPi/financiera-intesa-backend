@@ -14,6 +14,7 @@ class ElaboradoCatalogResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'display_number' => $this->display_number ?? $this->id,
             'nombre' => $this->nombre,
             'estado' => $this->estado,
         ];

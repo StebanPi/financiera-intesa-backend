@@ -14,6 +14,7 @@ class ModuleCatalogResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'display_number' => $this->display_number ?? $this->id,
             'name' => $this->name,
             'code' => $this->code,
             'active' => $this->active,
