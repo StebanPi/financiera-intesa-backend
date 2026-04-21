@@ -51,12 +51,7 @@ class OtherEntryController extends Controller
         $query = OtherEntry::query()->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'));
 
         if ($request->filled('cod_alumno')) {
-            $cost = Cost::where('cod_alumno', $request->cod_alumno)->first();
-            if ($cost) {
-                $query->where('id_cost', $cost->id);
-            } else {
-                $query->whereRaw('1 = 0');
-            }
+            $query->where('cod_alumno', $request->cod_alumno);
         }
         if ($request->filled('id_cost')) {
             $query->where('id_cost', $request->id_cost);
@@ -202,16 +197,15 @@ class OtherEntryController extends Controller
             }
 
             // 2. Obtener otros ingresos del estudiante
-            // JOIN con costs para filtrar por cod_alumno
+            // Buscamos directamente en other_entries.cod_alumno
             $entries = DB::connection('mysql')->select(
                 'SELECT other_entries.id, other_entries.id_cost, otros_conceptos.nombre AS concepto, other_entries.descripcion, other_entries.no_recibo, other_entries.fecha_recibo, other_entries.valor, elaborados.nombre AS elaborado_por, CONCAT(debes.cuenta, " - ", debes.nombre) AS debe, CONCAT(habers.cuenta, " - ", habers.nombre) AS haber, other_entries.created_at 
                  FROM other_entries 
-                 INNER JOIN costs ON costs.id = other_entries.id_cost
                  INNER JOIN otros_conceptos ON otros_conceptos.id = other_entries.concepto 
                  INNER JOIN elaborados ON elaborados.id = other_entries.elaborado_por 
                  INNER JOIN debes ON debes.id = other_entries.debe 
                  INNER JOIN habers ON habers.id = other_entries.haber 
-                 WHERE costs.cod_alumno = ? 
+                 WHERE other_entries.cod_alumno = ? 
                  ORDER BY other_entries.no_recibo ASC',
                 [$cod_alumno]
             );

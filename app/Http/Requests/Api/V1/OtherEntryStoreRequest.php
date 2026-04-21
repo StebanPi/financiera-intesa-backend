@@ -18,7 +18,8 @@ class OtherEntryStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_cost' => ['required', 'integer', 'exists:costs,id'],
+            'id_cost' => ['nullable', 'integer', 'exists:costs,id'],
+            'cod_alumno' => ['required'],
             'concepto' => ['required', 'integer', 'exists:otros_conceptos,id'],
             'descripcion' => ['required', 'string'],
             'fecha_recibo' => ['required', 'date'],

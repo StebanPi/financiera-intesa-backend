@@ -41,12 +41,14 @@ class OtherEntryService
             $con->num_current = $current + 1;
             $con->save();
 
-            // Obtener cod_alumno del costo asociado
-            $cost = Cost::find($data['id_cost']);
-            $codAlumno = $cost ? $cost->cod_alumno : null;
+            $codAlumno = $data['cod_alumno'] ?? null;
+            if (!$codAlumno && !empty($data['id_cost'])) {
+                $cost = Cost::find($data['id_cost']);
+                $codAlumno = $cost ? $cost->cod_alumno : null;
+            }
 
             $entry = OtherEntry::create([
-                'id_cost' => $data['id_cost'],
+                'id_cost' => $data['id_cost'] ?? null,
                 'cod_alumno' => $codAlumno,
                 'concepto' => $data['concepto'],
                 'descripcion' => $data['descripcion'],

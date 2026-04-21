@@ -157,7 +157,7 @@ class ProviderController extends Controller
             return ApiResponse::success(null, 'Eliminado.', null, 200);
         } catch (\Illuminate\Database\QueryException $e) {
             if ($e->getCode() == 23000) {
-                return ApiResponse::error('No se puede eliminar el proveedor porque tiene recibos asociados.', 409);
+                return ApiResponse::error('CONFLICT', 'No se puede eliminar el proveedor porque tiene recibos asociados.', null, 409);
             }
             throw $e;
         }

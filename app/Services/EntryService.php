@@ -47,12 +47,14 @@ class EntryService
             $con->num_current = $current + 1;
             $con->save();
 
-            // Obtener cod_alumno del costo asociado
-            $cost = Cost::find($data['id_cost']);
-            $codAlumno = $cost ? $cost->cod_alumno : null;
+            $codAlumno = $data['cod_alumno'] ?? null;
+            if (!$codAlumno && !empty($data['id_cost'])) {
+                $cost = Cost::find($data['id_cost']);
+                $codAlumno = $cost ? $cost->cod_alumno : null;
+            }
 
             $entry = Entry::create([
-                'id_cost' => $data['id_cost'],
+                'id_cost' => $data['id_cost'] ?? null,
                 'cod_alumno' => $codAlumno,
                 'concepto' => $data['concepto'],
                 'descripcion' => $data['descripcion'],
@@ -66,7 +68,9 @@ class EntryService
                 'sede' => $data['sede'] ?? 'BARRANCABERMEJA',
             ]);
 
-            $this->costService->ensurePursesForCost((int) $data['id_cost']);
+            if (!empty($data['id_cost'])) {
+                $this->costService->ensurePursesForCost((int) $data['id_cost']);
+            }
         });
 
         return $entry->fresh();

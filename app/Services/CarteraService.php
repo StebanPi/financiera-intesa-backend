@@ -53,9 +53,16 @@ class CarteraService
             ->get();
 
         // Calcular total de abonos (solo entries, other_entries son otros ingresos separados)
+        // Se buscan todos los abonos vinculados al alumno, incluso si no tienen id_cost (independientes)
         $totalEntries = DB::connection('mysql')
             ->table('entries')
-            ->whereIn('id_cost', $ids_cost)
+            ->where(function($query) use ($ids_cost, $cod_alumno) {
+                if ($cod_alumno) {
+                    $query->where('cod_alumno', $cod_alumno);
+                } else {
+                    $query->whereIn('id_cost', $ids_cost);
+                }
+            })
             ->sum('valor') ?? 0;
 
         $totalAbono = floatval($totalEntries);

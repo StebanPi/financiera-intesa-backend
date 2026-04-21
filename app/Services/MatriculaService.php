@@ -87,25 +87,21 @@ class MatriculaService
         $matricula = $this->getByCodAlumno($cod_alumno, $sede);
         $costs = Cost::where('cod_alumno', $cod_alumno)->orderBy('numero_semestre', 'asc')->get();
         
-        $entryData = [];
-        $otherEntryData = [];
+        // Abonos (Entries) - Buscamos por cod_alumno directamente
+        $entryData = Entry::where('cod_alumno', $cod_alumno)
+            ->with(['conceptoObj', 'elaboradoObj', 'cost'])
+            ->orderBy('fecha_recibo', 'desc')
+            ->get();
+        
+        // Otros Ingresos (OtherEntries) - Buscamos por cod_alumno directamente
+        $otherEntryData = OtherEntry::where('cod_alumno', $cod_alumno)
+            ->with(['conceptoObj', 'elaboradoObj', 'cost'])
+            ->orderBy('fecha_recibo', 'desc')
+            ->get();
+
         $pursesData = [];
 
         if ($costs->isNotEmpty()) {
-            $costIds = $costs->pluck('id')->toArray();
-            
-            // Abonos (Entries)
-            $entryData = Entry::whereIn('id_cost', $costIds)
-                ->with(['conceptoObj', 'elaboradoObj', 'cost'])
-                ->orderBy('fecha_recibo', 'desc')
-                ->get();
-            
-            // Otros Ingresos (OtherEntries)
-            $otherEntryData = OtherEntry::whereIn('id_cost', $costIds)
-                ->with(['conceptoObj', 'elaboradoObj', 'cost'])
-                ->orderBy('fecha_recibo', 'desc')
-                ->get();
-
             // Cartera (Calculada con CarteraService)
             // Obtiene cuotas, estados (Al día, En Mora), saldos y totales
             $pursesData = CarteraService::calcularCartera(null, $cod_alumno);

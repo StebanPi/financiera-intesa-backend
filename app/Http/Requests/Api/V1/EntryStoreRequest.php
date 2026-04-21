@@ -12,13 +12,11 @@ class EntryStoreRequest extends FormRequest
         return true;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public function rules(): array
     {
         return [
-            'id_cost' => ['required', 'integer', 'exists:costs,id'],
+            'id_cost' => ['nullable', 'integer', 'exists:costs,id'],
+            'cod_alumno' => ['required'],
             'concepto' => ['required', 'integer', 'exists:conceptos,id'],
             'descripcion' => ['required', 'string'],
             'fecha_recibo' => ['required', 'date'],

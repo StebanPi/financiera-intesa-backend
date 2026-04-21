@@ -51,12 +51,7 @@ class EntryController extends Controller
         $query = Entry::query()->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'));
 
         if ($request->filled('cod_alumno')) {
-            $costIds = Cost::where('cod_alumno', $request->cod_alumno)->pluck('id');
-            if ($costIds->isNotEmpty()) {
-                $query->whereIn('id_cost', $costIds);
-            } else {
-                $query->whereRaw('1 = 0');
-            }
+            $query->where('cod_alumno', $request->cod_alumno);
         }
         if ($request->filled('id_cost')) {
             $query->where('id_cost', $request->id_cost);
@@ -214,16 +209,15 @@ class EntryController extends Controller
             $passedCost = [$fakeCost];
 
             // 3. Obtener todos los abonos del estudiante
-            // Hacemos JOIN con costs para filtrar por cod_alumno
+            // Buscamos directamente en entries.cod_alumno
             $entries = DB::connection('mysql')->select(
                 'SELECT entries.id, entries.id_cost, conceptos.nombre AS concepto, entries.descripcion, entries.no_recibo, entries.fecha_recibo, entries.valor, elaborados.nombre AS elaborado_por, CONCAT(debes.cuenta, " - ", debes.nombre) AS debe, CONCAT(habers.cuenta, " - ", habers.nombre) AS haber, entries.created_at 
                  FROM entries 
-                 INNER JOIN costs ON costs.id = entries.id_cost
                  INNER JOIN conceptos ON conceptos.id = entries.concepto 
                  INNER JOIN elaborados ON elaborados.id = entries.elaborado_por 
                  INNER JOIN debes ON debes.id = entries.debe 
                  INNER JOIN habers ON habers.id = entries.haber 
-                 WHERE costs.cod_alumno = ? 
+                 WHERE entries.cod_alumno = ? 
                  ORDER BY entries.no_recibo ASC',
                 [$cod_alumno]
             );
