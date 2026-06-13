@@ -8,16 +8,16 @@
 | Si FRONTEND_URL está definido, se incluye siempre en la lista.
 | Evitar '*'; en local sin variables se usa http://localhost:3000.
 */
-$corsAllowedOrigins = (function () {
-    $fe = trim((string) (env('FRONTEND_URL') ?? ''));
-    $src = env('FRONTEND_URLS') ?: env('CORS_ALLOWED_ORIGINS') ?: ($fe !== '' ? $fe : 'http://localhost:3000');
-    $list = array_filter(array_map('trim', explode(',', (string) $src)));
-    if ($fe !== '' && ! in_array($fe, $list)) {
-        $list[] = $fe;
-    }
+// $corsAllowedOrigins = (function () {
+//     $fe = trim((string) (env('FRONTEND_URL') ?? ''));
+//     $src = env('FRONTEND_URLS') ?: env('CORS_ALLOWED_ORIGINS') ?: ($fe !== '' ? $fe : 'http://localhost:3000');
+//     $list = array_filter(array_map('trim', explode(',', (string) $src)));
+//     if ($fe !== '' && ! in_array($fe, $list)) {
+//         $list[] = $fe;
+//     }
 
-    return $list ?: ['http://localhost:3000'];
-})();
+//     return $list ?: ['http://localhost:3000'];
+// })();
 
 return [
 
@@ -36,7 +36,10 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => $corsAllowedOrigins,
+    'allowed_origins' => [
+        'https://financiera.institutointesa.edu.co',
+        'http://localhost:3000'
+    ],,
 
     'allowed_origins_patterns' => [],
 
