@@ -47,8 +47,9 @@ class MatriculaService
             $query->where('horario', $request->horario);
         }
 
-        if ($request->filled('estado_estudiante')) {
-            $query->where('estado_estudiante', $request->estado_estudiante);
+        $estadoFilter = $request->get('estado_estudiante', 'Activo');
+        if ($estadoFilter !== 'Todos') {
+            $query->where('estado_estudiante', $estadoFilter);
         }
 
         $query->where('sede', $request->get('sede_activa', 'BARRANCABERMEJA'));

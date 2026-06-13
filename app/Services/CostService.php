@@ -98,15 +98,18 @@ class CostService
 
     public function list(Request $request): LengthAwarePaginator
     {
-        $query = Cost::query();
+        $query = Cost::query()
+            ->join('matriculas', 'costs.cod_alumno', '=', 'matriculas.cod_alumno')
+            ->where('matriculas.estado_estudiante', 'Activo')
+            ->select('costs.*');
 
         if ($request->filled('cod_alumno')) {
-            $query->where('cod_alumno', $request->cod_alumno);
+            $query->where('costs.cod_alumno', $request->cod_alumno);
         }
 
         $perPage = min((int) $request->get('per_page', 15), 100);
 
-        return $query->orderBy('id')->paginate($perPage);
+        return $query->orderBy('costs.id')->paginate($perPage);
     }
 
     /**
