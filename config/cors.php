@@ -2,53 +2,99 @@
 
 /*
 |--------------------------------------------------------------------------
-| CORS allowed_origins (configurable por entorno)
+| Cross-Origin Resource Sharing (CORS) Configuration
 |--------------------------------------------------------------------------
-| Origen: FRONTEND_URLS (varios, coma) > CORS_ALLOWED_ORIGINS > FRONTEND_URL.
-| Si FRONTEND_URL está definido, se incluye siempre en la lista.
-| Evitar '*'; en local sin variables se usa http://localhost:3000.
+|
+| Configuración dinámica: los orígenes se leen SIEMPRE del .env para
+| que nunca sea necesario modificar este archivo en producción.
+|
+| Variables de entorno (en orden de prioridad):
+|   CORS_ALLOWED_ORIGINS  →  lista separada por comas
+|   FRONTEND_URL          →  fallback si CORS_ALLOWED_ORIGINS no existe
+|
+| Ejemplo .env local:
+|   CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+|
+| Ejemplo .env producción:
+|   CORS_ALLOWED_ORIGINS=https://financiera.institutointesa.edu.co
+|
 */
-// $corsAllowedOrigins = (function () {
-//     $fe = trim((string) (env('FRONTEND_URL') ?? ''));
-//     $src = env('FRONTEND_URLS') ?: env('CORS_ALLOWED_ORIGINS') ?: ($fe !== '' ? $fe : 'http://localhost:3000');
-//     $list = array_filter(array_map('trim', explode(',', (string) $src)));
-//     if ($fe !== '' && ! in_array($fe, $list)) {
-//         $list[] = $fe;
-//     }
 
-//     return $list ?: ['http://localhost:3000'];
-// })();
+$allowedOrigins = (function (): array {
+    // 1. Fuente principal: CORS_ALLOWED_ORIGINS (varios orígenes, coma)
+    $raw = env('CORS_ALLOWED_ORIGINS', '');
+
+    // 2. Fallback: FRONTEND_URL (un solo origen)
+    if (empty($raw)) {
+        $raw = env('FRONTEND_URL', 'http://localhost:3000');
+    }
+
+    // Limpiar, separar y filtrar vacíos
+    $origins = array_values(array_filter(array_map('trim', explode(',', (string) $raw))));
+
+    // Garantizar que siempre haya al menos un origen
+    return $origins ?: ['http://localhost:3000'];
+})();
 
 return [
 
     /*
     |--------------------------------------------------------------------------
-    | Cross-Origin Resource Sharing (CORS) Configuration
+    | Rutas que aceptan CORS
     |--------------------------------------------------------------------------
-    |
-    | CORS para /api/*: Postman, debug y posibles llamadas directas desde el
-    | navegador. Con Next como BFF la mayoría de peticiones son server-to-server.
-    | supports_credentials=false (no usamos cookies directas browser→Laravel).
-    |
     */
-
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Métodos HTTP permitidos
+    |--------------------------------------------------------------------------
+    */
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        'https://financiera.institutointesa.edu.co',
-        'http://localhost:3000'
-    ],
+    /*
+    |--------------------------------------------------------------------------
+    | Orígenes permitidos (dinámicos desde .env)
+    |--------------------------------------------------------------------------
+    */
+    'allowed_origins' => $allowedOrigins,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Patrones de orígenes (regex) — vacío por defecto
+    |--------------------------------------------------------------------------
+    */
     'allowed_origins_patterns' => [],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Headers permitidos
+    |--------------------------------------------------------------------------
+    */
     'allowed_headers' => ['*'],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Headers expuestos al navegador
+    |--------------------------------------------------------------------------
+    | Content-Disposition: necesario para descargas de PDF/XLSX.
+    */
     'exposed_headers' => ['Content-Disposition'],
 
-    'max_age' => 0,
+    /*
+    |--------------------------------------------------------------------------
+    | Preflight cache (segundos)
+    |--------------------------------------------------------------------------
+    | 7200 = 2 horas. Reduce las peticiones OPTIONS repetitivas.
+    */
+    'max_age' => 7200,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Credenciales (cookies, Authorization headers)
+    |--------------------------------------------------------------------------
+    | true porque usamos tokens Bearer y Sanctum con withCredentials.
+    */
     'supports_credentials' => true,
 
 ];
