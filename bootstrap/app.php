@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
         // RequestIdMiddleware debe ir antes para que el request_id esté disponible para todos los demás middlewares
         $middleware->append(\App\Http\Middleware\RequestIdMiddleware::class);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
