@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Servicio centralizado para el cálculo de cartera
@@ -158,24 +157,6 @@ class CarteraService
                 $saldoAFavor += $valueShow;
             }
             
-            // Log detallado por cuota
-            Log::info("CarteraService - Cuota #{$index}", [
-                'id' => $purse->id,
-                'fecha_pago' => $fechaPago,
-                'hoy' => $hoy,
-                'is_vencida' => $isVencida,
-                'cuota' => $cuota,
-                'abono_restante_antes' => $abonoRestanteAntes,
-                'abonado' => $abonado,
-                'abono_restante_despues' => $abonoRestante,
-                'valueShow' => $valueShow,
-                'estado' => $estado,
-                'estado_pago' => $estadoPago,
-                'saldo_pendiente_antes' => $saldoPendiente,
-                'saldo_a_favor_antes' => $saldoAFavorAntes,
-                'saldo_a_favor_despues' => $saldoAFavor
-            ]);
-
             // Guardar información de la cuota
             $cuotasCalculadas[] = [
                 'id' => $purse->id,
@@ -194,41 +175,6 @@ class CarteraService
 
         // El saldo a favor ya fue calculado correctamente en el loop anterior
 
-        // Log detallado para depuración
-        Log::info('CarteraService - DATOS DE LA BASE DE DATOS', [
-            'ids_cost' => $ids_cost,
-            'cod_alumno' => $cod_alumno,
-            'total_entries' => $totalEntries,
-            'total_abono' => $totalAbono,
-            'nota' => 'other_entries no se incluyen en el cálculo de cartera (son otros ingresos separados)',
-            'num_purses' => count($purses),
-            'purses_raw' => $purses->map(function($p) {
-                return [
-                    'id' => $p->id,
-                    'fecha_pago' => $p->fecha_pago,
-                    'cuota' => $p->cuota,
-                    'abonado' => $p->abonado ?? 0,
-                    'comentario' => $p->comentario ?? ''
-                ];
-            })->toArray()
-        ]);
-        
-        Log::info('CarteraService - CÁLCULOS POR CUOTA', [
-            'cuotas_calculadas' => $cuotasCalculadas
-        ]);
-        
-        Log::info('CarteraService - TOTALES CALCULADOS', [
-            'ids_cost' => $ids_cost,
-            'cod_alumno' => $cod_alumno,
-            'total_abono' => $totalAbono,
-            'cuotas_total' => $cuotasTotal,
-            'total_abonado' => $totalAbonado,
-            'saldo_pendiente' => $saldoPendiente,
-            'saldo_a_favor' => $saldoAFavor,
-            'saldo_en_mora' => $saldoEnMora,
-            'num_cuotas' => count($cuotasCalculadas)
-        ]);
-        
         return [
             'cuotas' => $cuotasCalculadas,
             'totales' => [
