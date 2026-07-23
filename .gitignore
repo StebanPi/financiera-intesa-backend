@@ -142,7 +142,6 @@ build/
 # ============================================
 
 # Scripts de desarrollo local
-Iniciar.bat
 
 # Archivos de respaldo
 *.bak
