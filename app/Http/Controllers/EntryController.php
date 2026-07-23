@@ -396,24 +396,21 @@ class EntryController extends Controller
             $data = [];
             if (isset($arrayCost->cod_alumno) && !empty($arrayCost->cod_alumno)) {
                 try {
-                    \Log::info('Buscando estudiante con cod_alumno: ' . $arrayCost->cod_alumno . ' (tipo: ' . gettype($arrayCost->cod_alumno) . ')');
                     // Usar el mismo formato que viewStudentController::carteraTable
                     $data = DB::connection('mysql2')->select(
-                        'SELECT alumno.cedula, alumno.nombre, programa.nombre_programa 
-                         FROM alumno 
-                         INNER JOIN relacion_programa_estudiante ON relacion_programa_estudiante.Alumno_cod = alumno.cod_alumno 
-                         INNER JOIN programa ON programa.cod_programa = relacion_programa_estudiante.programa_cod 
+                        'SELECT alumno.cedula, alumno.nombre, programa.nombre_programa
+                         FROM alumno
+                         INNER JOIN relacion_programa_estudiante ON relacion_programa_estudiante.Alumno_cod = alumno.cod_alumno
+                         INNER JOIN programa ON programa.cod_programa = relacion_programa_estudiante.programa_cod
                          WHERE alumno.cod_alumno = "' . $arrayCost->cod_alumno . '"'
                     );
-                    \Log::info('Resultados encontrados: ' . count($data));
                     if (empty($data)) {
                         // Intentar sin la relación de programa (por si no tiene programa asignado)
                         $data = DB::connection('mysql2')->select(
-                            'SELECT alumno.cedula, alumno.nombre, "" AS nombre_programa 
-                             FROM alumno 
+                            'SELECT alumno.cedula, alumno.nombre, "" AS nombre_programa
+                             FROM alumno
                              WHERE alumno.cod_alumno = "' . $arrayCost->cod_alumno . '"'
                         );
-                        \Log::info('Resultados sin programa: ' . count($data));
                     }
                     if (empty($data)) {
                         // Fallback: buscar en la tabla matriculas (como en CostController)
@@ -426,7 +423,6 @@ class EntryController extends Controller
                                     'nombre_programa' => $matricula->programa ?? ''
                                 ]
                             ];
-                            \Log::info('Estudiante encontrado en tabla matriculas');
                         }
                     }
                 } catch (\Exception $e) {
@@ -501,24 +497,21 @@ class EntryController extends Controller
             $data = [];
             if (isset($arrayCost->cod_alumno) && !empty($arrayCost->cod_alumno)) {
                 try {
-                    \Log::info('Buscando estudiante con cod_alumno: ' . $arrayCost->cod_alumno . ' (tipo: ' . gettype($arrayCost->cod_alumno) . ')');
                     // Usar el mismo formato que viewStudentController::carteraTable
                     $data = DB::connection('mysql2')->select(
-                        'SELECT alumno.cedula, alumno.nombre, programa.nombre_programa 
-                         FROM alumno 
-                         INNER JOIN relacion_programa_estudiante ON relacion_programa_estudiante.Alumno_cod = alumno.cod_alumno 
-                         INNER JOIN programa ON programa.cod_programa = relacion_programa_estudiante.programa_cod 
+                        'SELECT alumno.cedula, alumno.nombre, programa.nombre_programa
+                         FROM alumno
+                         INNER JOIN relacion_programa_estudiante ON relacion_programa_estudiante.Alumno_cod = alumno.cod_alumno
+                         INNER JOIN programa ON programa.cod_programa = relacion_programa_estudiante.programa_cod
                          WHERE alumno.cod_alumno = "' . $arrayCost->cod_alumno . '"'
                     );
-                    \Log::info('Resultados encontrados: ' . count($data));
                     if (empty($data)) {
                         // Intentar sin la relación de programa (por si no tiene programa asignado)
                         $data = DB::connection('mysql2')->select(
-                            'SELECT alumno.cedula, alumno.nombre, "" AS nombre_programa 
-                             FROM alumno 
+                            'SELECT alumno.cedula, alumno.nombre, "" AS nombre_programa
+                             FROM alumno
                              WHERE alumno.cod_alumno = "' . $arrayCost->cod_alumno . '"'
                         );
-                        \Log::info('Resultados sin programa: ' . count($data));
                     }
                     if (empty($data)) {
                         // Fallback: buscar en la tabla matriculas (como en CostController)
@@ -531,7 +524,6 @@ class EntryController extends Controller
                                     'nombre_programa' => $matricula->programa ?? ''
                                 ]
                             ];
-                            \Log::info('Estudiante encontrado en tabla matriculas');
                         }
                     }
                 } catch (\Exception $e) {

@@ -220,9 +220,8 @@ class PurseController extends Controller
             $data = [];
             if (isset($arrayCost->cod_alumno) && !empty($arrayCost->cod_alumno)) {
                 try {
-                    \Log::info('Buscando estudiante con cod_alumno: ' . $arrayCost->cod_alumno);
                     $codAlumno = strval($arrayCost->cod_alumno);
-                    
+
                     // PRIMERO: Buscar en la tabla local matriculas (siempre disponible)
                     $matricula = \App\Models\Matricula::where('cod_alumno', $codAlumno)->first();
                     if ($matricula) {
@@ -233,20 +232,18 @@ class PurseController extends Controller
                                 'nombre_programa' => $matricula->programa ?? ''
                             ]
                         ];
-                        \Log::info('Estudiante encontrado en matriculas: ' . ($matricula->nombre_completo ?? 'N/A'));
                     } else {
                         // FALLBACK: Intentar en mysql2 (solo si está disponible)
                         try {
-                            $Sql = 'SELECT alumno.cedula, alumno.nombre, programa.nombre_programa 
-                                    FROM alumno 
-                                    INNER JOIN relacion_programa_estudiante ON relacion_programa_estudiante.Alumno_cod = alumno.cod_alumno 
-                                    INNER JOIN programa ON programa.cod_programa = relacion_programa_estudiante.programa_cod 
+                            $Sql = 'SELECT alumno.cedula, alumno.nombre, programa.nombre_programa
+                                    FROM alumno
+                                    INNER JOIN relacion_programa_estudiante ON relacion_programa_estudiante.Alumno_cod = alumno.cod_alumno
+                                    INNER JOIN programa ON programa.cod_programa = relacion_programa_estudiante.programa_cod
                                     WHERE alumno.cod_alumno = "'.$codAlumno.'"';
                             $Student = DB::connection('mysql2')->select($Sql);
-                            
+
                             if (!empty($Student) && isset($Student[0])) {
                                 $data = $Student;
-                                \Log::info('Estudiante encontrado en mysql2: ' . ($Student[0]->nombre ?? 'N/A'));
                             } else {
                                 \Log::warning('No se encontró información del estudiante para cod_alumno: ' . $codAlumno);
                                 $data = [];
@@ -254,7 +251,6 @@ class PurseController extends Controller
                         } catch (\Exception $e2) {
                             // Si mysql2 falla (tabla no existe), solo loguear y continuar con array vacío
                             \Log::warning('No se pudo acceder a mysql2 para buscar estudiante: ' . $e2->getMessage());
-                            \Log::warning('Buscando solo en matriculas locales. cod_alumno: ' . $codAlumno);
                             $data = [];
                         }
                     }
