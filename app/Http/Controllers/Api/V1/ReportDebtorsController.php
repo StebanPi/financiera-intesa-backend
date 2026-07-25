@@ -62,15 +62,25 @@ class ReportDebtorsController extends Controller
         $results = $query->orderBy('matriculas.nombre_completo')->get();
 
         $debtors = [];
-        
-        // Agrupar por alumno para evitar múltiples llamadas al CarteraService si tiene varias cuotas en el mismo día/mes
-        // Aunque generalmente cada cuota es independiente, el CarteraService calcula por id_cost.
-        
+
+        // El estado real de la cartera debe calcularse a nivel de ESTUDIANTE (cod_alumno),
+        // igual que en la vista de "Gestionar Cartera" (PurseController), donde se llama a
+        // CarteraService::calcularCartera(null, $cod_alumno). Ese cálculo suma TODOS los abonos
+        // del alumno y los distribuye cronológicamente sobre TODAS sus cuotas.
+        //
+        // Antes se calculaba por id_cost (un solo semestre), lo que ignoraba abonos que no
+        // estaban etiquetados a ese id_cost y hacía aparecer como deudores a estudiantes que
+        // en realidad estaban Al Día. Cacheamos el resultado por alumno para no recalcular.
+        $carteraCache = [];
+
         foreach ($results as $row) {
-            // Usar el servicio para verificar el estado real de la cartera
-            // El servicio redistribuye los abonos cronológicamente
-            $carteraData = CarteraService::calcularCartera($row->id_cost);
-            
+            $codAlumno = $row->cod_alumno;
+
+            if (!array_key_exists($codAlumno, $carteraCache)) {
+                $carteraCache[$codAlumno] = CarteraService::calcularCartera(null, $codAlumno);
+            }
+            $carteraData = $carteraCache[$codAlumno];
+
             // Buscar la cuota específica en los resultados calculados
             $cuotaCalculada = null;
             foreach ($carteraData['cuotas'] as $c) {
