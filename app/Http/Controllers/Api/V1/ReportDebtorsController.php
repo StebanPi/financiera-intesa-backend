@@ -80,8 +80,10 @@ class ReportDebtorsController extends Controller
                 }
             }
 
-            // Si la cuota no está completa, es un deudor
-            if ($cuotaCalculada && ($cuotaCalculada['estado_pago'] !== 'Completa')) {
+            // Solo se consideran deudores las cuotas EN MORA (vencidas y no pagadas completamente).
+            // Se excluyen las cuotas 'Proxima' (futuras sin abono) e 'Incompleta' (futuras con abono parcial),
+            // ya que esos estudiantes están al día y no deben aparecer en el calendario de cobranza.
+            if ($cuotaCalculada && $cuotaCalculada['estado'] === 'En Mora') {
                 $debtors[] = [
                     'cod_alumno' => $row->cod_alumno,
                     'nombre' => $row->nombre_completo,
