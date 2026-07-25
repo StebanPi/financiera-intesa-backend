@@ -249,6 +249,8 @@
         <span class="info-value">{{ \Carbon\Carbon::parse($fecha_final)->format('d/m/Y') }}</span>
     </div>
     <div class="info-row">
+        <span class="info-label">DOCENTE:</span>
+        <span class="info-value">{{ $docente ?? '' }}</span>
         <span class="info-label">ÚLTIMA FECHA PARA ENTREGA DE NOTAS:</span>
         <span class="info-value">{{ \Carbon\Carbon::parse($fecha_final)->format('d/m/Y') }}</span>
     </div>
